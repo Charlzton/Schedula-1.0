@@ -1,0 +1,418 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --text-tertiary: #9CA3AF;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-system);
+  }
+
+  body {
+    background-color: #FFFFFF;
+    color: var(--text-primary);
+    font-family: var(--font-system);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    line-height: 1.5;
+  }
+
+  /* Standard Heading Hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-system);
+    letter-spacing: -0.022em;
+    color: inherit;
+  }
+}
+
+/* System Typography Utility Tokens */
+.font-system {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Backward-compatible alias mapping to SF Pro system UI */
+.font-google,
+.font-display {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Responsive Fluid Typography Tokens */
+.type-hero {
+  font-size: clamp(2.25rem, 4.5vw + 0.5rem, 3.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 750;
+}
+
+.type-h1 {
+  font-size: clamp(1.75rem, 3vw + 0.5rem, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+.type-h2 {
+  font-size: clamp(1.5rem, 2.2vw + 0.25rem, 2rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 650;
+}
+
+.type-h3 {
+  font-size: clamp(1.15rem, 1.4vw + 0.25rem, 1.45rem);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+
+.type-body {
+  font-size: 0.9375rem; /* 15px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+@media (min-width: 640px) {
+  .type-body {
+    font-size: 1rem; /* 16px */
+    line-height: 1.625;
+  }
+}
+
+.type-secondary {
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.type-caption {
+  font-size: 0.75rem; /* 12px */
+  line-height: 1.4;
+  font-weight: 450;
+}
+
+.type-button {
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.25;
+  font-weight: 550;
+}
+
+.type-label {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+.type-metric {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+@layer components {
+  /* Core Glass Tokens */
+  .glass-panel {
+    @apply bg-white/10 dark:bg-black/10 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg rounded-2xl;
+  }
+  .glass-pill {
+    @apply bg-white/15 dark:bg-black/15 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-full px-4 py-2 hover:bg-white/25 dark:hover:bg-white/10 transition-all;
+  }
+  .glass-input {
+    @apply bg-white/5 dark:bg-black/5 backdrop-blur-md border border-white/10 dark:border-white/5 rounded-xl px-4 py-2 text-neutral-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-hidden;
+  }
+  .glass-sidebar {
+    @apply bg-white/10 dark:bg-black/10 backdrop-blur-2xl border border-white/20 dark:border-white/5 shadow-2xl rounded-3xl;
+  }
+}
+
+@keyframes subtle-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-subtle-float {
+  animation: subtle-float 3.6s ease-in-out infinite;
+}
+
+/* AI Button Specialized Living Reveal & Sparkle Animations */
+@keyframes ai-letter-a-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(2px) scale(0.95);
+    clip-path: inset(0 100% 0 0);
+  }
+  6% {
+    opacity: 1;
+  }
+  22% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+    clip-path: inset(0 0% 0 0);
+  }
+  78% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+    clip-path: inset(0 0% 0 0);
+  }
+  88% {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.96);
+    clip-path: inset(0 0% 0 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(2px) scale(0.95);
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@keyframes ai-letter-i-reveal {
+  0%, 18% {
+    opacity: 0;
+    transform: translateY(3px) scale(0.9);
+    clip-path: inset(0 0 100% 0);
+  }
+  24% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+    clip-path: inset(0 0 0% 0);
+  }
+  78% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+    clip-path: inset(0 0 0% 0);
+  }
+  88% {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.96);
+    clip-path: inset(0 0 0% 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(3px) scale(0.9);
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+@keyframes ai-sparkle-1 {
+  0%, 100% {
+    transform: rotate(0deg) scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: rotate(18deg) scale(1.15);
+    opacity: 1;
+    filter: drop-shadow(0 0 3px rgba(6, 182, 212, 0.6));
+  }
+}
+
+@keyframes ai-sparkle-2 {
+  0%, 100% {
+    transform: scale(0.7) translate(0, 0);
+    opacity: 0.4;
+  }
+  45% {
+    transform: scale(1.25) translate(1px, -1px);
+    opacity: 1;
+    filter: drop-shadow(0 0 2.5px rgba(147, 51, 234, 0.7));
+  }
+  80% {
+    transform: scale(0.85) translate(0, 0);
+    opacity: 0.6;
+  }
+}
+
+@keyframes ai-sparkle-3 {
+  0%, 100% {
+    transform: translateY(0px) scale(0.9);
+    opacity: 0.65;
+  }
+  55% {
+    transform: translateY(-2px) scale(1.15);
+    opacity: 1;
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.6));
+  }
+}
+
+.animate-ai-letter-a {
+  transform-origin: 36.5px 51px;
+  animation: ai-letter-a-reveal 4.6s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.animate-ai-letter-i {
+  transform-origin: 59px 51px;
+  animation: ai-letter-i-reveal 4.6s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.animate-ai-sparkle-1 {
+  transform-origin: 68px 26px;
+  animation: ai-sparkle-1 3.2s ease-in-out infinite;
+}
+
+.animate-ai-sparkle-2 {
+  transform-origin: 79px 13px;
+  animation: ai-sparkle-2 2.6s ease-in-out 0.5s infinite;
+}
+
+.animate-ai-sparkle-3 {
+  transform-origin: 81px 35px;
+  animation: ai-sparkle-3 2.9s ease-in-out 1.1s infinite;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  /* Reset layout overflows so multi-page printing works without clipping */
+  html, body {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide navigation, sidebar, navbar, header, floating buttons, modal overlays, and no-print items */
+  aside, 
+  header, 
+  nav, 
+  button,
+  footer,
+  input,
+  select,
+  textarea,
+  .fixed, 
+  .sticky,
+  .no-print, 
+  #mobile-sidebar-toggle,
+  #floating-scheduler-btn,
+  [role="navigation"],
+  [role="dialog"],
+  [role="tooltip"],
+  [role="status"],
+  .glass-sidebar,
+  .floating-button,
+  .no-print-area,
+  .search-container,
+  .filter-bar,
+  .action-buttons,
+  .actions-column {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  /* Main content containment for print */
+  main {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Force visibility for scrollable containers in print */
+  .overflow-x-auto, 
+  .overflow-y-auto,
+  .custom-scrollbar {
+    overflow: visible !important;
+    max-height: none !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .glass-panel {
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: 1px solid #d1d5db !important;
+    backdrop-filter: none !important;
+    border-radius: 4px !important;
+    margin-bottom: 16px !important;
+    break-inside: avoid;
+  }
+
+  .print-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  h1, h2, h3, h4 {
+    color: #000000 !important;
+    page-break-after: avoid;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border: 1px solid #d1d5db !important;
+    margin-bottom: 1rem !important;
+    table-layout: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  th, td {
+    border: 1px solid #e5e7eb !important;
+    color: #111827 !important;
+    padding: 6px 8px !important;
+    font-size: 8.5pt !important;
+    word-wrap: break-word !important;
+  }
+
+  th {
+    background-color: #f3f4f6 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 8pt !important;
+    color: #000000 !important;
+  }
+
+  /* Text color fixes for print */
+  .text-zinc-900, .text-zinc-800, .text-zinc-700, .text-zinc-600, .text-zinc-500,
+  .dark\:text-white, .dark\:text-zinc-100, .dark\:text-zinc-200, .dark\:text-zinc-300, .dark\:text-zinc-400 {
+    color: #111827 !important;
+  }
+
+  /* Links */
+  a {
+    text-decoration: none !important;
+    color: #000000 !important;
+  }
+}
+

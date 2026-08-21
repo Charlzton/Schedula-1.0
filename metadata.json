@@ -1,0 +1,6 @@
+{
+  "name": "Schedula",
+  "description": "Manage your schedule. Stay in control. Intelligent university timetable scheduling and hall allocation management system for academic administrators.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

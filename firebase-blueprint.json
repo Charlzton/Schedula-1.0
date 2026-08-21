@@ -1,0 +1,130 @@
+{
+  "entities": {
+    "Course": {
+      "title": "Course",
+      "description": "University course offering",
+      "type": "object",
+      "properties": {
+        "courseCode": { "type": "string", "maxLength": 20 },
+        "courseTitle": { "type": "string", "maxLength": 150 },
+        "totalCredits": { "type": "number" },
+        "level": { "type": "number" },
+        "semester": { "type": "string", "maxLength": 20 },
+        "expectedEnrollment": { "type": "number" },
+        "theoryHours": { "type": "number" },
+        "practicalHours": { "type": "number" },
+        "department": { "type": "string", "maxLength": 100 },
+        "assignedLecturerId": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["courseCode", "courseTitle", "totalCredits", "level", "semester", "expectedEnrollment"]
+    },
+    "LectureFacility": {
+      "title": "LectureFacility",
+      "description": "Lecture hall, auditorium or lab venue",
+      "type": "object",
+      "properties": {
+        "hallId": { "type": "string", "maxLength": 20 },
+        "hallName": { "type": "string", "maxLength": 100 },
+        "venueType": { "type": "string", "maxLength": 50 },
+        "capacity": { "type": "number" },
+        "buildingLocation": { "type": "string", "maxLength": 100 },
+        "hasProjector": { "type": "boolean" },
+        "hasComputers": { "type": "boolean" },
+        "status": { "type": "string", "maxLength": 20 }
+      },
+      "required": ["hallId", "hallName", "venueType", "capacity", "buildingLocation", "status"]
+    },
+    "Lecturer": {
+      "title": "Lecturer",
+      "description": "Academic faculty member",
+      "type": "object",
+      "properties": {
+        "lecturerId": { "type": "string", "maxLength": 20 },
+        "fullName": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 50 },
+        "officeEmail": { "type": "string", "maxLength": 100 },
+        "assignedCourses": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["lecturerId", "fullName", "title", "officeEmail"]
+    },
+    "TimeSlot": {
+      "title": "TimeSlot",
+      "description": "Academic scheduling time block",
+      "type": "object",
+      "properties": {
+        "slotId": { "type": "string", "maxLength": 20 },
+        "day": { "type": "string", "maxLength": 20 },
+        "startTime": { "type": "string", "maxLength": 10 },
+        "endTime": { "type": "string", "maxLength": 10 },
+        "durationHours": { "type": "number" },
+        "sessionType": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["slotId", "day", "startTime", "endTime", "durationHours", "sessionType"]
+    },
+    "TimetableSchedule": {
+      "title": "TimetableSchedule",
+      "description": "Generated or saved timetable schedule entry",
+      "type": "object",
+      "properties": {
+        "scheduleId": { "type": "string", "maxLength": 60 },
+        "courseCode": { "type": "string", "maxLength": 20 },
+        "courseTitle": { "type": "string", "maxLength": 150 },
+        "level": { "type": "number" },
+        "semester": { "type": "string", "maxLength": 20 },
+        "hallId": { "type": "string", "maxLength": 20 },
+        "hallName": { "type": "string", "maxLength": 100 },
+        "slotId": { "type": "string", "maxLength": 20 },
+        "day": { "type": "string", "maxLength": 20 },
+        "startTime": { "type": "string", "maxLength": 10 },
+        "endTime": { "type": "string", "maxLength": 10 },
+        "sessionType": { "type": "string", "maxLength": 30 },
+        "lecturerName": { "type": "string", "maxLength": 100 },
+        "studentCount": { "type": "number" },
+        "capacity": { "type": "number" },
+        "hasConflict": { "type": "boolean" },
+        "conflictReason": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["scheduleId", "courseCode", "hallId", "slotId", "day", "startTime", "endTime", "sessionType"]
+    },
+    "SystemActivity": {
+      "title": "SystemActivity",
+      "description": "Log of timetable operations and administrative activities",
+      "type": "object",
+      "properties": {
+        "activityId": { "type": "string", "maxLength": 60 },
+        "action": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 250 },
+        "timestamp": { "type": "string", "maxLength": 40 },
+        "type": { "type": "string", "maxLength": 30 },
+        "userEmail": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["activityId", "action", "description", "timestamp", "type"]
+    }
+  },
+  "firestore": {
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "University courses catalog"
+    },
+    "/facilities/{facilityId}": {
+      "schema": "LectureFacility",
+      "description": "Lecture venues and labs"
+    },
+    "/lecturers/{lecturerId}": {
+      "schema": "Lecturer",
+      "description": "Faculty and instructors"
+    },
+    "/timeslots/{slotId}": {
+      "schema": "TimeSlot",
+      "description": "Timetable periods"
+    },
+    "/timetables/{scheduleId}": {
+      "schema": "TimetableSchedule",
+      "description": "Generated timetable entries"
+    },
+    "/activities/{activityId}": {
+      "schema": "SystemActivity",
+      "description": "Audit and activity log"
+    }
+  }
+}
