@@ -54,23 +54,27 @@ interface TimetableContextType {
   lastGeneratedResult: GenerationResult | null;
   
   // CRUD actions
-  addCourse: (course: Course) => void;
-  updateCourse: (code: string, updated: Partial<Course>) => void;
+  addCourse: (course: Course, silent?: boolean) => void;
+  bulkAddCourses: (courses: Course[]) => void;
+  updateCourse: (code: string, updated: Partial<Course>, silent?: boolean) => void;
   deleteCourse: (code: string) => void;
   bulkDeleteCourses: (codes: string[]) => void;
 
-  addFacility: (facility: LectureFacility) => void;
-  updateFacility: (id: string, updated: Partial<LectureFacility>) => void;
+  addFacility: (facility: LectureFacility, silent?: boolean) => void;
+  bulkAddFacilities: (facilities: LectureFacility[]) => void;
+  updateFacility: (id: string, updated: Partial<LectureFacility>, silent?: boolean) => void;
   deleteFacility: (id: string) => void;
   bulkDeleteFacilities: (ids: string[]) => void;
 
-  addLecturer: (lecturer: Lecturer) => void;
-  updateLecturer: (id: string, updated: Partial<Lecturer>) => void;
+  addLecturer: (lecturer: Lecturer, silent?: boolean) => void;
+  bulkAddLecturers: (lecturers: Lecturer[]) => void;
+  updateLecturer: (id: string, updated: Partial<Lecturer>, silent?: boolean) => void;
   deleteLecturer: (id: string) => void;
   bulkDeleteLecturers: (ids: string[]) => void;
 
-  addTimeSlot: (slot: TimeSlot) => void;
-  updateTimeSlot: (id: string, updated: Partial<TimeSlot>) => void;
+  addTimeSlot: (slot: TimeSlot, silent?: boolean) => void;
+  bulkAddTimeSlots: (slots: TimeSlot[]) => void;
+  updateTimeSlot: (id: string, updated: Partial<TimeSlot>, silent?: boolean) => void;
   deleteTimeSlot: (id: string) => void;
   bulkDeleteTimeSlots: (ids: string[]) => void;
 
@@ -156,7 +160,20 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
   const [systemActivities, setSystemActivities] = useState<SystemActivity[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_ACTIVITIES);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: SystemActivity[] = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const seen = new Set<string>();
+          return parsed.map((act, index) => {
+            let id = act.id || `ACT-${Date.now()}-${index}`;
+            if (seen.has(id)) {
+              id = `ACT-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 7)}`;
+            }
+            seen.add(id);
+            return { ...act, id };
+          });
+        }
+      }
     } catch {}
     return INITIAL_SYSTEM_ACTIVITIES;
   });
@@ -179,8 +196,9 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
   }, [courses, facilities, lecturers, timeSlots, schedules, systemActivities]);
 
   const addActivity = (action: string, description: string, type: SystemActivity['type']) => {
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
     const newAct: SystemActivity = {
-      id: `ACT-${Date.now().toString().slice(-4)}`,
+      id: `ACT-${Date.now()}-${randomSuffix}`,
       action,
       description,
       timestamp: 'Just now',
@@ -188,13 +206,21 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       badgeColor: type === 'generate' ? 'blue' : type === 'conflict' ? 'rose' : type === 'create' ? 'emerald' : 'purple',
       userEmail: user?.email || 'admin@ug.edu.gh'
     };
-    setSystemActivities(prev => [newAct, ...prev.slice(0, 20)]);
+    setSystemActivities(prev => [newAct, ...prev.slice(0, 25)]);
   };
 
   // Course CRUD
-  const addCourse = (course: Course) => {
+  const addCourse = (course: Course, silent: boolean = false) => {
     setCourses(prev => [...prev, course]);
-    addActivity('Course Created', `Added ${course.courseCode} - ${course.courseTitle} (${course.level} Level)`, 'create');
+    if (!silent) {
+      addActivity('Course Created', `Added ${course.courseCode} - ${course.courseTitle} (${course.level} Level)`, 'create');
+    }
+  };
+
+  const bulkAddCourses = (newCourses: Course[]) => {
+    if (!newCourses.length) return;
+    setCourses(prev => [...prev, ...newCourses]);
+    addActivity('Bulk Courses Added', `Added ${newCourses.length} courses to departmental catalog`, 'create');
   };
 
   const updateCourse = (code: string, updated: Partial<Course>) => {
@@ -217,15 +243,25 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
   };
 
   // Facility CRUD
-  const addFacility = (facility: LectureFacility) => {
+  const addFacility = (facility: LectureFacility, silent: boolean = false) => {
     setFacilities(prev => [...prev, facility]);
-    addActivity('Facility Added', `Registered ${facility.hallName} (${facility.capacity} seats)`, 'create');
+    if (!silent) {
+      addActivity('Facility Added', `Registered ${facility.hallName} (${facility.capacity} seats)`, 'create');
+    }
   };
 
-  const updateFacility = (id: string, updated: Partial<LectureFacility>) => {
+  const bulkAddFacilities = (newFacilities: LectureFacility[]) => {
+    if (!newFacilities.length) return;
+    setFacilities(prev => [...prev, ...newFacilities]);
+    addActivity('Bulk Facilities Added', `Registered ${newFacilities.length} lecture venues`, 'create');
+  };
+
+  const updateFacility = (id: string, updated: Partial<LectureFacility>, silent: boolean = false) => {
     setFacilities(prev => prev.map(f => f.hallId === id ? { ...f, ...updated } : f));
     setSchedules(prev => validateScheduleEntries(prev, facilities.map(f => f.hallId === id ? { ...f, ...updated } : f), lecturers));
-    addActivity('Lecture Facility Updated', `Updated venue details for ${id}`, 'update');
+    if (!silent) {
+      addActivity('Lecture Facility Updated', `Updated venue details for ${id}`, 'update');
+    }
   };
 
   const deleteFacility = (id: string) => {
@@ -243,14 +279,24 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
   };
 
   // Lecturer CRUD
-  const addLecturer = (lecturer: Lecturer) => {
+  const addLecturer = (lecturer: Lecturer, silent: boolean = false) => {
     setLecturers(prev => [...prev, lecturer]);
-    addActivity('Lecturer Added', `Added ${lecturer.fullName} (${lecturer.title})`, 'create');
+    if (!silent) {
+      addActivity('Lecturer Added', `Added ${lecturer.fullName} (${lecturer.title})`, 'create');
+    }
   };
 
-  const updateLecturer = (id: string, updated: Partial<Lecturer>) => {
+  const bulkAddLecturers = (newLecturers: Lecturer[]) => {
+    if (!newLecturers.length) return;
+    setLecturers(prev => [...prev, ...newLecturers]);
+    addActivity('Bulk Lecturers Added', `Added ${newLecturers.length} faculty member profiles`, 'create');
+  };
+
+  const updateLecturer = (id: string, updated: Partial<Lecturer>, silent: boolean = false) => {
     setLecturers(prev => prev.map(l => l.lecturerId === id ? { ...l, ...updated } : l));
-    addActivity('Lecturer Updated', `Modified profile for ${id}`, 'update');
+    if (!silent) {
+      addActivity('Lecturer Updated', `Modified profile for ${id}`, 'update');
+    }
   };
 
   const deleteLecturer = (id: string) => {
@@ -266,14 +312,24 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
   };
 
   // TimeSlot CRUD
-  const addTimeSlot = (slot: TimeSlot) => {
+  const addTimeSlot = (slot: TimeSlot, silent: boolean = false) => {
     setTimeSlots(prev => [...prev, slot]);
-    addActivity('Time Slot Added', `Added ${slot.day} slot ${slot.startTime}-${slot.endTime}`, 'create');
+    if (!silent) {
+      addActivity('Time Slot Added', `Added ${slot.day} slot ${slot.startTime}-${slot.endTime}`, 'create');
+    }
   };
 
-  const updateTimeSlot = (id: string, updated: Partial<TimeSlot>) => {
+  const bulkAddTimeSlots = (newSlots: TimeSlot[]) => {
+    if (!newSlots.length) return;
+    setTimeSlots(prev => [...prev, ...newSlots]);
+    addActivity('Bulk Time Slots Added', `Configured ${newSlots.length} schedule periods`, 'create');
+  };
+
+  const updateTimeSlot = (id: string, updated: Partial<TimeSlot>, silent: boolean = false) => {
     setTimeSlots(prev => prev.map(s => s.slotId === id ? { ...s, ...updated } : s));
-    addActivity('Time Slot Updated', `Updated parameters for slot ${id}`, 'update');
+    if (!silent) {
+      addActivity('Time Slot Updated', `Updated parameters for slot ${id}`, 'update');
+    }
   };
 
   const deleteTimeSlot = (id: string) => {
@@ -471,18 +527,22 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         isGenerating,
         lastGeneratedResult,
         addCourse,
+        bulkAddCourses,
         updateCourse,
         deleteCourse,
         bulkDeleteCourses,
         addFacility,
+        bulkAddFacilities,
         updateFacility,
         deleteFacility,
         bulkDeleteFacilities,
         addLecturer,
+        bulkAddLecturers,
         updateLecturer,
         deleteLecturer,
         bulkDeleteLecturers,
         addTimeSlot,
+        bulkAddTimeSlots,
         updateTimeSlot,
         deleteTimeSlot,
         bulkDeleteTimeSlots,

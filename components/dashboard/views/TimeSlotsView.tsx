@@ -117,7 +117,7 @@ export function TimeSlotsView({ onOpenAddTimeSlot, onEditTimeSlot }: TimeSlotsVi
       )}
 
       {/* Day Filter Tabs and Select All */}
-      <div className="p-4 rounded-3xl glass-panel flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 no-print">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 no-print">
         <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 sm:pb-0 max-w-full">
           <button
             onClick={() => setDayFilter('All')}

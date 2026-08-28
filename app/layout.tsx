@@ -29,24 +29,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
+    <html lang="en" className="dark h-full" style={{ colorScheme: 'dark' }} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function() {
               try {
-                var stored = localStorage.getItem('schedula-theme');
-                if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
-                }
+                document.documentElement.classList.add('dark');
+                localStorage.removeItem('schedula-theme');
               } catch (e) {}
             })();`
           }}
         />
       </head>
-      <body className="min-h-screen bg-white dark:bg-[#0B0B0E] text-[#111827] dark:text-[#F9FAFB] font-system antialiased selection:bg-[#111827] selection:text-white dark:selection:bg-white dark:selection:text-[#0B0B0E] overflow-x-hidden transition-colors duration-300" suppressHydrationWarning>
+      <body className="min-h-screen bg-[#0B0B0E] text-[#F9FAFB] font-system antialiased selection:bg-white selection:text-[#0B0B0E] overflow-x-hidden transition-colors duration-300" suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>
             <TimetableProvider>

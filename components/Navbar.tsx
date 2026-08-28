@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sun, Moon, Menu, X, ArrowRight, Home, HelpCircle } from 'lucide-react';
+import { Menu, X, ArrowRight, Home, HelpCircle, Loader2 } from 'lucide-react';
 import { SchedulaLogo } from './SchedulaLogo';
-import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 
 interface NavbarProps {
@@ -11,6 +10,7 @@ interface NavbarProps {
   onFaqClick?: () => void;
   onHomeClick?: () => void;
   onOpenAuthModal?: (mode: 'signin' | 'signup') => void;
+  isNavigatingDashboard?: boolean;
 }
 
 export function Navbar({
@@ -18,9 +18,8 @@ export function Navbar({
   onFaqClick,
   onHomeClick,
   onOpenAuthModal,
+  isNavigatingDashboard = false,
 }: NavbarProps) {
-  const { theme, toggleTheme, mounted } = useTheme();
-  const isDark = mounted ? theme === 'dark' : false;
   const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -86,7 +85,7 @@ export function Navbar({
                 className="focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded-xl transition-transform hover:opacity-95 group"
                 id="nav-brand-logo"
               >
-                <SchedulaLogo size="md" textColor={isDark ? "text-white" : "text-slate-900"} />
+                <SchedulaLogo size="md" textColor="text-white" isDark={true} />
               </a>
             </div>
 
@@ -119,27 +118,8 @@ export function Navbar({
               </button>
             </nav>
 
-            {/* Right: Theme Toggle + Sign In / Get Started Buttons */}
+            {/* Right: Sign In / Get Started Buttons */}
             <div className="hidden sm:flex items-center gap-3">
-              {/* Subtle Theme Toggle */}
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="p-2 text-slate-600 hover:text-slate-900 dark:text-zinc-300 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer"
-                aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-                id="theme-toggle-btn"
-              >
-                {mounted ? (
-                  isDark ? (
-                    <Sun className="w-4 h-4 text-amber-300" />
-                  ) : (
-                    <Moon className="w-4 h-4 text-slate-700" />
-                  )
-                ) : (
-                  <div className="w-4 h-4" />
-                )}
-              </button>
-
               {/* Sign In Text Button (if not logged in) */}
               {!user && (
                 <button
@@ -158,6 +138,8 @@ export function Navbar({
               {/* Action Pill Button */}
               <button
                 type="button"
+                disabled={isNavigatingDashboard}
+                aria-busy={isNavigatingDashboard}
                 onClick={() => {
                   if (user) {
                     if (onDashboardClick) onDashboardClick();
@@ -166,10 +148,17 @@ export function Navbar({
                     else if (onDashboardClick) onDashboardClick();
                   }
                 }}
-                className="px-5 py-2 rounded-full text-xs sm:text-sm font-semibold border border-slate-300/80 dark:border-white/20 bg-white/90 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 text-slate-900 dark:text-white hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shadow-xs backdrop-blur-md"
+                className="px-5 py-2 rounded-full text-xs sm:text-sm font-semibold border border-slate-300/80 dark:border-white/20 bg-white/90 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 text-slate-900 dark:text-white hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shadow-xs backdrop-blur-md disabled:opacity-75 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[100px] flex items-center justify-center gap-1.5"
                 id="nav-auth-cta-btn"
               >
-                <span>{user ? 'Dashboard' : 'Sign up Free'}</span>
+                {isNavigatingDashboard && user ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <span>{user ? 'Dashboard' : 'Sign up Free'}</span>
+                )}
               </button>
             </div>
 
@@ -177,15 +166,8 @@ export function Navbar({
             <div className="flex sm:hidden items-center gap-2">
               <button
                 type="button"
-                onClick={toggleTheme}
-                className="p-2 text-slate-700 dark:text-white/80 hover:text-slate-900 dark:hover:text-white transition-colors"
-                aria-label="Toggle theme"
-              >
-                {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-slate-700" />}
-              </button>
-
-              <button
-                type="button"
+                disabled={isNavigatingDashboard}
+                aria-busy={isNavigatingDashboard}
                 onClick={() => {
                   if (user) {
                     if (onDashboardClick) onDashboardClick();
@@ -194,9 +176,16 @@ export function Navbar({
                     else if (onDashboardClick) onDashboardClick();
                   }
                 }}
-                className="px-3 py-1.5 rounded-full text-xs font-medium border border-slate-300 dark:border-white/30 bg-white/80 dark:bg-white/10 text-slate-800 dark:text-white"
+                className="px-3 py-1.5 rounded-full text-xs font-medium border border-slate-300 dark:border-white/30 bg-white/80 dark:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center gap-1.5 disabled:opacity-75 disabled:cursor-not-allowed"
               >
-                <span>{user ? 'Dashboard' : 'Sign in'}</span>
+                {isNavigatingDashboard && user ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <span>{user ? 'Dashboard' : 'Sign in'}</span>
+                )}
               </button>
 
               <button
@@ -254,6 +243,8 @@ export function Navbar({
               <div className="pt-2">
                 <button
                   type="button"
+                  disabled={isNavigatingDashboard}
+                  aria-busy={isNavigatingDashboard}
                   onClick={() => {
                     setMobileMenuOpen(false);
                     if (user) {
@@ -263,10 +254,19 @@ export function Navbar({
                       else if (onDashboardClick) onDashboardClick();
                     }
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-white/30 bg-white/10 hover:bg-white hover:text-slate-900 text-white text-sm font-medium shadow-xs transition-all"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-white/30 bg-white/10 hover:bg-white hover:text-slate-900 text-white text-sm font-medium shadow-xs transition-all disabled:opacity-75 disabled:cursor-not-allowed"
                 >
-                  <span>{user ? 'Open Dashboard' : 'Get Started'}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  {isNavigatingDashboard && user ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                      <span>Loading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{user ? 'Dashboard' : 'Get Started'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>

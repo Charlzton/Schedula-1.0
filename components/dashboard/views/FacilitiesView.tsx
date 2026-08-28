@@ -102,14 +102,14 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Lecture Facilities & Computer Labs
+              Facilities
             </h2>
             <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-              {facilities.length} Venues • {facilities.reduce((sum, f) => sum + f.capacity, 0).toLocaleString()} Total Seats
+              {facilities.length}
             </span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Department of Computer Science & Campus Lecture Theatre Directory
+            Department of Computer Science
           </p>
         </div>
 
@@ -119,7 +119,7 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Register New Facility</span>
+          <span>Add Facility</span>
         </button>
       </div>
 
@@ -134,7 +134,7 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
       )}
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-3xl glass-panel space-y-3 no-print">
+      <div className="space-y-3 no-print">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1">
             <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -153,7 +153,7 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
               onClick={handleSelectAll}
               className="px-3 py-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
             >
-              {isAllFilteredSelected ? 'Deselect All' : 'Select All Filtered'}
+              {isAllFilteredSelected ? 'Deselect All' : 'Select All'}
             </button>
           </div>
         </div>
@@ -197,7 +197,7 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Decommission Selected ({selectedIds.length})</span>
+              <span>Delete ({selectedIds.length})</span>
             </button>
           </div>
         </div>

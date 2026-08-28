@@ -12,9 +12,10 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: 'signin' | 'signup';
+  onAuthSuccess?: () => void;
 }
 
-export function AuthModal({ isOpen, onClose, initialMode = 'signup' }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSuccess }: AuthModalProps) {
   const router = useRouter();
   const { theme, mounted } = useTheme();
   const isDark = mounted ? theme === 'dark' : false;
@@ -48,7 +49,9 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup' }: AuthModal
       const res = await signInWithGoogle();
       if (res.success) {
         onClose();
-        router.push('/dashboard');
+        if (onAuthSuccess) {
+          onAuthSuccess();
+        }
       } else {
         setError(res.error || 'Failed to sign in with Google');
       }
@@ -79,7 +82,9 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup' }: AuthModal
         const res = await signUpWithEmail(name, email, password, 'University of Ghana');
         if (res.success) {
           onClose();
-          router.push('/dashboard');
+          if (onAuthSuccess) {
+            onAuthSuccess();
+          }
         } else {
           setError(res.error || 'Failed to create account');
         }
@@ -87,7 +92,9 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup' }: AuthModal
         const res = await signInWithEmail(email, password);
         if (res.success) {
           onClose();
-          router.push('/dashboard');
+          if (onAuthSuccess) {
+            onAuthSuccess();
+          }
         } else {
           setError(res.error || 'Invalid credentials');
         }

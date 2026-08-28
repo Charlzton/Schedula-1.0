@@ -123,14 +123,14 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Course Catalog & Curriculum
+              Courses
             </h2>
             <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-              {filteredCourses.length} Courses Listed
+              {filteredCourses.length}
             </span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Department of Computer Science • Accredited courses across Levels 100 - 400
+            Department of Computer Science
           </p>
         </div>
 
@@ -141,7 +141,7 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
             className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-500/20 font-bold text-xs transition-all cursor-pointer"
           >
             <UploadCloud className="w-4 h-4" />
-            <span>Bulk Import</span>
+            <span>Import</span>
           </button>
           <button
             id="add-new-course-btn"
@@ -149,13 +149,13 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
             className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add New Course</span>
+            <span>Add Course</span>
           </button>
         </div>
       </div>
 
       {/* Filters & Search Control Bar */}
-      <div className="p-4 rounded-3xl glass-panel space-y-3">
+      <div className="space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           
           {/* Semester Selector */}
@@ -237,7 +237,7 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete Selected ({selectedCodes.length})</span>
+              <span>Delete ({selectedCodes.length})</span>
             </button>
           </div>
         </div>

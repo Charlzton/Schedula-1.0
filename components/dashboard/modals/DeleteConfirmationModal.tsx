@@ -34,7 +34,7 @@ export function DeleteConfirmationModal({
       }}
     >
       <div 
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/80 dark:border-white/10 shadow-2xl rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto glass-modal rounded-3xl overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-dialog-title"

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { HeroBackground } from '@/components/HeroBackground';
@@ -9,17 +10,20 @@ import { HeroBackground } from '@/components/HeroBackground';
 interface HeroSectionProps {
   onOpenDashboard?: () => void;
   onOpenAuthModal?: (mode: 'signin' | 'signup') => void;
+  isNavigatingDashboard?: boolean;
 }
 
 export function HeroSection({
   onOpenDashboard,
   onOpenAuthModal,
+  isNavigatingDashboard = false,
 }: HeroSectionProps) {
   const { user } = useAuth();
   const { theme, mounted } = useTheme();
   const isDark = mounted ? theme === 'dark' : false;
 
   const handleCtaClick = () => {
+    if (isNavigatingDashboard) return;
     if (user) {
       if (onOpenDashboard) onOpenDashboard();
     } else {
@@ -80,11 +84,20 @@ export function HeroSection({
           >
             <button
               type="button"
+              disabled={isNavigatingDashboard}
+              aria-busy={isNavigatingDashboard}
               onClick={handleCtaClick}
-              className="px-8 py-3.5 sm:py-4 rounded-full text-xs sm:text-sm font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 shadow-xl shadow-slate-900/15 dark:shadow-white/10 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center"
+              className="px-8 py-3.5 sm:py-4 rounded-full text-xs sm:text-sm font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 shadow-xl shadow-slate-900/15 dark:shadow-white/10 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[140px]"
               id="hero-primary-coral-cta"
             >
-              <span>{user ? 'Go to Schedula Console' : 'Get Started'}</span>
+              {isNavigatingDashboard && user ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  <span>Loading...</span>
+                </>
+              ) : (
+                <span>{user ? 'Dashboard' : 'Get Started'}</span>
+              )}
             </button>
           </motion.div>
         </div>

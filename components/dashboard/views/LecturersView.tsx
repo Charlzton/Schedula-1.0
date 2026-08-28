@@ -136,7 +136,7 @@ export function LecturersView({ onOpenAddLecturer, onEditLecturer }: LecturersVi
       )}
 
       {/* Search & Bulk Select Toolbar */}
-      <div className="p-4 rounded-3xl glass-panel space-y-3 no-print">
+      <div className="space-y-3 no-print">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1 min-w-0">
             <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -155,7 +155,7 @@ export function LecturersView({ onOpenAddLecturer, onEditLecturer }: LecturersVi
               onClick={handleSelectAll}
               className="px-3 py-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
             >
-              {isAllFilteredSelected ? 'Deselect All' : 'Select All Filtered'}
+              {isAllFilteredSelected ? 'Deselect All' : 'Select All'}
             </button>
           </div>
         </div>

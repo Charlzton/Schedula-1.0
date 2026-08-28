@@ -83,7 +83,7 @@ export function TimeSlotModal({ isOpen, onClose, initialSlot }: TimeSlotModalPro
       }}
     >
       <div 
-        className="w-full max-w-md bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl border border-white/80 dark:border-white/10 shadow-2xl rounded-3xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+        className="w-full max-w-md glass-modal rounded-3xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
       >

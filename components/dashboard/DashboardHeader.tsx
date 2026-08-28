@@ -4,8 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Menu, 
   Search, 
-  Sun, 
-  Moon, 
   Settings, 
   BookOpen, 
   Building2, 
@@ -18,7 +16,6 @@ import {
   Loader2
 } from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import Image from 'next/image';
 
@@ -35,7 +32,6 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
     facilities,
     lecturers
   } = useTimetable();
-  const { theme, toggleTheme, mounted } = useTheme();
   const { user, signOut, isSigningOut } = useAuth();
 
   // Search state
@@ -126,7 +122,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
             {searchOpen && searchQuery.trim().length > 0 && (
               <div 
                 id="global-search-results-dropdown"
-                className="fixed sm:absolute top-[64px] sm:top-full left-3 sm:left-auto right-3 sm:right-0 sm:w-88 md:w-96 mt-2 p-2.5 sm:p-3 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-2xl z-50 animate-in fade-in-50 zoom-in-95 max-w-[calc(100vw-24px)] sm:max-w-none max-h-[min(70vh,420px)] flex flex-col"
+                className="fixed sm:absolute top-[64px] sm:top-full left-3 sm:left-auto right-3 sm:right-0 sm:w-88 md:w-96 mt-2 p-2.5 sm:p-3 rounded-2xl glass-modal z-50 animate-in fade-in-50 zoom-in-95 max-w-[calc(100vw-24px)] sm:max-w-none max-h-[min(70vh,420px)] flex flex-col"
               >
                 {totalResults === 0 ? (
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center py-4">
@@ -216,20 +212,6 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
             )}
           </div>
 
-          {/* Theme Toggle - Minimal icon button */}
-          <button
-            onClick={toggleTheme}
-            aria-label={`Switch to ${mounted && theme === 'dark' ? 'light' : 'dark'} mode`}
-            title={`Switch to ${mounted && theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
-          >
-            {mounted && theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
-            )}
-          </button>
-
           {/* Settings Gear Icon */}
           <button
             onClick={() => setActiveView('settings')}
@@ -271,7 +253,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
 
             {/* Glassmorphic Profile Menu Dropdown */}
             {profileOpen && (
-              <div className="absolute top-full right-0 mt-2 w-64 max-w-[calc(100vw-24px)] p-3 rounded-2xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-2xl z-50 animate-in fade-in-50 zoom-in-95">
+              <div className="absolute top-full right-0 mt-2 w-64 max-w-[calc(100vw-24px)] p-3 rounded-2xl glass-modal z-50 animate-in fade-in-50 zoom-in-95">
                 {/* User Info Header */}
                 <div className="p-2 border-b border-zinc-200/60 dark:border-white/10 flex items-center gap-3">
                   {user?.avatar ? (

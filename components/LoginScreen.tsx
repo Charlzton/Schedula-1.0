@@ -8,14 +8,11 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
-  Sun, 
-  Moon,
-  Eye,
+  Eye, 
   EyeOff
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { SchedulaLogo } from '@/components/SchedulaLogo';
 
 interface LoginScreenProps {
@@ -33,8 +30,6 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
     signOut, 
     isLoading 
   } = useAuth();
-  const { theme, toggleTheme, mounted } = useTheme();
-  const isDark = mounted ? theme === 'dark' : false;
   
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -159,23 +154,8 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
       className="relative w-full flex items-center justify-center p-2 sm:p-4 text-[#111827] dark:text-[#F9FAFB] font-system"
       id="schedula-login-container"
     >
-      {/* Top Floating Controls: Theme Toggle & Close Button */}
-      <div className="fixed top-3 right-3 sm:top-5 sm:right-5 z-40 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-          className="min-h-[38px] min-w-[38px] p-2 rounded-full bg-white/90 dark:bg-[#1A1A22]/90 backdrop-blur text-gray-700 dark:text-gray-200 hover:text-black dark:hover:text-white shadow-md border border-gray-200/80 dark:border-gray-800 transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center"
-          id="theme-toggle-login"
-          title={`Switch to ${isDark ? 'Light' : 'Dark'} Mode`}
-        >
-          {!isDark ? (
-            <Moon className="w-4 h-4 text-gray-700" />
-          ) : (
-            <Sun className="w-4 h-4 text-amber-400" />
-          )}
-        </button>
-
+      {/* Top Floating Controls: Close Button */}
+      <div className="fixed top-3 right-3 sm:top-5 sm:right-5 z-40 flex items-center">
         <button
           type="button"
           onClick={onClose}
@@ -189,13 +169,13 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
 
       {/* Main Master Card Container */}
       <div 
-        className="relative w-full max-w-[500px] bg-white/40 dark:bg-black/30 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-2xl rounded-3xl p-6 sm:p-8 my-auto overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95"
+        className="relative w-full max-w-[500px] glass-modal p-6 sm:p-8 my-auto overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95 rounded-3xl"
       >
         <div className="flex flex-col items-center justify-center space-y-6">
           
           {/* Schedula Brand Logo & Title */}
           <div className="text-center flex flex-col items-center justify-center space-y-2">
-            <SchedulaLogo size="lg" isDark={isDark} />
+            <SchedulaLogo size="lg" isDark={true} />
           </div>
 
           {/* Schedula Authentication Form with Refined Typographic Scale */}

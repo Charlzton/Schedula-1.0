@@ -54,10 +54,10 @@ export function GenerateTimetableView() {
       {/* Header */}
       <div>
         <h2 className="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
-          Intelligent Timetable Generation Console
+          Generate Timetable
         </h2>
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Automated heuristic constraint solver based on University of Ghana academic parameters
+          Automated heuristic scheduling solver
         </p>
       </div>
 
@@ -67,17 +67,14 @@ export function GenerateTimetableView() {
           <div className="p-6 glass-panel space-y-6">
             <div>
               <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-1">
-                1. Scope & Academic Target
+                Scope
               </h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                Choose the semester and level cohort to optimize
-              </p>
             </div>
 
             {/* Semester Selection */}
             <div>
               <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-                Target Academic Semester
+                Semester
               </label>
               <div className="flex sm:grid sm:grid-cols-3 gap-2 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
                 {(['Semester 1', 'Semester 2', 'All'] as const).map(sem => (
@@ -100,7 +97,7 @@ export function GenerateTimetableView() {
             {/* Academic Level Selection */}
             <div>
               <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
-                Cohort Level Filter
+                Academic Level
               </label>
               <div className="flex sm:grid sm:grid-cols-5 gap-2 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
                 {(['All', 100, 200, 300, 400] as const).map(lvl => (
@@ -123,17 +120,17 @@ export function GenerateTimetableView() {
             {/* Constraint Toggles */}
             <div className="pt-4 border-t border-white/10 space-y-3">
               <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-2">
-                2. Hard & Soft Constraint Rules
+                Scheduling Constraints
               </h3>
 
               {/* Strict Capacity */}
               <div className="flex items-center justify-between p-3 glass-panel border-white/5">
                 <div className="space-y-0.5">
                   <p className="text-xs font-bold text-neutral-900 dark:text-white">
-                    Strict Facility Capacity Limit
+                    Strict Capacity
                   </p>
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    Never assign a course to a venue with seat capacity smaller than expected enrollment.
+                    Never assign courses to venues smaller than enrollment.
                   </p>
                 </div>
                 <input
@@ -148,10 +145,10 @@ export function GenerateTimetableView() {
               <div className="flex items-center justify-between p-3 glass-panel border-white/5">
                 <div className="space-y-0.5">
                   <p className="text-xs font-bold text-neutral-900 dark:text-white">
-                    Separate Theory & Practical Sessions Across Days
+                    Separate Theory & Practical
                   </p>
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    Ensures 2-hour lecture and 1-hour lab session do not land on the same day for student balance.
+                    Spread lecture and lab sessions across different days.
                   </p>
                 </div>
                 <input
@@ -166,10 +163,10 @@ export function GenerateTimetableView() {
               <div className="flex items-center justify-between p-3 glass-panel border-white/5">
                 <div className="space-y-0.5">
                   <p className="text-xs font-bold text-neutral-900 dark:text-white">
-                    Zero Lecturer Double-Booking
+                    Prevent Lecturer Conflicts
                   </p>
                   <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    Prevents any academic faculty member from being scheduled in two simultaneous classes.
+                    Prevent double-booking faculty members in simultaneous classes.
                   </p>
                 </div>
                 <input
@@ -187,17 +184,17 @@ export function GenerateTimetableView() {
                 id="run-generation-algorithm-btn"
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 glass-pill font-bold text-sm shadow-md transition-all cursor-pointer disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-2xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
               >
                 {isGenerating ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
-                    <span>Executing Heuristic Schedule Solver...</span>
+                    <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                    <span>Generating Timetable...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4 text-amber-400 dark:text-amber-600" />
-                    <span>Run Intelligent Schedule Optimization</span>
+                    <Sparkles className="w-4 h-4 text-blue-500" />
+                    <span>Generate Timetable</span>
                   </>
                 )}
               </button>
@@ -209,35 +206,27 @@ export function GenerateTimetableView() {
         <div className="space-y-6">
           {/* Engine Parameters Summary Card */}
           <div className="p-5 glass-panel space-y-4">
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              Optimization Engine Stats
+            <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+              System Parameters
             </h3>
 
             <div className="space-y-2.5 text-xs">
               <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
-                <span>Active Course Pool:</span>
-                <span className="font-bold text-neutral-900 dark:text-white">{courses.length} courses</span>
+                <span>Courses:</span>
+                <span className="font-bold text-neutral-900 dark:text-white">{courses.length}</span>
               </div>
               <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
-                <span>Available Venues:</span>
-                <span className="font-bold text-neutral-900 dark:text-white">{facilities.length} halls/labs</span>
+                <span>Venues:</span>
+                <span className="font-bold text-neutral-900 dark:text-white">{facilities.length}</span>
               </div>
               <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
-                <span>Available Weekly Slots:</span>
-                <span className="font-bold text-neutral-900 dark:text-white">{timeSlots.length} slots</span>
+                <span>Weekly Slots:</span>
+                <span className="font-bold text-neutral-900 dark:text-white">{timeSlots.length}</span>
               </div>
               <div className="flex items-center justify-between text-neutral-600 dark:text-neutral-400">
-                <span>Faculty Pool:</span>
-                <span className="font-bold text-neutral-900 dark:text-white">{lecturers.length} lecturers</span>
+                <span>Faculty:</span>
+                <span className="font-bold text-neutral-900 dark:text-white">{lecturers.length}</span>
               </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-[11px] text-blue-900 dark:text-blue-200 flex items-start gap-2">
-              <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
-              <span>
-                The scheduler prioritizes largest enrollment courses into higher capacity venues first (e.g. Great Hall, N-Block 1).
-              </span>
             </div>
           </div>
 
@@ -245,23 +234,22 @@ export function GenerateTimetableView() {
           {result && (
             <div className="p-5 glass-panel space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  Execution Results
+                <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+                  Results
                 </h3>
-                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                   Ready
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="p-2.5 rounded-xl bg-neutral-800/80 border border-neutral-700">
-                  <p className="text-[11px] text-neutral-400">Scheduled</p>
-                  <p className="text-lg font-bold text-emerald-400">{result.successfullyScheduledCount}</p>
+                <div className="p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10">
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Scheduled</p>
+                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{result.successfullyScheduledCount}</p>
                 </div>
-                <div className="p-2.5 rounded-xl bg-neutral-800/80 border border-neutral-700">
-                  <p className="text-[11px] text-neutral-400">Warnings</p>
-                  <p className={`text-lg font-bold ${result.conflictCount === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <div className="p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10">
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Warnings</p>
+                  <p className={`text-lg font-bold ${result.conflictCount === 0 ? 'text-zinc-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
                     {result.conflictCount}
                   </p>
                 </div>
@@ -269,9 +257,9 @@ export function GenerateTimetableView() {
 
               {result.conflicts && result.conflicts.length > 0 && (
                 <div className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar text-[11px] pr-1">
-                  <p className="font-semibold text-amber-400">Attention Notes:</p>
+                  <p className="font-semibold text-rose-600 dark:text-rose-400">Attention Notes:</p>
                   {result.conflicts.map((c, i) => (
-                    <div key={i} className="p-1.5 rounded bg-amber-950/40 border border-amber-900/60 text-amber-200">
+                    <div key={i} className="p-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300">
                       <span className="font-bold">{c.courseCode}:</span> {c.reason}
                     </div>
                   ))}
@@ -281,10 +269,10 @@ export function GenerateTimetableView() {
               <button
                 id="view-generated-matrix-btn"
                 onClick={() => setActiveView('generated_timetables')}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-950 font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-colors cursor-pointer"
               >
-                <CalendarDays className="w-4 h-4 text-blue-600" />
-                <span>Open Timetable Matrix</span>
+                <CalendarDays className="w-4 h-4 text-blue-500" />
+                <span>View Timetable</span>
               </button>
             </div>
           )}

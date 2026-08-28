@@ -4,7 +4,6 @@ import React, { useState, useRef } from 'react';
 import { 
   User as UserIcon,
   Shield, 
-  Palette, 
   Sliders, 
   RotateCcw, 
   Building2, 
@@ -14,8 +13,6 @@ import {
   Trash2, 
   Eye, 
   EyeOff, 
-  Sun, 
-  Moon, 
   Database,
   GraduationCap,
   Sparkles,
@@ -23,7 +20,6 @@ import {
 } from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { DeleteConfirmationModal } from '@/components/dashboard/modals/DeleteConfirmationModal';
 
 const PRESET_AVATARS = [
@@ -69,10 +65,9 @@ export function SettingsView() {
     clearSchedules 
   } = useTimetable();
   const { user, updateUserProfile, changePassword, removeProfilePicture } = useAuth();
-  const { theme, setTheme, mounted } = useTheme();
 
-  // Tab State: 'account' | 'security' | 'appearance' | 'scheduling'
-  const [activeTab, setActiveTab] = useState<'account' | 'security' | 'appearance' | 'scheduling'>('account');
+  // Tab State: 'account' | 'security' | 'scheduling'
+  const [activeTab, setActiveTab] = useState<'account' | 'security' | 'scheduling'>('account');
 
   // Account form state
   const [displayName, setDisplayName] = useState(user?.name || '');
@@ -293,65 +288,47 @@ export function SettingsView() {
   const userInitial = (user?.name || user?.email || 'A').charAt(0).toUpperCase();
 
   return (
-    <div className="space-y-6 pb-12 max-w-4xl">
+    <div className="space-y-6 pb-12 max-w-4xl mx-auto w-full">
       {/* Page Header */}
       <div>
         <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-          Settings & Preferences
+          Settings
         </h2>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Manage your administrator account, security credentials, display theme, and university scheduling parameters
-        </p>
       </div>
 
-      {/* Tabs Navigation */}
+      {/* Tabs Navigation (Text Only - No Icons) */}
       <div className="flex items-center gap-1.5 p-1 rounded-2xl glass-panel border-white/60 dark:border-white/10 overflow-x-auto text-xs">
         <button
           onClick={() => setActiveTab('account')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
+          className={`px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'account'
               ? 'bg-white/80 dark:bg-white/20 text-zinc-900 dark:text-white shadow-xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
           }`}
         >
-          <UserIcon className="w-4 h-4 text-blue-500" />
-          <span>Manage Account</span>
+          Manage Account
         </button>
 
         <button
           onClick={() => setActiveTab('security')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
+          className={`px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'security'
               ? 'bg-white/80 dark:bg-white/20 text-zinc-900 dark:text-white shadow-xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
           }`}
         >
-          <Shield className="w-4 h-4 text-emerald-500" />
-          <span>Security</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('appearance')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
-            activeTab === 'appearance'
-              ? 'bg-white/80 dark:bg-white/20 text-zinc-900 dark:text-white shadow-xs'
-              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
-          }`}
-        >
-          <Palette className="w-4 h-4 text-purple-500" />
-          <span>Appearance</span>
+          Security
         </button>
 
         <button
           onClick={() => setActiveTab('scheduling')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
+          className={`px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'scheduling'
               ? 'bg-white/80 dark:bg-white/20 text-zinc-900 dark:text-white shadow-xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
           }`}
         >
-          <Sliders className="w-4 h-4 text-amber-500" />
-          <span>Scheduling Preferences</span>
+          Scheduling Preferences
         </button>
       </div>
 
@@ -376,16 +353,12 @@ export function SettingsView() {
           {/* Profile Picture Card */}
           <div className="p-6 rounded-3xl glass-panel space-y-5">
             <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <UserIcon className="w-4 h-4 text-blue-500" />
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
                 Profile Picture
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Upload a customized photo from your device. This image will appear on the dashboard header, welcome banners, and activity logs.
-              </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
+            <div className="flex flex-col sm:flex-row items-center gap-5 pt-1">
               <div className="relative">
                 {user?.avatar ? (
                   <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-blue-500/40 shadow-lg ring-2 ring-white/60 dark:ring-white/10 shrink-0">
@@ -420,7 +393,7 @@ export function SettingsView() {
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Upload New Photo</span>
+                    <span>Upload Photo</span>
                   </button>
 
                   {user?.avatar && (
@@ -431,12 +404,12 @@ export function SettingsView() {
                       className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-semibold border border-rose-500/20 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Remove Photo</span>
+                      <span>Remove</span>
                     </button>
                   )}
                 </div>
                 <p className="text-[11px] text-zinc-400">
-                  Accepted formats: JPG, PNG, WebP (Max size 2MB)
+                  JPG, PNG, WebP up to 2MB
                 </p>
               </div>
             </div>
@@ -445,11 +418,11 @@ export function SettingsView() {
             <div className="pt-4 border-t border-zinc-200/60 dark:border-white/10 space-y-2.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                  Or Choose an Official University Profile Avatar
+                  Preset Avatars
                 </label>
                 {isSavingProfile && (
                   <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Updating profile...
+                    <Loader2 className="w-3 h-3 animate-spin" /> Updating...
                   </span>
                 )}
               </div>
@@ -492,18 +465,15 @@ export function SettingsView() {
           <div className="p-6 rounded-3xl glass-panel space-y-4">
             <div>
               <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
-                Personal & Account Details
+                Account Details
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Update your administrative display name and view account information
-              </p>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="space-y-4 pt-2">
+            <form onSubmit={handleSaveProfile} className="space-y-4 pt-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
                   <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    Display Name / Full Name *
+                    Display Name *
                   </label>
                   <input
                     type="text"
@@ -541,7 +511,7 @@ export function SettingsView() {
 
                 <div>
                   <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    Affiliation / Institution
+                    Institution
                   </label>
                   <input
                     type="text"
@@ -561,12 +531,12 @@ export function SettingsView() {
                   {isSavingProfile ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving Changes...</span>
+                      <span>Saving...</span>
                     </>
                   ) : (
                     <>
                       <Check className="w-3.5 h-3.5" />
-                      <span>Save Profile Changes</span>
+                      <span>Save Changes</span>
                     </>
                   )}
                 </button>
@@ -595,16 +565,12 @@ export function SettingsView() {
 
           <div className="p-6 rounded-3xl glass-panel space-y-4">
             <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <Shield className="w-4 h-4 text-emerald-500" />
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
                 Change Password
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Update your authentication password using Firebase secure authentication. Minimum 6 characters required.
-              </p>
             </div>
 
-            <form onSubmit={handleChangePassword} className="space-y-4 pt-2">
+            <form onSubmit={handleChangePassword} className="space-y-4 pt-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
                   <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
@@ -631,7 +597,7 @@ export function SettingsView() {
 
                 <div>
                   <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                    Confirm New Password *
+                    Confirm Password *
                   </label>
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -653,7 +619,7 @@ export function SettingsView() {
                   {isChangingPassword ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Updating Password...</span>
+                      <span>Updating...</span>
                     </>
                   ) : (
                     <>
@@ -668,96 +634,7 @@ export function SettingsView() {
         </div>
       )}
 
-      {/* TAB 3: APPEARANCE */}
-      {activeTab === 'appearance' && (
-        <div className="space-y-6 animate-in fade-in-50 duration-200">
-          <div className="p-6 rounded-3xl glass-panel space-y-4">
-            <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <Palette className="w-4 h-4 text-purple-500" />
-                Theme & Interface Appearance
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Choose between Light and Dark modes. The system maintains high-contrast typography and subtle glassmorphic surfaces across both themes.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              {/* Light Theme Card */}
-              <div
-                onClick={() => setTheme('light')}
-                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-4 ${
-                  mounted && theme === 'light'
-                    ? 'border-blue-500 bg-blue-500/10 shadow-lg'
-                    : 'border-zinc-200/60 dark:border-white/10 bg-white/40 dark:bg-zinc-900/40 hover:border-zinc-400'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-                      <Sun className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Light Mode</h4>
-                      <p className="text-[11px] text-zinc-500">Crisp, high-contrast academic aesthetic</p>
-                    </div>
-                  </div>
-                  {mounted && theme === 'light' && (
-                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="h-16 rounded-xl bg-zinc-100 border border-zinc-200 p-2 flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-zinc-300" />
-                  <div className="flex-1 space-y-1">
-                    <div className="w-3/4 h-2 rounded bg-zinc-400" />
-                    <div className="w-1/2 h-2 rounded bg-zinc-300" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Dark Theme Card */}
-              <div
-                onClick={() => setTheme('dark')}
-                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-4 ${
-                  mounted && theme === 'dark'
-                    ? 'border-blue-500 bg-blue-500/10 shadow-lg'
-                    : 'border-zinc-200/60 dark:border-white/10 bg-white/40 dark:bg-zinc-900/40 hover:border-zinc-400'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-                      <Moon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Dark Mode</h4>
-                      <p className="text-[11px] text-zinc-500">Deep neutral palette with glowing accents</p>
-                    </div>
-                  </div>
-                  {mounted && theme === 'dark' && (
-                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="h-16 rounded-xl bg-zinc-900 border border-zinc-800 p-2 flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-zinc-700" />
-                  <div className="flex-1 space-y-1">
-                    <div className="w-3/4 h-2 rounded bg-zinc-600" />
-                    <div className="w-1/2 h-2 rounded bg-zinc-700" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: SCHEDULING PREFERENCES */}
+      {/* TAB 3: SCHEDULING PREFERENCES */}
       {activeTab === 'scheduling' && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
           {datasetSuccess && (
@@ -770,23 +647,19 @@ export function SettingsView() {
           {/* Master Dataset Control */}
           <div className="p-6 rounded-3xl glass-panel space-y-4">
             <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <Database className="w-4 h-4 text-blue-500" />
-                University Master Dataset & Backup
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                Master Dataset
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Current baseline dataset includes {courses.length} courses, {facilities.length} lecture facilities, {lecturers.length} faculty members, and {timeSlots.length} standard period blocks.
-              </p>
             </div>
 
-            <div className="pt-2 flex flex-wrap gap-3">
+            <div className="pt-1 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => setIsResetModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4 text-amber-400 dark:text-amber-600" />
-                <span>Restore Master UG DCIT Dataset</span>
+                <span>Restore Master Dataset</span>
               </button>
 
               <button
@@ -795,7 +668,7 @@ export function SettingsView() {
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-semibold text-xs border border-rose-500/20 transition-all cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
-                <span>Clear Current Timetable Grid</span>
+                <span>Clear Timetable</span>
               </button>
             </div>
           </div>
@@ -803,19 +676,15 @@ export function SettingsView() {
           {/* Institutional Information */}
           <div className="p-6 rounded-3xl glass-panel space-y-4">
             <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-emerald-500" />
-                Institution & Academic Unit Profiles
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                Institution Details
               </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                Academic unit parameters reflected on official schedule printouts and compliance exports
-              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Institution Name
+                  Institution
                 </label>
                 <input
                   type="text"
@@ -827,7 +696,7 @@ export function SettingsView() {
 
               <div>
                 <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Academic Department
+                  Department
                 </label>
                 <input
                   type="text"
@@ -839,19 +708,19 @@ export function SettingsView() {
 
               <div>
                 <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Academic Calendar
+                  Academic Year
                 </label>
                 <input
                   type="text"
                   readOnly
-                  value="2025/2026 Academic Year"
+                  value="2025/2026"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-zinc-200/50 dark:border-white/10 text-zinc-600 dark:text-zinc-300 cursor-not-allowed"
                 />
               </div>
 
               <div>
                 <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Operating Period Hours
+                  Operating Hours
                 </label>
                 <input
                   type="text"

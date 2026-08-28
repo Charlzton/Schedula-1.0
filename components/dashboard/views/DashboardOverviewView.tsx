@@ -143,19 +143,19 @@ export function DashboardOverviewView({
       { 
         name: 'Conflict-Free Scheduled', 
         value: Math.max(1, kpi.successfullyScheduled), 
-        color: '#10B981', // Emerald
+        color: '#2563EB', // Blue
         percentage: kpi.schedulingPercentage 
       },
       { 
         name: 'Hard Clashes / Overlaps', 
         value: kpi.schedulingConflicts, 
-        color: '#F43F5E', // Rose/Red (like inspiration image red slice)
+        color: '#EF4444', // Red for actual clashes
         percentage: kpi.schedulingConflicts 
       },
       { 
         name: 'Pending Allocation', 
         value: kpi.unsatisfiedOrPending, 
-        color: '#F59E0B', // Amber
+        color: '#64748B', // Slate
         percentage: kpi.unsatisfiedOrPending 
       }
     ];
@@ -228,7 +228,7 @@ export function DashboardOverviewView({
       return {
         ...f,
         assignedCount,
-        imageBg: idx === 0 ? 'from-amber-600/20 to-orange-600/20' : idx === 1 ? 'from-blue-600/20 to-cyan-600/20' : 'from-purple-600/20 to-indigo-600/20',
+        imageBg: idx === 0 ? 'from-blue-600/20 to-blue-700/20' : idx === 1 ? 'from-zinc-600/20 to-zinc-700/20' : 'from-blue-500/20 to-indigo-600/20',
         activeCourse: schedules.find(s => s.hallId === f.hallId)?.courseCode || 'DCIT ' + (100 + idx * 102),
         shiftDuration: f.venueType === 'Computer Lab' ? '1 Hour Lab' : '2 Hours Theory'
       };
@@ -246,10 +246,10 @@ export function DashboardOverviewView({
         {/* Card 1: Total Courses & Curriculum Load */}
         <div 
           onClick={() => setActiveView('courses')}
-          className="group relative p-4 sm:p-5 rounded-3xl glass-panel hover:border-purple-500/50 dark:hover:border-purple-500/50 transition-all duration-300 cursor-pointer overflow-hidden"
+          className="group relative p-4 sm:p-5 rounded-3xl glass-panel hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 cursor-pointer overflow-hidden"
         >
           <div className="flex items-start gap-3.5 sm:gap-4">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center shadow-[0_4px_20px_rgba(147,51,234,0.3)] group-hover:scale-105 transition-transform shrink-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
               <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
 
@@ -263,7 +263,7 @@ export function DashboardOverviewView({
                   {kpi.totalCourses}
                 </span>
                 
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 whitespace-nowrap">
                   <TrendingUp className="w-2.5 h-2.5 shrink-0" />
                   +12% Active Load
                 </span>
@@ -271,8 +271,8 @@ export function DashboardOverviewView({
 
               <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-white/10 dark:border-white/5">
                 <span className="truncate">L100 - L400 UGCS</span>
-                <span className="font-semibold text-purple-600 dark:text-purple-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5 shrink-0">
-                  Manage →
+                <span className="font-semibold text-blue-600 dark:text-blue-400 group-hover:underline transition-colors flex items-center gap-0.5 shrink-0">
+                  Manage
                 </span>
               </div>
             </div>
@@ -282,10 +282,10 @@ export function DashboardOverviewView({
         {/* Card 2: Scheduling Efficiency */}
         <div 
           onClick={() => setActiveView('generate')}
-          className="group relative p-4 sm:p-5 rounded-3xl glass-panel hover:border-rose-500/50 dark:hover:border-rose-500/50 transition-all duration-300 cursor-pointer overflow-hidden"
+          className="group relative p-4 sm:p-5 rounded-3xl glass-panel hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 cursor-pointer overflow-hidden"
         >
           <div className="flex items-start gap-3.5 sm:gap-4">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-500 text-white flex items-center justify-center shadow-[0_4px_20px_rgba(244,63,94,0.3)] group-hover:scale-105 transition-transform shrink-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center shadow-lg shadow-black/10 group-hover:scale-105 transition-transform shrink-0">
               <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
 
@@ -307,8 +307,8 @@ export function DashboardOverviewView({
 
               <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-white/10 dark:border-white/5">
                 <span className="truncate">Room Capacity Guard</span>
-                <span className="font-semibold text-rose-600 dark:text-rose-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5 shrink-0">
-                  Optimizer →
+                <span className="font-semibold text-blue-600 dark:text-blue-400 group-hover:underline transition-colors flex items-center gap-0.5 shrink-0">
+                  Optimizer
                 </span>
               </div>
             </div>
@@ -318,10 +318,10 @@ export function DashboardOverviewView({
         {/* Card 3: Total Weekly Scheduled Slots */}
         <div 
           onClick={() => setActiveView('generated_timetables')}
-          className="group relative p-4 sm:p-5 rounded-3xl glass-panel hover:border-emerald-500/50 dark:hover:border-emerald-500/50 transition-all duration-300 cursor-pointer overflow-hidden sm:col-span-2 lg:col-span-1"
+          className="group relative p-4 sm:p-5 rounded-3xl glass-panel hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 cursor-pointer overflow-hidden sm:col-span-2 lg:col-span-1"
         >
           <div className="flex items-start gap-3.5 sm:gap-4">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center shadow-[0_4px_20px_rgba(16,185,129,0.3)] group-hover:scale-105 transition-transform shrink-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
               <CalendarDays className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
 
@@ -335,7 +335,7 @@ export function DashboardOverviewView({
                   {kpi.successfullyScheduled}
                 </span>
                 
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 whitespace-nowrap">
                   <TrendingUp className="w-2.5 h-2.5 shrink-0" />
                   +8% vs last week
                 </span>
@@ -343,8 +343,8 @@ export function DashboardOverviewView({
 
               <div className="mt-3 flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 pt-2 border-t border-white/10 dark:border-white/5">
                 <span className="truncate">Mon - Fri (07:30-17:30)</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5 shrink-0">
-                  Schedule →
+                <span className="font-semibold text-blue-600 dark:text-blue-400 group-hover:underline transition-colors flex items-center gap-0.5 shrink-0">
+                  Schedule
                 </span>
               </div>
             </div>
@@ -359,11 +359,11 @@ export function DashboardOverviewView({
         {/* Total Seat Capacity */}
         <div 
           onClick={() => setActiveView('facilities')}
-          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-purple-400/40 dark:hover:border-purple-400/30 transition-all cursor-pointer group"
+          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-blue-400/40 dark:hover:border-blue-400/30 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1">
             <span className="text-[11px] font-medium">Seat Capacity</span>
-            <Armchair className="w-3.5 h-3.5 text-purple-500 group-hover:scale-110 transition-transform" />
+            <Armchair className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-lg font-bold text-zinc-900 dark:text-white">
             {kpi.totalSeatCapacity.toLocaleString()}
@@ -374,11 +374,11 @@ export function DashboardOverviewView({
         {/* Total Lecture Facilities */}
         <div 
           onClick={() => setActiveView('facilities')}
-          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-emerald-400/40 dark:hover:border-emerald-400/30 transition-all cursor-pointer group"
+          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-blue-400/40 dark:hover:border-blue-400/30 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1">
             <span className="text-[11px] font-medium">Facilities</span>
-            <Building2 className="w-3.5 h-3.5 text-emerald-500 group-hover:scale-110 transition-transform" />
+            <Building2 className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-lg font-bold text-zinc-900 dark:text-white">
             {kpi.totalFacilities}
@@ -389,11 +389,11 @@ export function DashboardOverviewView({
         {/* Total Lecturers */}
         <div 
           onClick={() => setActiveView('lecturers')}
-          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-indigo-400/40 dark:hover:border-indigo-400/30 transition-all cursor-pointer group"
+          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-blue-400/40 dark:hover:border-blue-400/30 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1">
             <span className="text-[11px] font-medium">Faculty</span>
-            <Users className="w-3.5 h-3.5 text-indigo-500 group-hover:scale-110 transition-transform" />
+            <Users className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-lg font-bold text-zinc-900 dark:text-white">
             {kpi.totalLecturers}
@@ -404,11 +404,11 @@ export function DashboardOverviewView({
         {/* Available Time Slots */}
         <div 
           onClick={() => setActiveView('timeslots')}
-          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-amber-400/40 dark:hover:border-amber-400/30 transition-all cursor-pointer group"
+          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-blue-400/40 dark:hover:border-blue-400/30 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1">
             <span className="text-[11px] font-medium">Time Slots</span>
-            <Clock className="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform" />
+            <Clock className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
           </div>
           <div className="text-lg font-bold text-zinc-900 dark:text-white">
             {kpi.totalTimeSlots}
@@ -419,13 +419,13 @@ export function DashboardOverviewView({
         {/* Scheduling Conflicts */}
         <div 
           onClick={() => setActiveView('reports')}
-          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-rose-400/40 dark:hover:border-rose-400/30 transition-all cursor-pointer group"
+          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-blue-400/40 dark:hover:border-blue-400/30 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1">
             <span className="text-[11px] font-medium">Clashes</span>
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 group-hover:scale-110 transition-transform" />
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
           </div>
-          <div className={`text-lg font-bold ${kpi.schedulingConflicts === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+          <div className={`text-lg font-bold ${kpi.schedulingConflicts === 0 ? 'text-zinc-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'}`}>
             {kpi.schedulingConflicts}
           </div>
           <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">Zero double-bookings</p>
@@ -434,13 +434,13 @@ export function DashboardOverviewView({
         {/* Pending / Unsatisfied Courses */}
         <div 
           onClick={() => setActiveView('generate')}
-          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-amber-400/40 dark:hover:border-amber-400/30 transition-all cursor-pointer group"
+          className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-blue-400/40 dark:hover:border-blue-400/30 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1">
             <span className="text-[11px] font-medium">Pending Queue</span>
-            <Clock3 className="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform" />
+            <Clock3 className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
           </div>
-          <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
+          <div className="text-lg font-bold text-zinc-900 dark:text-white">
             {kpi.unsatisfiedOrPending}
           </div>
           <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">Ready to optimize</p>
@@ -468,15 +468,15 @@ export function DashboardOverviewView({
                 {/* Legend Dots */}
                 <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0" />
                     <span className="whitespace-nowrap">Current Sessions</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600 shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-700 shrink-0" />
                     <span className="whitespace-nowrap">Threshold Limit</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-400 shrink-0" />
                     <span className="whitespace-nowrap">Lab Practicals</span>
                   </div>
                 </div>
@@ -516,7 +516,7 @@ export function DashboardOverviewView({
             {/* 3 Summary Chips */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 mb-4">
               <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-white/3 border border-zinc-200/60 dark:border-white/5 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                   <Layers className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -528,7 +528,7 @@ export function DashboardOverviewView({
               </div>
 
               <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-white/3 border border-zinc-200/60 dark:border-white/5 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                   <Activity className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -576,8 +576,8 @@ export function DashboardOverviewView({
                     }}
                   />
                   <Bar dataKey="threshold" fill={isDark ? '#27272E' : '#E2E8F0'} radius={[6, 6, 0, 0]} maxBarSize={28} />
-                  <Bar dataKey="currentSessions" fill="#F43F5E" radius={[6, 6, 0, 0]} maxBarSize={28} />
-                  <Bar dataKey="labSessions" fill="#3B82F6" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="currentSessions" fill="#2563EB" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="labSessions" fill="#60A5FA" radius={[6, 6, 0, 0]} maxBarSize={28} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -585,7 +585,7 @@ export function DashboardOverviewView({
             {/* Bottom Meta Note */}
             <div className="flex items-center justify-between pt-3 border-t border-zinc-100 dark:border-white/5 text-[11px] text-zinc-400 dark:text-zinc-500">
               <span>Constraint Verification: Theory 2h & Practical 1h separated</span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">100% Passed</span>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">100% Passed</span>
             </div>
           </div>
         </div>
@@ -599,7 +599,7 @@ export function DashboardOverviewView({
               <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-white">
                 Conflict & Quality Rates
               </h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 Audit Live
               </span>
             </div>
@@ -607,7 +607,7 @@ export function DashboardOverviewView({
             {/* Legend Pills */}
             <div className="flex items-center gap-3 text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="w-2 h-2 rounded-full bg-blue-600" />
                 <span>Non-Conflict</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -651,7 +651,7 @@ export function DashboardOverviewView({
                   Total Conflicts
                 </span>
                 <span className={`text-2xl font-bold tracking-tight ${
-                  kpi.schedulingConflicts === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+                  kpi.schedulingConflicts === 0 ? 'text-zinc-900 dark:text-white' : 'text-rose-500'
                 }`}>
                   {kpi.schedulingConflicts}
                 </span>
@@ -662,15 +662,15 @@ export function DashboardOverviewView({
             <div className="space-y-1.5 pt-2 border-t border-zinc-100 dark:border-white/5 text-xs">
               <div className="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> Successfully Placed
+                  <span className="w-2 h-2 rounded-full bg-blue-600" /> Successfully Placed
                 </span>
                 <span className="font-bold">{kpi.successfullyScheduled} courses</span>
               </div>
               <div className="flex items-center justify-between text-zinc-600 dark:text-zinc-300">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" /> Pending Allocation
+                  <span className="w-2 h-2 rounded-full bg-slate-500" /> Pending Allocation
                 </span>
-                <span className="font-bold text-amber-600 dark:text-amber-400">{kpi.unsatisfiedOrPending} courses</span>
+                <span className="font-bold text-zinc-700 dark:text-zinc-300">{kpi.unsatisfiedOrPending} courses</span>
               </div>
             </div>
           </div>
@@ -725,8 +725,8 @@ export function DashboardOverviewView({
               <AreaChart data={hourlyTrafficData} margin={{ top: 15, right: 15, left: -25, bottom: 0 }}>
                 <defs>
                   <linearGradient id="trafficGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.0} />
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#27272A' : '#E4E4E7'} opacity={0.4} />
@@ -748,26 +748,26 @@ export function DashboardOverviewView({
                 <Area 
                   type="monotone" 
                   dataKey="loadPercentage" 
-                  stroke="#F43F5E" 
-                  strokeWidth={3} 
+                  stroke="#2563EB" 
+                  strokeWidth={2.5} 
                   fillOpacity={1} 
                   fill="url(#trafficGradient)" 
-                  activeDot={{ r: 6, fill: '#F43F5E', stroke: '#FFF', strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: '#2563EB', stroke: '#FFF', strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Peak Callout Badge (Like "Waste of cost $412558" in image) */}
-          <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-between text-xs">
+          {/* Peak Callout Badge */}
+          <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <Flame className="w-4 h-4 text-rose-500" />
+              <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <div>
-                <span className="font-bold text-rose-600 dark:text-rose-400">Peak Load Period:</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400">Peak Load Period:</span>
                 <span className="text-zinc-600 dark:text-zinc-300 ml-1">11:30 - 13:30 Midday</span>
               </div>
             </div>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-500 text-white">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white">
               96% Cap
             </span>
           </div>
@@ -837,8 +837,8 @@ export function DashboardOverviewView({
                         <td className="py-2.5 text-right">
                           <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             scheduledEntry 
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
-                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                              ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20' 
+                              : 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20'
                           }`}>
                             {scheduledEntry ? 'Scheduled' : 'Pending'}
                           </span>
@@ -884,7 +884,7 @@ export function DashboardOverviewView({
                 onClick={() => setActiveView('facilities')}
                 className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
               >
-                All (14) →
+                All (14)
               </button>
             </div>
 
@@ -1011,9 +1011,9 @@ export function DashboardOverviewView({
                   setInspectedCourse(null);
                   setActiveView('courses');
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs cursor-pointer"
               >
-                Open Course Manager →
+                Open Course Manager
               </button>
             </div>
           </div>
@@ -1084,9 +1084,9 @@ export function DashboardOverviewView({
                   setInspectedFacility(null);
                   setActiveView('facilities');
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs cursor-pointer"
               >
-                Open Facility Manager →
+                Open Facility Manager
               </button>
             </div>
           </div>
@@ -1115,9 +1115,9 @@ export function DashboardOverviewView({
           </div>
 
           <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
-            {systemActivities.map((act) => (
+            {systemActivities.map((act, index) => (
               <div 
-                key={act.id}
+                key={act.id ? `${act.id}-${index}` : `act-${index}`}
                 className="p-3 rounded-2xl bg-zinc-50/70 dark:bg-white/3 border border-zinc-200/60 dark:border-white/5 flex items-start justify-between gap-3 hover:bg-zinc-100/60 dark:hover:bg-white/6 transition-colors"
               >
                 <div className="flex items-start gap-3">
@@ -1169,57 +1169,52 @@ export function DashboardOverviewView({
             <div className="grid grid-cols-1 gap-2">
               <button
                 onClick={onOpenAddCourse}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 dark:bg-white/3 dark:hover:bg-white/6 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/60 dark:border-white/5 transition-all"
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 dark:bg-white/3 dark:hover:bg-white/6 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/60 dark:border-white/5 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <BookOpen className="w-4 h-4 text-blue-500" />
+                  <BookOpen className="w-4 h-4 text-blue-500 shrink-0" />
                   <span>Add New DCIT Course</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-zinc-400" />
               </button>
 
               <button
                 onClick={onOpenAddFacility}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 dark:bg-white/3 dark:hover:bg-white/6 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/60 dark:border-white/5 transition-all"
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 dark:bg-white/3 dark:hover:bg-white/6 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/60 dark:border-white/5 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <Building2 className="w-4 h-4 text-emerald-500" />
+                  <Building2 className="w-4 h-4 text-emerald-500 shrink-0" />
                   <span>Register Lecture Hall / Lab</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-zinc-400" />
               </button>
 
               <button
                 onClick={() => setActiveView('generate')}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-bold border border-amber-500/20 transition-all"
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-bold border border-amber-500/20 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
                   <span>AI Timetable Generator</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-amber-500" />
               </button>
 
               <button
                 onClick={handleExportCsv}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 dark:bg-white/3 dark:hover:bg-white/6 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/60 dark:border-white/5 transition-all"
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 dark:bg-white/3 dark:hover:bg-white/6 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/60 dark:border-white/5 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <Download className="w-4 h-4 text-purple-500" />
+                  <Download className="w-4 h-4 text-purple-500 shrink-0" />
                   <span>Export Master Schedule (CSV)</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-zinc-400" />
               </button>
 
               <button
                 onClick={onOpenImportExport}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 dark:bg-white/3 dark:hover:bg-white/6 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/60 dark:border-white/5 transition-all"
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 dark:bg-white/3 dark:hover:bg-white/6 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/60 dark:border-white/5 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <UploadCloud className="w-4 h-4 text-teal-500" />
+                  <UploadCloud className="w-4 h-4 text-teal-500 shrink-0" />
                   <span>Import Excel Workbook</span>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-zinc-400" />
               </button>
             </div>
           </div>

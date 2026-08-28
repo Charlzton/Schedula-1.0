@@ -74,14 +74,14 @@ export function ReportsView() {
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Academic Compliance & Audit Reports
+              Reports
             </h2>
             <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-              {selectedSemester} Report
+              {selectedSemester}
             </span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            University of Ghana Department of Computer Science • Faculty workload and room utilization audit
+            Faculty workload and room utilization audit
           </p>
         </div>
 

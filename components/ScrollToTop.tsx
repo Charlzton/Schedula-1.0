@@ -66,7 +66,7 @@ export function ScrollToTop({ className = '' }: ScrollToTopProps) {
     <div
       className={`no-print select-none fixed z-45 transition-all duration-300 ease-out
         bottom-20 right-6 
-        lg:bottom-8 lg:left-[274px] lg:right-auto ${className}`}
+        lg:bottom-8 lg:left-[104px] lg:right-auto ${className}`}
     >
       {/* Tooltip on Hover */}
       <div

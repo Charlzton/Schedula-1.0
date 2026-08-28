@@ -148,14 +148,14 @@ export function GeneratedTimetablesView() {
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Master Academic Timetable
+              Timetables
             </h2>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
-              {filteredSchedules.length} Sessions Allocated
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+              {filteredSchedules.length} Sessions
             </span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            University of Ghana • Department of Computer Science • {selectedSemester} Schedule Grid
+            Department of Computer Science • {selectedSemester}
           </p>
         </div>
 
@@ -165,17 +165,17 @@ export function GeneratedTimetablesView() {
             onClick={handleGenerate}
             disabled={isGenerating}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all cursor-pointer disabled:opacity-50"
-            title="Run genetic constraint satisfaction algorithm"
+            title="Generate timetable"
           >
             {isGenerating ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Optimizing Grid...</span>
+                <span>Generating...</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Auto-Generate Grid</span>
+                <span>Generate</span>
               </>
             )}
           </button>
@@ -250,7 +250,7 @@ export function GeneratedTimetablesView() {
       )}
 
       {/* Filter Toolbar: Semester Selector, Level Filters, Search */}
-      <div className="p-4 rounded-3xl glass-panel space-y-3 no-print">
+      <div className="space-y-3 no-print">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           
           {/* Semester Selector on the Schedule View */}

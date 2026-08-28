@@ -83,6 +83,7 @@ export function ImportExportModal({ isOpen, onClose }: ImportExportModalProps) {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = ''; // Allow selecting another file repeatedly
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -92,13 +93,13 @@ export function ImportExportModal({ isOpen, onClose }: ImportExportModalProps) {
           const parsed = JSON.parse(content);
           let count = 0;
           if (Array.isArray(parsed.courses)) {
-            parsed.courses.forEach((c: any) => { if (c.courseCode) { addCourse(c); count++; } });
+            parsed.courses.forEach((c: any) => { if (c.courseCode) { addCourse(c, true); count++; } });
           }
           if (Array.isArray(parsed.facilities)) {
-            parsed.facilities.forEach((f: any) => { if (f.hallId) { addFacility(f); count++; } });
+            parsed.facilities.forEach((f: any) => { if (f.hallId) { addFacility(f, true); count++; } });
           }
           if (Array.isArray(parsed.lecturers)) {
-            parsed.lecturers.forEach((l: any) => { if (l.lecturerId) { addLecturer(l); count++; } });
+            parsed.lecturers.forEach((l: any) => { if (l.lecturerId) { addLecturer(l, true); count++; } });
           }
           setFeedbackMsg({ type: 'success', text: `Successfully imported JSON master package (${count} records processed).` });
         } else {
@@ -119,7 +120,7 @@ export function ImportExportModal({ isOpen, onClose }: ImportExportModalProps) {
       }}
     >
       <div 
-        className="w-full max-w-lg bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl border border-white/80 dark:border-white/10 shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg glass-modal rounded-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
       >

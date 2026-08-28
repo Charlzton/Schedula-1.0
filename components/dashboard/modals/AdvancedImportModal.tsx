@@ -63,11 +63,28 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
     errors: number;
   }>({ imported: 0, updated: 0, skipped: 0, errors: 0 });
 
+  const resetModalState = () => {
+    setStep('upload');
+    setFileName('');
+    setDatasets([]);
+    setActiveDatasetIndex(0);
+    setIsProcessing(false);
+    setErrorMsg(null);
+    setDuplicateStrategies({});
+    setImportStats({ imported: 0, updated: 0, skipped: 0, errors: 0 });
+  };
+
+  const handleClose = () => {
+    resetModalState();
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = ''; // Allow selecting another file repeatedly without refresh
 
     setFileName(file.name);
     setIsProcessing(true);
@@ -191,7 +208,7 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
                 semester: mapped.semester === 'Semester 2' ? 'Semester 2' : 'Semester 1',
                 assignedLecturerName: mapped.lecturerName || 'Assigned Lecturer',
                 expectedEnrollment: Number(mapped.expectedEnrollment) || 50
-              });
+              }, true);
               updatedCount++;
               return;
             } else if (duplicateInfo.type === 'lecturer') {
@@ -199,7 +216,7 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
                 fullName: mapped.fullName || mapped.name || 'Lecturer',
                 department: mapped.department || 'Computer Science',
                 email: mapped.email || ''
-              });
+              }, true);
               updatedCount++;
               return;
             } else if (duplicateInfo.type === 'facility') {
@@ -207,7 +224,7 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
                 hallName: mapped.hallName || 'Hall',
                 capacity: Number(mapped.capacity) || 100,
                 buildingLocation: mapped.buildingLocation || mapped.building || 'Main Building'
-              });
+              }, true);
               updatedCount++;
               return;
             }
@@ -228,7 +245,7 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
             department: mapped.department || 'Department of Computer Science',
             assignedLecturerName: mapped.lecturerName || 'Assigned Lecturer',
             expectedEnrollment: Number(mapped.expectedEnrollment) || 50
-          });
+          }, true);
           importedCount++;
         } else if (ds.detectedType === 'lecturers') {
           const id = `LEC-${Math.floor(Math.random() * 9000 + 1000)}`;
@@ -238,7 +255,7 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
             title: mapped.title || 'Dr.',
             department: mapped.department || 'Department of Computer Science',
             email: mapped.email || `${id.toLowerCase()}@ug.edu.gh`
-          });
+          }, true);
           importedCount++;
         } else if (ds.detectedType === 'facilities') {
           const id = `FAC-${Math.floor(Math.random() * 9000 + 1000)}`;
@@ -251,7 +268,7 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
             hasProjector: true,
             hasComputers: false,
             status: 'Active'
-          });
+          }, true);
           importedCount++;
         } else if (ds.detectedType === 'timeslots') {
           addTimeSlot({
@@ -261,7 +278,7 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
             endTime: mapped.endTime || '10:25',
             durationHours: 3,
             sessionType: 'Theory'
-          });
+          }, true);
           importedCount++;
         }
       });
@@ -284,11 +301,11 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 dark:bg-black/70 backdrop-blur-md animate-in fade-in-50 duration-200"
       onClick={(e) => {
-        if (e.target === e.currentTarget && step !== 'preview') onClose();
+        if (e.target === e.currentTarget && step !== 'preview') handleClose();
       }}
     >
       <div 
-        className="w-full max-w-4xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/80 dark:border-white/10 shadow-2xl rounded-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+        className="w-full max-w-4xl glass-modal rounded-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
       >
@@ -310,7 +327,7 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
             aria-label="Close modal"
           >
@@ -579,13 +596,13 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
         <div className="p-4 border-t border-zinc-200/60 dark:border-white/10 flex items-center justify-between shrink-0">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="px-5 py-2.5 rounded-xl font-bold text-xs bg-zinc-200/60 hover:bg-zinc-200 dark:bg-white/10 dark:hover:bg-white/20 text-zinc-700 dark:text-zinc-200 transition-all cursor-pointer"
           >
             {step === 'results' ? 'Close & View Data' : 'Cancel'}
           </button>
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             {step === 'mapping' && (
               <button
                 type="button"
@@ -619,13 +636,23 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
             )}
 
             {step === 'results' && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2.5 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white transition-all cursor-pointer shadow-lg"
-              >
-                Done
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={resetModalState}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-all cursor-pointer inline-flex items-center gap-1.5 border border-blue-500/20"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>Import Another File</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-6 py-2.5 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white transition-all cursor-pointer shadow-lg"
+                >
+                  Done
+                </button>
+              </>
             )}
           </div>
         </div>
