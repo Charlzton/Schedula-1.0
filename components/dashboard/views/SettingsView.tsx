@@ -16,10 +16,15 @@ import {
   Database,
   GraduationCap,
   Sparkles,
-  Loader2
+  Loader2,
+  Sun,
+  Moon,
+  CheckCircle2,
+  Palette
 } from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { DeleteConfirmationModal } from '@/components/dashboard/modals/DeleteConfirmationModal';
 
 const PRESET_AVATARS = [
@@ -65,9 +70,10 @@ export function SettingsView() {
     clearSchedules 
   } = useTimetable();
   const { user, updateUserProfile, changePassword, removeProfilePicture } = useAuth();
+  const { theme, setTheme, toggleTheme, mounted } = useTheme();
 
-  // Tab State: 'account' | 'security' | 'scheduling'
-  const [activeTab, setActiveTab] = useState<'account' | 'security' | 'scheduling'>('account');
+  // Tab State: 'account' | 'appearance' | 'security' | 'scheduling'
+  const [activeTab, setActiveTab] = useState<'account' | 'appearance' | 'security' | 'scheduling'>('account');
 
   // Account form state
   const [displayName, setDisplayName] = useState(user?.name || '');
@@ -310,6 +316,17 @@ export function SettingsView() {
         </button>
 
         <button
+          onClick={() => setActiveTab('appearance')}
+          className={`px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
+            activeTab === 'appearance'
+              ? 'bg-white/80 dark:bg-white/20 text-zinc-900 dark:text-white shadow-xs'
+              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          Appearance
+        </button>
+
+        <button
           onClick={() => setActiveTab('security')}
           className={`px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'security'
@@ -546,7 +563,162 @@ export function SettingsView() {
         </div>
       )}
 
-      {/* TAB 2: SECURITY */}
+      {/* TAB 2: APPEARANCE */}
+      {activeTab === 'appearance' && (
+        <div className="space-y-6 animate-in fade-in-50 duration-200">
+          <div className="p-6 rounded-3xl glass-panel space-y-6">
+            <div>
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                Interface Theme
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                Customize how Schedula looks on your device. Choose between high-contrast Light Mode or deep twilight Dark Mode.
+              </p>
+            </div>
+
+            {/* Theme Selector Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Light Mode Option */}
+              <div
+                onClick={() => setTheme('light')}
+                className={`p-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group flex flex-col justify-between ${
+                  theme === 'light'
+                    ? 'bg-blue-50/70 dark:bg-blue-950/20 border-blue-600 ring-2 ring-blue-600/30 shadow-md'
+                    : 'bg-white/60 dark:bg-white/5 border-zinc-200/80 dark:border-white/10 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-white/90 dark:hover:bg-white/10'
+                }`}
+              >
+                <div>
+                  {/* Theme Preview Box */}
+                  <div className="w-full h-24 rounded-xl bg-gradient-to-br from-white to-slate-100 border border-slate-200 p-2.5 flex flex-col justify-between shadow-inner mb-4 overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+                        <div className="w-12 h-2 rounded bg-slate-300" />
+                      </div>
+                      <div className="w-4 h-4 rounded bg-slate-200" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="w-3/4 h-2 rounded bg-slate-800" />
+                      <div className="w-1/2 h-1.5 rounded bg-slate-400" />
+                    </div>
+                    <div className="flex gap-1">
+                      <div className="w-8 h-3 rounded-md bg-blue-600" />
+                      <div className="w-8 h-3 rounded-md bg-slate-200" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center">
+                        <Sun className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-sm text-zinc-900 dark:text-white">
+                        Light Mode
+                      </span>
+                    </div>
+
+                    {theme === 'light' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                        <Check className="w-3 h-3" />
+                        Active
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    Clean, high-contrast bright theme designed for daylight clarity, optimal reading comfort, and crisp text rendering.
+                  </p>
+                </div>
+              </div>
+
+              {/* Dark Mode Option */}
+              <div
+                onClick={() => setTheme('dark')}
+                className={`p-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group flex flex-col justify-between ${
+                  theme === 'dark'
+                    ? 'bg-blue-50/70 dark:bg-blue-950/20 border-blue-600 ring-2 ring-blue-600/30 shadow-md'
+                    : 'bg-white/60 dark:bg-white/5 border-zinc-200/80 dark:border-white/10 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-white/90 dark:hover:bg-white/10'
+                }`}
+              >
+                <div>
+                  {/* Theme Preview Box */}
+                  <div className="w-full h-24 rounded-xl bg-gradient-to-br from-[#0B0B0E] to-[#161824] border border-white/10 p-2.5 flex flex-col justify-between shadow-inner mb-4 overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                        <div className="w-12 h-2 rounded bg-zinc-700" />
+                      </div>
+                      <div className="w-4 h-4 rounded bg-zinc-800" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="w-3/4 h-2 rounded bg-white" />
+                      <div className="w-1/2 h-1.5 rounded bg-zinc-500" />
+                    </div>
+                    <div className="flex gap-1">
+                      <div className="w-8 h-3 rounded-md bg-blue-500" />
+                      <div className="w-8 h-3 rounded-md bg-zinc-800" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-500/15 text-indigo-400 flex items-center justify-center">
+                        <Moon className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-sm text-zinc-900 dark:text-white">
+                        Dark Mode
+                      </span>
+                    </div>
+
+                    {theme === 'dark' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                        <Check className="w-3 h-3" />
+                        Active
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    Deep twilight OLED theme featuring sleek frosted glass refraction, glowing neon highlights, and reduced eye strain.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Toggle Switch Row */}
+            <div className="pt-2 border-t border-zinc-200/60 dark:border-white/10 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-zinc-900 dark:text-white">
+                  Quick Mode Switch
+                </p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Currently running in <span className="font-bold text-blue-600 dark:text-blue-400 capitalize">{theme} Mode</span>
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer"
+              >
+                {theme === 'dark' ? (
+                  <>
+                    <Sun className="w-4 h-4 text-amber-400 dark:text-amber-600" />
+                    <span>Switch to Light Mode</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-4 h-4 text-indigo-400 dark:text-indigo-600" />
+                    <span>Switch to Dark Mode</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: SECURITY */}
       {activeTab === 'security' && (
         <div className="space-y-6 animate-in fade-in-50 duration-200">
           {passwordSuccess && (

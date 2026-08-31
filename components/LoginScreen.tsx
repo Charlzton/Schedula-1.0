@@ -9,10 +9,13 @@ import {
   AlertCircle, 
   Loader2, 
   Eye, 
-  EyeOff
+  EyeOff,
+  Sun,
+  Moon
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { SchedulaLogo } from '@/components/SchedulaLogo';
 
 interface LoginScreenProps {
@@ -30,6 +33,7 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
     signOut, 
     isLoading 
   } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -154,8 +158,23 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
       className="relative w-full flex items-center justify-center p-2 sm:p-4 text-[#111827] dark:text-[#F9FAFB] font-system"
       id="schedula-login-container"
     >
-      {/* Top Floating Controls: Close Button */}
-      <div className="fixed top-3 right-3 sm:top-5 sm:right-5 z-40 flex items-center">
+      {/* Top Floating Controls: Theme Toggle & Close Button */}
+      <div className="fixed top-3 right-3 sm:top-5 sm:right-5 z-40 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          className="min-h-[38px] min-w-[38px] p-2 rounded-full bg-white/90 dark:bg-[#1A1A22]/90 backdrop-blur text-gray-700 dark:text-gray-200 hover:text-black dark:hover:text-white shadow-md border border-gray-200/80 dark:border-gray-800 transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center"
+          id="login-theme-toggle-btn"
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-amber-400" />
+          ) : (
+            <Moon className="w-4 h-4 text-slate-700" />
+          )}
+        </button>
+
         <button
           type="button"
           onClick={onClose}

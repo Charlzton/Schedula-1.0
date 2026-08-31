@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ArrowRight, Home, HelpCircle, Loader2 } from 'lucide-react';
+import { Menu, X, ArrowRight, Home, HelpCircle, Loader2, Sun, Moon } from 'lucide-react';
 import { SchedulaLogo } from './SchedulaLogo';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 
 interface NavbarProps {
   onDashboardClick?: () => void;
@@ -21,6 +22,7 @@ export function Navbar({
   isNavigatingDashboard = false,
 }: NavbarProps) {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'faq'>('overview');
@@ -85,7 +87,7 @@ export function Navbar({
                 className="focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 rounded-xl transition-transform hover:opacity-95 group"
                 id="nav-brand-logo"
               >
-                <SchedulaLogo size="md" textColor="text-white" isDark={true} />
+                <SchedulaLogo size="md" textColor="text-slate-900 dark:text-white" isDark={true} />
               </a>
             </div>
 
@@ -119,7 +121,23 @@ export function Navbar({
             </nav>
 
             {/* Right: Sign In / Get Started Buttons */}
-            <div className="hidden sm:flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 md:gap-3">
+              {/* Theme Toggle Button */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                className="p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-black/5 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-white/10 transition-colors cursor-pointer"
+                id="nav-theme-toggle-btn"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-slate-700" />
+                )}
+              </button>
+
               {/* Sign In Text Button (if not logged in) */}
               {!user && (
                 <button
@@ -163,7 +181,22 @@ export function Navbar({
             </div>
 
             {/* Mobile Navigation Trigger */}
-            <div className="flex sm:hidden items-center gap-2">
+            <div className="flex sm:hidden items-center gap-1.5">
+              {/* Mobile Theme Toggle */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                className="p-1.5 rounded-xl text-slate-800 dark:text-white/90 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                id="mobile-nav-theme-toggle"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Moon className="w-4 h-4 text-slate-700" />
+                )}
+              </button>
+
               <button
                 type="button"
                 disabled={isNavigatingDashboard}
@@ -236,6 +269,24 @@ export function Navbar({
                   <span className="flex items-center gap-2">
                     <HelpCircle className="w-4 h-4 text-blue-400" />
                     FAQ
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => toggleTheme()}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl text-left text-sm font-medium text-white/90 hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    {theme === 'dark' ? (
+                      <Sun className="w-4 h-4 text-amber-400" />
+                    ) : (
+                      <Moon className="w-4 h-4 text-indigo-400" />
+                    )}
+                    <span>{theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/70 capitalize">
+                    {theme}
                   </span>
                 </button>
               </div>

@@ -13,10 +13,13 @@ import {
   LogOut,
   Sliders,
   Shield,
-  Loader2
+  Loader2,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import Image from 'next/image';
 
 interface DashboardHeaderProps {
@@ -33,6 +36,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
     lecturers
   } = useTimetable();
   const { user, signOut, isSigningOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -211,6 +215,21 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
               </div>
             )}
           </div>
+
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            id="dashboard-header-theme-toggle"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-700" />
+            )}
+          </button>
 
           {/* Settings Gear Icon */}
           <button

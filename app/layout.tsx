@@ -29,20 +29,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark h-full" style={{ colorScheme: 'dark' }} suppressHydrationWarning>
+    <html lang="en" className="dark h-full" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function() {
               try {
-                document.documentElement.classList.add('dark');
-                localStorage.removeItem('schedula-theme');
+                var stored = localStorage.getItem('schedula-theme');
+                var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
+                if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.style.colorScheme = 'dark';
+                } else {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.style.colorScheme = 'light';
+                }
               } catch (e) {}
             })();`
           }}
         />
       </head>
-      <body className="min-h-screen bg-[#0B0B0E] text-[#F9FAFB] font-system antialiased selection:bg-white selection:text-[#0B0B0E] overflow-x-hidden transition-colors duration-300" suppressHydrationWarning>
+      <body className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0B0E] text-[#111827] dark:text-[#F9FAFB] font-system antialiased selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-[#0B0B0E] overflow-x-hidden transition-colors duration-300" suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>
             <TimetableProvider>
