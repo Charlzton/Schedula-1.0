@@ -12,6 +12,12 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!isLoading && !user && !isSigningOut) {
       router.replace('/login');
+    } else if (!isLoading && user && !isSigningOut) {
+      const userRole = (user.role || '').toLowerCase();
+      // If user is strictly a lecturer without admin rights, redirect them to the lecturer portal
+      if (userRole.includes('lecturer') && !userRole.includes('admin')) {
+        router.replace('/lecturer');
+      }
     }
   }, [user, isLoading, isSigningOut, router]);
 
@@ -28,6 +34,11 @@ export default function DashboardPage() {
 
   if (!user && !isSigningOut) {
     return null; // Redirecting to login
+  }
+
+  const userRole = (user?.role || '').toLowerCase();
+  if (userRole.includes('lecturer') && !userRole.includes('admin')) {
+    return null; // Redirecting to lecturer portal
   }
 
   return <AdminDashboard />;

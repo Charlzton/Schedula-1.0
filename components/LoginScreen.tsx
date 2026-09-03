@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   X, 
   Mail, 
@@ -11,10 +12,12 @@ import {
   Eye, 
   EyeOff,
   Sun,
-  Moon
+  Moon,
+  GraduationCap,
+  ShieldCheck
 } from 'lucide-react';
 import Image from 'next/image';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, UserRole } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { SchedulaLogo } from '@/components/SchedulaLogo';
 
@@ -34,7 +37,9 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
     isLoading 
   } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const router = useRouter();
   
+  const [role, setRole] = useState<UserRole>('lecturer');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,7 +76,7 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
 
     try {
       if (mode === 'signin') {
-        const res = await signInWithEmail(cleanEmail, password);
+        const res = await signInWithEmail(cleanEmail, password, role);
         if (!res.success) {
           setSubmitting(false);
           setErrorCode(res.code || null);
@@ -81,12 +86,23 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
             setErrorMsg(res.error || 'Incorrect email or password. Please try again.');
           }
         } else {
-          if (onOpenDashboard) {
+          setSubmitting(false);
+          if (res.targetRoute) {
+            router.replace(res.targetRoute);
+          } else if (onOpenDashboard) {
             onOpenDashboard();
           }
         }
       } else {
-        const res = await signUpWithEmail(fullName, cleanEmail, password, institution);
+        // Prevent Admin account creation attempts
+        if (role === 'admin') {
+          setSubmitting(false);
+          setErrorMsg('Administrator accounts cannot be created here. Please sign in with an authorized administrator account.');
+          setErrorCode('auth/admin-registration-disabled');
+          return;
+        }
+
+        const res = await signUpWithEmail(fullName, cleanEmail, password, institution, role);
         setSubmitting(false);
         if (!res.success) {
           setErrorCode(res.code || null);
@@ -108,13 +124,16 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
     setSuccessMsg(null);
     setSubmitting(true);
     try {
-      const res = await signInWithGoogle();
+      const res = await signInWithGoogle(role);
       if (!res.success) {
         setSubmitting(false);
         setErrorMsg(res.error || 'Google authentication failed.');
         setErrorCode(res.code || null);
       } else {
-        if (onOpenDashboard) {
+        setSubmitting(false);
+        if (res.targetRoute) {
+          router.replace(res.targetRoute);
+        } else if (onOpenDashboard) {
           onOpenDashboard();
         }
       }
@@ -138,66 +157,133 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
     setErrorMsg(null);
     setErrorCode(null);
     const cleanEmail = email.trim();
+
     if (!cleanEmail) {
-      setErrorMsg('Please enter your email address first.');
+      setErrorMsg('Please enter your email address.');
+      setErrorCode('auth/missing-email');
       return;
     }
+
     setSubmitting(true);
-    const res = await sendPasswordReset(cleanEmail);
-    setSubmitting(false);
-    if (res.success) {
-      setResetEmailSent(true);
-    } else {
-      setErrorMsg(res.error || 'Failed to send password reset email.');
-      setErrorCode(res.code || null);
+    try {
+      const res = await sendPasswordReset(cleanEmail);
+      setSubmitting(false);
+      if (res.success) {
+        setResetEmailSent(true);
+      } else {
+        setErrorMsg(res.error || 'Failed to send password reset email.');
+        setErrorCode(res.code || null);
+      }
+    } catch (err: any) {
+      setSubmitting(false);
+      setErrorMsg(err?.message || 'Failed to send password reset email.');
+      setErrorCode(err?.code || null);
     }
   };
 
   return (
-    <div 
-      className="relative w-full flex items-center justify-center p-2 sm:p-4 text-[#111827] dark:text-[#F9FAFB] font-system"
-      id="schedula-login-container"
-    >
-      {/* Top Floating Controls: Theme Toggle & Close Button */}
-      <div className="fixed top-3 right-3 sm:top-5 sm:right-5 z-40 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          className="min-h-[38px] min-w-[38px] p-2 rounded-full bg-white/90 dark:bg-[#1A1A22]/90 backdrop-blur text-gray-700 dark:text-gray-200 hover:text-black dark:hover:text-white shadow-md border border-gray-200/80 dark:border-gray-800 transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center"
-          id="login-theme-toggle-btn"
-        >
-          {theme === 'dark' ? (
-            <Sun className="w-4 h-4 text-amber-400" />
-          ) : (
-            <Moon className="w-4 h-4 text-slate-700" />
-          )}
-        </button>
+    <div className="relative w-full max-w-md mx-auto">
+      {/* Outer Card with Glassmorphic Border */}
+      <div className="relative rounded-3xl p-6 sm:p-8 bg-white/80 dark:bg-[#12131A]/80 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-2xl shadow-zinc-950/10 dark:shadow-zinc-950/50 transition-all">
+        
+        {/* Top Controls */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            className="p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-black/5 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-zinc-700" />
+            )}
+          </button>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="min-h-[38px] min-w-[38px] p-2 rounded-full bg-white/90 dark:bg-[#1A1A22]/90 backdrop-blur text-gray-700 dark:text-gray-200 hover:text-black dark:hover:text-white shadow-md border border-gray-200/80 dark:border-gray-800 transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center"
-          aria-label="Close modal"
-          id="login-close-btn"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="p-2 rounded-xl text-zinc-500 hover:text-zinc-900 hover:bg-black/5 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-      {/* Main Master Card Container */}
-      <div 
-        className="relative w-full max-w-[500px] glass-modal p-6 sm:p-8 my-auto overflow-hidden transition-all duration-300 animate-in fade-in zoom-in-95 rounded-3xl"
-      >
-        <div className="flex flex-col items-center justify-center space-y-6">
-          
-          {/* Schedula Brand Logo & Title */}
-          <div className="text-center flex flex-col items-center justify-center space-y-2">
-            <SchedulaLogo size="lg" isDark={true} />
+        {/* Brand Header */}
+        <div className="flex flex-col items-center text-center space-y-4 mb-6">
+          <SchedulaLogo size="lg" isDark={theme === 'dark'} />
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              Schedula Academic Platform
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+              Intelligent University Timetable &amp; Facility Scheduling
+            </p>
           </div>
+        </div>
 
-          {/* Schedula Authentication Form with Refined Typographic Scale */}
+        {/* Logged in state */}
+        {user ? (
+          <div className="space-y-5 text-center py-2">
+            <div className="relative w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-blue-500/20 shadow-md">
+              {user.avatar ? (
+                <Image
+                  src={user.avatar}
+                  alt={user.name || 'User'}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl font-bold">
+                  {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Signed In ({user.role || 'User'})</span>
+              </div>
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
+                {user.name}
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                {user.email}
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (user.role === 'lecturer') {
+                    router.push('/lecturer');
+                  } else if (onOpenDashboard) {
+                    onOpenDashboard();
+                  } else {
+                    router.push('/dashboard');
+                  }
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-sm transition-all shadow-md active:scale-[0.98] cursor-pointer"
+              >
+                {user.role === 'lecturer' ? 'Open Lecturer Portal' : 'Open Administrator Dashboard'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="w-full py-2.5 px-4 rounded-xl border border-zinc-200/80 dark:border-white/10 text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/5 font-medium text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Schedula Authentication Form with Refined Typographic Scale */
           <div className="w-full space-y-5">
 
             {verificationEmail ? (
@@ -300,6 +386,42 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
                   </p>
                 </div>
 
+                {/* ROLE SELECTOR: Exactly two options (LECTURER | ADMIN) */}
+                <div className="p-1 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole('lecturer');
+                      setErrorMsg(null);
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                      role === 'lecturer'
+                        ? 'bg-white dark:bg-[#1E202C] text-blue-600 dark:text-blue-400 shadow-sm border border-black/5 dark:border-white/10'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <GraduationCap className="w-4 h-4" />
+                    <span>Lecturer</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole('admin');
+                      setMode('signin');
+                      setErrorMsg(null);
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                      role === 'admin'
+                        ? 'bg-white dark:bg-[#1E202C] text-blue-600 dark:text-blue-400 shadow-sm border border-black/5 dark:border-white/10'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Admin</span>
+                  </button>
+                </div>
+
                 {errorMsg && (
                   <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-medium text-rose-700 dark:text-rose-300 space-y-2">
                     <div className="flex items-start gap-2">
@@ -346,37 +468,35 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
                     <input
                       type="email"
                       required
-                      disabled={submitting || isLoading}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Email address"
-                      className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-white/5 backdrop-blur-md border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-sm font-medium focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none transition-all disabled:opacity-60"
+                      placeholder={role === 'lecturer' ? 'Lecturer email address' : 'Administrator email address'}
+                      className="w-full px-4 py-3 rounded-xl bg-white/60 dark:bg-white/5 backdrop-blur-md border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-sm font-medium focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none transition-all"
                     />
                   </div>
 
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      disabled={submitting || isLoading}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Password"
-                      className="w-full px-4 py-3 pr-12 rounded-xl bg-white/60 dark:bg-white/5 backdrop-blur-md border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-sm font-medium focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none transition-all disabled:opacity-60"
-                    />
-                    <button
-                      type="button"
-                      disabled={submitting || isLoading}
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors p-1 cursor-pointer"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                  <div>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Password"
+                        className="w-full pl-4 pr-11 py-3 rounded-xl bg-white/60 dark:bg-white/5 backdrop-blur-md border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder:text-zinc-500 dark:placeholder:text-zinc-400 text-sm font-medium focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
 
                   {mode === 'signin' && (
-                    <div className="flex justify-center">
+                    <div className="flex justify-end">
                       <button
                         type="button"
                         onClick={() => setShowForgotPassword(true)}
@@ -399,7 +519,7 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
                           <span>{mode === 'signin' ? 'Signing in...' : 'Creating account...'}</span>
                         </>
                       ) : (
-                        <span>{mode === 'signin' ? 'Sign In' : 'Create Account'}</span>
+                        <span>{mode === 'signin' ? `Sign In as ${role === 'lecturer' ? 'Lecturer' : 'Admin'}` : `Create ${role === 'lecturer' ? 'Lecturer' : 'Admin'} Account`}</span>
                       )}
                     </button>
                   </div>
@@ -426,14 +546,18 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
                       <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.19C.43 8.12 0 9.87 0 12s.43 3.88 1.19 5.42l4.09-3.15z"/>
                       <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.24 0 3.17 2.64 1.19 6.58l4.09 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
                     </svg>
-                    <span>Continue with Google</span>
+                    <span>Continue with Google ({role === 'lecturer' ? 'Lecturer' : 'Admin'})</span>
                   </button>
                 </div>
 
                 <div className="pt-1 text-center text-sm text-zinc-600 dark:text-zinc-400">
-                  {mode === 'signin' ? (
+                  {role === 'admin' ? (
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Administrator portal is restricted to authorized administrative personnel.
+                    </p>
+                  ) : mode === 'signin' ? (
                     <p>
-                      Don&apos;t have an account?{' '}
+                      Faculty member registering for the first time?{' '}
                       <button
                         type="button"
                         onClick={() => {
@@ -443,7 +567,7 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
                         }}
                         className="text-zinc-900 dark:text-white font-semibold hover:underline cursor-pointer ml-1"
                       >
-                        Sign up
+                        Register
                       </button>
                     </p>
                   ) : (
@@ -468,7 +592,8 @@ export function LoginScreen({ onClose, onOpenDashboard }: LoginScreenProps) {
             )}
 
           </div>
-        </div>
+        )}
+
       </div>
     </div>
   );

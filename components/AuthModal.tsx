@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Loader2, AlertCircle, Sun, Moon } from 'lucide-react';
+import { X, Loader2, AlertCircle, Sun, Moon, GraduationCap, ShieldCheck } from 'lucide-react';
 import { SchedulaLogo } from './SchedulaLogo';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, UserRole } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 
 interface AuthModalProps {
@@ -21,6 +21,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
   const isDark = mounted ? theme === 'dark' : false;
   const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
 
+  const [role, setRole] = useState<UserRole>('lecturer');
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -46,10 +47,12 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
     setError(null);
     setGoogleLoading(true);
     try {
-      const res = await signInWithGoogle();
+      const res = await signInWithGoogle(role);
       if (res.success) {
         onClose();
-        if (onAuthSuccess) {
+        if (res.targetRoute) {
+          router.replace(res.targetRoute);
+        } else if (onAuthSuccess) {
           onAuthSuccess();
         }
       } else {
@@ -79,7 +82,13 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
     setLoading(true);
     try {
       if (mode === 'signup') {
-        const res = await signUpWithEmail(name, email, password, 'University of Ghana');
+        if (role === 'admin') {
+          setError('Administrator accounts cannot be created here. Please sign in with an authorized administrator account.');
+          setLoading(false);
+          return;
+        }
+
+        const res = await signUpWithEmail(name, email, password, 'University of Ghana', role);
         if (res.success) {
           onClose();
           if (onAuthSuccess) {
@@ -89,10 +98,12 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
           setError(res.error || 'Failed to create account');
         }
       } else {
-        const res = await signInWithEmail(email, password);
+        const res = await signInWithEmail(email, password, role);
         if (res.success) {
           onClose();
-          if (onAuthSuccess) {
+          if (res.targetRoute) {
+            router.replace(res.targetRoute);
+          } else if (onAuthSuccess) {
             onAuthSuccess();
           }
         } else {
@@ -161,15 +172,51 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
             </div>
 
             {/* Modal Heading */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-4">
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-                {mode === 'signup' ? 'Create your account' : 'Welcome back'}
+                {role === 'admin' || mode === 'signin' ? 'Welcome back' : 'Create your account'}
               </h2>
               <p className="text-xs sm:text-[13px] text-zinc-500 dark:text-zinc-400 mt-1 font-normal">
-                {mode === 'signup'
-                  ? 'Get started with Schedula Academic Timetable Engine'
-                  : 'Access your university timetable console'}
+                {role === 'admin' || mode === 'signin'
+                  ? 'Access your university timetable console'
+                  : 'Get started with Schedula Academic Timetable Engine'}
               </p>
+            </div>
+
+            {/* Role Selector */}
+            <div className="p-1 mb-4 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 flex items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setRole('lecturer');
+                  setError(null);
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  role === 'lecturer'
+                    ? 'bg-white dark:bg-[#1E202C] text-blue-600 dark:text-blue-400 shadow-sm border border-black/5 dark:border-white/10'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                }`}
+              >
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Lecturer</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setRole('admin');
+                  setMode('signin');
+                  setError(null);
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  role === 'admin'
+                    ? 'bg-white dark:bg-[#1E202C] text-blue-600 dark:text-blue-400 shadow-sm border border-black/5 dark:border-white/10'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin</span>
+              </button>
             </div>
 
             {/* Error Message */}
@@ -180,7 +227,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
               </div>
             )}
 
-            {/* Google Quick Sign-In (Matching Video Button) */}
+            {/* Google Quick Sign-In */}
             <button
               type="button"
               onClick={handleGoogleSignIn}
@@ -209,7 +256,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
                   />
                 </svg>
               )}
-              <span>Continue with Google</span>
+              <span>Continue with Google ({role === 'lecturer' ? 'Lecturer' : 'Admin'})</span>
             </button>
 
             {/* Or Divider */}
@@ -222,7 +269,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
 
             {/* Email / Password Form */}
             <form onSubmit={handleSubmit} className="space-y-3">
-              {mode === 'signup' && (
+              {role === 'lecturer' && mode === 'signup' && (
                 <div>
                   <input
                     type="text"
@@ -240,7 +287,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Your email"
+                  placeholder={role === 'lecturer' ? 'Lecturer email address' : 'Admin email address'}
                   disabled={loading}
                   required
                   className="w-full px-4 py-3 rounded-full bg-zinc-50 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
@@ -252,7 +299,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={mode === 'signup' ? 'Create a password' : 'Password'}
+                  placeholder={role === 'lecturer' && mode === 'signup' ? 'Create a password' : 'Password'}
                   disabled={loading}
                   required
                   className="w-full px-4 py-3 rounded-full bg-zinc-50 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white transition-all"
@@ -282,34 +329,40 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{mode === 'signup' ? 'Creating account...' : 'Signing in...'}</span>
+                    <span>{role === 'lecturer' && mode === 'signup' ? 'Creating account...' : 'Signing in...'}</span>
                   </>
                 ) : (
-                  <span>Continue with email</span>
+                  <span>{role === 'lecturer' && mode === 'signup' ? 'Create Lecturer Account' : `Sign in as ${role === 'lecturer' ? 'Lecturer' : 'Admin'}`}</span>
                 )}
               </button>
             </form>
 
-            {/* Toggle Sign In / Sign Up */}
+            {/* Toggle Sign In / Sign Up (Lecturer only) */}
             <div className="mt-5 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode(mode === 'signup' ? 'signin' : 'signup');
-                  setError(null);
-                }}
-                className="text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
-              >
-                {mode === 'signup' ? (
-                  <>
-                    Already have an account? <span className="font-semibold underline">Sign in</span>
-                  </>
-                ) : (
-                  <>
-                    Don&apos;t have an account? <span className="font-semibold underline">Sign up</span>
-                  </>
-                )}
-              </button>
+              {role === 'admin' ? (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Administrator portal is restricted to authorized personnel.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode(mode === 'signup' ? 'signin' : 'signup');
+                    setError(null);
+                  }}
+                  className="text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  {mode === 'signup' ? (
+                    <>
+                      Already have an account? <span className="font-semibold underline">Sign in</span>
+                    </>
+                  ) : (
+                    <>
+                      Faculty member registering? <span className="font-semibold underline">Register</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </motion.div>
         </div>
