@@ -99,6 +99,50 @@
         "userEmail": { "type": "string", "maxLength": 100 }
       },
       "required": ["activityId", "action", "description", "timestamp", "type"]
+    },
+    "BookingRequest": {
+      "title": "BookingRequest",
+      "description": "Ad-hoc lecture hall booking request from faculty",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 80 },
+        "lecturerId": { "type": "string", "maxLength": 50 },
+        "lecturerName": { "type": "string", "maxLength": 100 },
+        "lecturerEmail": { "type": "string", "maxLength": 100 },
+        "hallId": { "type": "string", "maxLength": 30 },
+        "hallName": { "type": "string", "maxLength": 100 },
+        "buildingLocation": { "type": "string", "maxLength": 100 },
+        "day": { "type": "string", "maxLength": 20 },
+        "timeSlot": { "type": "string", "maxLength": 30 },
+        "courseCode": { "type": "string", "maxLength": 30 },
+        "courseTitle": { "type": "string", "maxLength": 150 },
+        "expectedAttendance": { "type": "number" },
+        "purpose": { "type": "string", "maxLength": 300 },
+        "status": { "type": "string", "maxLength": 20 },
+        "submittedAt": { "type": "string", "maxLength": 50 },
+        "reviewedAt": { "type": "string", "maxLength": 50 },
+        "reviewedBy": { "type": "string", "maxLength": 100 },
+        "adminFeedback": { "type": "string", "maxLength": 300 }
+      },
+      "required": ["id", "lecturerId", "hallId", "day", "timeSlot", "courseCode", "status", "submittedAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System and workflow notifications for users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 80 },
+        "recipientRole": { "type": "string", "maxLength": 20 },
+        "recipientId": { "type": "string", "maxLength": 50 },
+        "recipientEmail": { "type": "string", "maxLength": 100 },
+        "title": { "type": "string", "maxLength": 120 },
+        "message": { "type": "string", "maxLength": 300 },
+        "type": { "type": "string", "maxLength": 30 },
+        "referenceId": { "type": "string", "maxLength": 80 },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["id", "recipientRole", "title", "message", "type", "createdAt", "isRead"]
     }
   },
   "firestore": {
@@ -125,6 +169,14 @@
     "/activities/{activityId}": {
       "schema": "SystemActivity",
       "description": "Audit and activity log"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "BookingRequest",
+      "description": "Faculty room reservation requests"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User notification messages"
     }
   }
 }

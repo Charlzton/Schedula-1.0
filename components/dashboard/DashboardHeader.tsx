@@ -20,6 +20,7 @@ import {
 import { useTimetable } from '@/context/TimetableContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { NotificationBell } from '@/components/NotificationBell';
 import Image from 'next/image';
 
 interface DashboardHeaderProps {
@@ -230,6 +231,12 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
               <Moon className="w-4 h-4 text-slate-700" />
             )}
           </button>
+
+          {/* Notification Bell */}
+          <NotificationBell 
+            variant="admin" 
+            onNavigateToRequests={() => setActiveView('booking_requests')} 
+          />
 
           {/* Settings Gear Icon */}
           <button

@@ -82,6 +82,8 @@ export interface TimetableEntry {
   conflictReason?: string;
 }
 
+export type ScheduleAssignment = TimetableEntry;
+
 export interface SystemActivity {
   id: string;
   action: string;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Building2, Armchair, Check, AlertCircle } from 'lucide-react';
-import { LectureFacility } from '@/lib/dataset';
+import { generateLowestAvailableId } from '@/lib/idHelper';
 import { useTimetable } from '@/context/TimetableContext';
 
 interface FacilityModalProps {
@@ -12,7 +12,7 @@ interface FacilityModalProps {
 }
 
 export function FacilityModal({ isOpen, onClose, initialFacility }: FacilityModalProps) {
-  const { addFacility, updateFacility } = useTimetable();
+  const { addFacility, updateFacility, facilities } = useTimetable();
 
   const [hallId, setHallId] = useState('');
   const [hallName, setHallName] = useState('');
@@ -41,7 +41,7 @@ export function FacilityModal({ isOpen, onClose, initialFacility }: FacilityModa
       setHasSoundSystem(initialFacility.hasSoundSystem ?? true);
       setStatus(initialFacility.status || 'Active');
     } else {
-      setHallId(`H${Math.floor(100 + Math.random() * 900)}`);
+      setHallId(generateLowestAvailableId(facilities.map(f => f.hallId), 'H'));
       setHallName('');
       setCapacity(250);
       setVenueType('Lecture Theatre');
@@ -63,9 +63,27 @@ export function FacilityModal({ isOpen, onClose, initialFacility }: FacilityModa
     setValidationError(null);
 
     const cleanName = hallName.trim();
+    const cleanId = hallId.trim().toUpperCase();
+
+    if (!cleanId) {
+      setValidationError('Facility ID is required.');
+      return;
+    }
     if (!cleanName) {
       setValidationError('Facility name is required.');
       return;
+    }
+    if (!initialFacility) {
+      const idExists = facilities.some(f => f.hallId.trim().toUpperCase() === cleanId);
+      const nameExists = facilities.some(f => f.hallName.trim().toLowerCase() === cleanName.toLowerCase());
+      if (idExists) {
+        setValidationError(`A facility with ID "${cleanId}" already exists. Please use a unique ID.`);
+        return;
+      }
+      if (nameExists) {
+        setValidationError(`A facility with name "${cleanName}" already exists. Please use a unique name.`);
+        return;
+      }
     }
     if (capacity <= 0) {
       setValidationError('Capacity must be greater than 0 seats.');

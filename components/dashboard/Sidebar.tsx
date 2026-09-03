@@ -9,6 +9,7 @@ import {
   Clock, 
   CalendarDays, 
   BarChart3, 
+  Settings,
   LogOut,
   X,
   Loader2
@@ -27,7 +28,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
-  const { activeView, setActiveView, analytics } = useTimetable();
+  const { activeView, setActiveView, analytics, bookingRequests } = useTimetable();
   const { signOut, user, isSigningOut: authIsSigningOut } = useAuth();
   const { theme, mounted } = useTheme();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -59,6 +60,8 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [mobileOpen, onCloseMobile]);
 
+  const pendingBookingsCount = bookingRequests?.filter(r => r.status === 'Pending').length || 0;
+
   const navItems: { 
     id: DashboardViewType; 
     label: string; 
@@ -66,13 +69,12 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
     badge?: string | number; 
     badgeColor?: string 
   }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'courses', label: 'Courses', icon: BookOpen, badge: analytics.kpi.totalCourses },
-    { id: 'facilities', label: 'Lecture Facilities', icon: Building2, badge: analytics.kpi.totalFacilities },
+    { id: 'facilities', label: 'Facilities', icon: Building2, badge: analytics.kpi.totalFacilities },
     { id: 'lecturers', label: 'Lecturers', icon: Users, badge: analytics.kpi.totalLecturers },
-    { id: 'timeslots', label: 'Time Slots', icon: Clock, badge: analytics.kpi.totalTimeSlots },
-    { id: 'generated_timetables', label: 'Generated Timetables', icon: CalendarDays, badge: analytics.kpi.successfullyScheduled > 0 ? `${analytics.kpi.successfullyScheduled}` : undefined },
-    { id: 'reports', label: 'Reports', icon: BarChart3 },
+    { id: 'generated_timetables', label: 'Schedule', icon: CalendarDays, badge: analytics.kpi.successfullyScheduled > 0 ? `${analytics.kpi.successfullyScheduled}` : undefined },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   const handleNavClick = (view: DashboardViewType) => {

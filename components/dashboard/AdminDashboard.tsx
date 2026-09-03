@@ -12,6 +12,7 @@ import { LecturersView } from './views/LecturersView';
 import { TimeSlotsView } from './views/TimeSlotsView';
 import { GenerateTimetableView } from './views/GenerateTimetableView';
 import { GeneratedTimetablesView } from './views/GeneratedTimetablesView';
+import { BookingRequestsView } from './views/BookingRequestsView';
 import { ReportsView } from './views/ReportsView';
 import { SettingsView } from './views/SettingsView';
 
@@ -205,6 +206,10 @@ export function AdminDashboard() {
               />
             )}
             {/* ... rest of views ... */}
+            {activeView === 'booking_requests' && (
+              <BookingRequestsView />
+            )}
+
             {activeView === 'courses' && (
               <CoursesView 
                 onOpenAddCourse={handleAddCourse}

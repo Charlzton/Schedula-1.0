@@ -11,9 +11,12 @@ export function ScrollToTop({ className = '' }: ScrollToTopProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Scroll detection across both admin main scroll container and window
+  // Scroll detection across admin/lecturer main scroll containers and window
   useEffect(() => {
-    const getMainElement = () => document.getElementById('admin-main-content') || document.querySelector('main');
+    const getMainElement = () => 
+      document.getElementById('admin-main-content') || 
+      document.getElementById('lecturer-main-content') || 
+      document.querySelector('main');
 
     const toggleVisibility = () => {
       const winScroll = window.scrollY || 0;
@@ -51,7 +54,10 @@ export function ScrollToTop({ className = '' }: ScrollToTopProps) {
       top: 0,
       behavior: 'smooth',
     });
-    const mainEl = document.getElementById('admin-main-content') || document.querySelector('main');
+    const mainEl = 
+      document.getElementById('admin-main-content') || 
+      document.getElementById('lecturer-main-content') || 
+      document.querySelector('main');
     if (mainEl) {
       mainEl.scrollTo({
         top: 0,
@@ -64,25 +70,9 @@ export function ScrollToTop({ className = '' }: ScrollToTopProps) {
 
   return (
     <div
-      className={`no-print select-none fixed z-45 transition-all duration-300 ease-out
-        bottom-20 right-6 
-        lg:bottom-8 lg:left-[104px] lg:right-auto ${className}`}
+      className={`no-print select-none fixed z-30 transition-all duration-300 ease-out
+        bottom-6 right-6 sm:bottom-8 sm:right-8 ${className}`}
     >
-      {/* Tooltip on Hover */}
-      <div
-        role="tooltip"
-        className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none transition-all duration-200 transform ${
-          isHovered
-            ? 'opacity-100 scale-100'
-            : 'opacity-0 scale-95 pointer-events-none'
-        }`}
-      >
-        <div className="px-2.5 py-1 rounded-lg bg-zinc-900/90 dark:bg-black/90 text-white text-[11px] font-medium whitespace-nowrap shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-1.5">
-          <ArrowUp className="w-3 h-3 text-blue-400" />
-          <span>Scroll to top</span>
-        </div>
-      </div>
-
       <button
         type="button"
         id="floating-scroll-to-top-btn"

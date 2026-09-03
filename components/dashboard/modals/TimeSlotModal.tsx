@@ -12,7 +12,7 @@ interface TimeSlotModalProps {
 }
 
 export function TimeSlotModal({ isOpen, onClose, initialSlot }: TimeSlotModalProps) {
-  const { addTimeSlot, updateTimeSlot } = useTimetable();
+  const { addTimeSlot, updateTimeSlot, timeSlots } = useTimetable();
 
   const [slotId, setSlotId] = useState('');
   const [day, setDay] = useState<TimeSlot['day']>('Monday');
@@ -53,6 +53,20 @@ export function TimeSlotModal({ isOpen, onClose, initialSlot }: TimeSlotModalPro
     if (!startTime || !endTime) {
       setValidationError('Start time and end time are required.');
       return;
+    }
+
+    const cleanId = slotId.trim().toUpperCase();
+    if (!cleanId) {
+      setValidationError('Time slot ID is required.');
+      return;
+    }
+
+    if (!initialSlot) {
+      const exists = timeSlots.some(s => s.slotId.trim().toUpperCase() === cleanId);
+      if (exists) {
+        setValidationError(`A time slot with ID "${cleanId}" already exists.`);
+        return;
+      }
     }
 
     const slotData: TimeSlot = {

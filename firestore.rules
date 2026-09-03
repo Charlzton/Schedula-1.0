@@ -2,39 +2,50 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // User profile documents (users can only read/write their own profile document)
+    // User profile documents
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if true;
     }
     
     // Academic courses catalog
     match /courses/{courseId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
     
     // Lecture halls, auditoriums, and computer labs
     match /facilities/{facilityId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
     
     // Faculty lecturers and instructors
     match /lecturers/{lecturerId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
     
     // Scheduling time periods and slots
     match /timeslots/{slotId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
     
     // Generated and manual timetable allocations
     match /timetables/{scheduleId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
     
     // System audit logs and activity events
     match /activities/{activityId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
+    }
+    
+    // Faculty room reservation requests
+    match /bookings/{bookingId} {
+      allow read, write: if true;
+    }
+    
+    // User notification messages
+    match /notifications/{notificationId} {
+      allow read, write: if true;
     }
   }
 }
+

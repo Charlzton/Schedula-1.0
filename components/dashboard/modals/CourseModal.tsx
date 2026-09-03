@@ -12,7 +12,7 @@ interface CourseModalProps {
 }
 
 export function CourseModal({ isOpen, onClose, initialCourse }: CourseModalProps) {
-  const { addCourse, updateCourse, lecturers } = useTimetable();
+  const { addCourse, updateCourse, lecturers, courses } = useTimetable();
 
   const [courseCode, setCourseCode] = useState('');
   const [courseTitle, setCourseTitle] = useState('');
@@ -65,6 +65,13 @@ export function CourseModal({ isOpen, onClose, initialCourse }: CourseModalProps
     if (!cleanCode) {
       setValidationError('Course code is required (e.g. DCIT301).');
       return;
+    }
+    if (!initialCourse) {
+      const exists = courses.some(c => c.courseCode.trim().toUpperCase() === cleanCode);
+      if (exists) {
+        setValidationError(`A course with code "${cleanCode}" already exists. Please use a unique course code.`);
+        return;
+      }
     }
     if (!cleanTitle) {
       setValidationError('Course title is required.');

@@ -255,10 +255,7 @@ export function Navbar({
                   onClick={handleHomeClick}
                   className="w-full flex items-center justify-between p-3 rounded-2xl text-left text-sm font-medium text-white/90 hover:bg-white/10 transition-colors"
                 >
-                  <span className="flex items-center gap-2">
-                    <Home className="w-4 h-4 text-blue-400" />
-                    Overview
-                  </span>
+                  <span>Overview</span>
                 </button>
 
                 <button
@@ -266,10 +263,7 @@ export function Navbar({
                   onClick={handleFaqClick}
                   className="w-full flex items-center justify-between p-3 rounded-2xl text-left text-sm font-medium text-white/90 hover:bg-white/10 transition-colors"
                 >
-                  <span className="flex items-center gap-2">
-                    <HelpCircle className="w-4 h-4 text-blue-400" />
-                    FAQ
-                  </span>
+                  <span>FAQ</span>
                 </button>
 
                 <button

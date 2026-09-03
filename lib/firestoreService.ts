@@ -24,6 +24,7 @@ import {
   INITIAL_LECTURERS,
   INITIAL_TIME_SLOTS
 } from './dataset';
+import { RoomBookingRequest, NotificationItem } from './lecturerTypes';
 import { handleFirestoreError, OperationType } from './firestoreErrors';
 
 /**
@@ -334,6 +335,88 @@ export async function saveActivityToFirestore(activity: SystemActivity): Promise
     await setDoc(doc(db, 'activities', docId), cleanFirestoreData(activity), { merge: true });
   } catch (error) {
     console.warn(`[Firestore] Failed to save activity ${activity.id}:`, error);
+  }
+}
+
+// ---------------- BOOKING REQUEST OPERATIONS ---------------- //
+
+export async function saveBookingRequestToFirestore(booking: RoomBookingRequest): Promise<void> {
+  const docId = sanitizeDocId(booking.id);
+  try {
+    await setDoc(doc(db, 'bookings', docId), cleanFirestoreData(booking), { merge: true });
+  } catch (error) {
+    console.warn(`[Firestore] Note: Failed to sync booking request ${booking.id} to remote server:`, error);
+  }
+}
+
+export async function updateBookingStatusInFirestore(
+  bookingId: string, 
+  status: 'Approved' | 'Rejected' | 'Pending' | 'Withdrawn',
+  details?: { reviewedBy?: string; reviewedAt?: string; adminFeedback?: string }
+): Promise<void> {
+  const docId = sanitizeDocId(bookingId);
+  try {
+    const updateData: any = {
+      status,
+      reviewedAt: details?.reviewedAt || new Date().toISOString(),
+      ...(details?.reviewedBy && { reviewedBy: details.reviewedBy }),
+      ...(details?.adminFeedback !== undefined && { adminFeedback: details.adminFeedback })
+    };
+    await setDoc(doc(db, 'bookings', docId), cleanFirestoreData(updateData), { merge: true });
+  } catch (error) {
+    console.warn(`[Firestore] Note: Failed to sync booking status ${bookingId} to remote server:`, error);
+  }
+}
+
+export async function deleteBookingRequestFromFirestore(bookingId: string): Promise<void> {
+  const docId = sanitizeDocId(bookingId);
+  try {
+    await deleteDoc(doc(db, 'bookings', docId));
+  } catch (error) {
+    console.warn(`[Firestore] Note: Failed to delete booking ${bookingId} from remote server:`, error);
+  }
+}
+
+// ---------------- NOTIFICATION OPERATIONS ---------------- //
+
+export async function createNotificationInFirestore(notification: NotificationItem): Promise<void> {
+  const docId = sanitizeDocId(notification.id);
+  try {
+    await setDoc(doc(db, 'notifications', docId), cleanFirestoreData(notification), { merge: true });
+  } catch (error) {
+    console.warn(`[Firestore] Failed to create notification ${notification.id}:`, error);
+  }
+}
+
+export async function markNotificationAsReadInFirestore(notificationId: string): Promise<void> {
+  const docId = sanitizeDocId(notificationId);
+  try {
+    await setDoc(doc(db, 'notifications', docId), { isRead: true }, { merge: true });
+  } catch (error) {
+    console.warn(`[Firestore] Failed to mark notification as read ${notificationId}:`, error);
+  }
+}
+
+export async function markAllNotificationsAsReadInFirestore(notificationIds: string[]): Promise<void> {
+  if (!notificationIds.length) return;
+  try {
+    const batch = writeBatch(db);
+    for (const id of notificationIds) {
+      const docRef = doc(db, 'notifications', sanitizeDocId(id));
+      batch.set(docRef, { isRead: true }, { merge: true });
+    }
+    await batch.commit();
+  } catch (error) {
+    console.warn('[Firestore] Failed to mark all notifications as read:', error);
+  }
+}
+
+export async function deleteNotificationFromFirestore(notificationId: string): Promise<void> {
+  const docId = sanitizeDocId(notificationId);
+  try {
+    await deleteDoc(doc(db, 'notifications', docId));
+  } catch (error) {
+    console.warn(`[Firestore] Failed to delete notification ${notificationId}:`, error);
   }
 }
 

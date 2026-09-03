@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Users, Mail, Phone, BookOpen, Check, AlertCircle } from 'lucide-react';
-import { Lecturer } from '@/lib/dataset';
+import { generateLowestAvailableId } from '@/lib/idHelper';
 import { useTimetable } from '@/context/TimetableContext';
 
 interface LecturerModalProps {
@@ -12,7 +12,7 @@ interface LecturerModalProps {
 }
 
 export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModalProps) {
-  const { addLecturer, updateLecturer, courses } = useTimetable();
+  const { addLecturer, updateLecturer, lecturers, courses } = useTimetable();
 
   const [lecturerId, setLecturerId] = useState('');
   const [fullName, setFullName] = useState('');
@@ -35,7 +35,7 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
       setMaxWeeklyHours(initialLecturer.maxWeeklyHours ?? 12);
       setSelectedCourses(initialLecturer.specializations || []);
     } else {
-      setLecturerId(`LEC${Math.floor(100 + Math.random() * 900)}`);
+      setLecturerId(generateLowestAvailableId(lecturers.map(l => l.lecturerId), 'LEC'));
       setFullName('');
       setTitle('Dr.');
       setEmail('');
@@ -54,9 +54,28 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
     setValidationError(null);
 
     const cleanName = fullName.trim();
+    const cleanId = lecturerId.trim().toUpperCase();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!cleanId) {
+      setValidationError('Lecturer ID is required.');
+      return;
+    }
     if (!cleanName) {
       setValidationError('Lecturer full name is required.');
       return;
+    }
+    if (!initialLecturer) {
+      const idExists = lecturers.some(l => l.lecturerId.trim().toUpperCase() === cleanId);
+      const emailExists = cleanEmail && lecturers.some(l => l.email?.trim().toLowerCase() === cleanEmail);
+      if (idExists) {
+        setValidationError(`A lecturer with ID "${cleanId}" already exists.`);
+        return;
+      }
+      if (emailExists) {
+        setValidationError(`A lecturer with email "${cleanEmail}" already exists.`);
+        return;
+      }
     }
 
     const lecturerData: Lecturer = {

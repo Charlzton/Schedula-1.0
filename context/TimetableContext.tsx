@@ -23,6 +23,7 @@ import {
   INITIAL_TIME_SLOTS,
   INITIAL_SYSTEM_ACTIVITIES
 } from '@/lib/dataset';
+import { RoomBookingRequest, NotificationItem } from '@/lib/lecturerTypes';
 import { 
   generateIntelligentTimetable, 
   validateScheduleEntries, 
@@ -54,6 +55,13 @@ import {
   saveAllSchedulesToFirestore,
   clearAllSchedulesFromFirestore,
   saveActivityToFirestore,
+  saveBookingRequestToFirestore,
+  updateBookingStatusInFirestore,
+  deleteBookingRequestFromFirestore,
+  createNotificationInFirestore,
+  markNotificationAsReadInFirestore,
+  markAllNotificationsAsReadInFirestore,
+  deleteNotificationFromFirestore,
   ensureFirestoreInitialized
 } from '@/lib/firestoreService';
 
@@ -63,6 +71,7 @@ export type DashboardViewType =
   | 'facilities'
   | 'lecturers'
   | 'timeslots'
+  | 'booking_requests'
   | 'generate'
   | 'generated_timetables'
   | 'reports'
@@ -76,6 +85,8 @@ interface TimetableContextType {
   residentialHalls: ResidentialHall[];
   schedules: TimetableEntry[];
   systemActivities: SystemActivity[];
+  bookingRequests: RoomBookingRequest[];
+  notifications: NotificationItem[];
   activeView: DashboardViewType;
   setActiveView: (view: DashboardViewType) => void;
   selectedSemester: 'All' | 'Semester 1' | 'Semester 2';
@@ -112,6 +123,16 @@ interface TimetableContextType {
   deleteTimeSlot: (id: string) => void;
   bulkDeleteTimeSlots: (ids: string[]) => void;
 
+  // Booking & Notifications actions
+  submitBookingRequest: (request: Omit<RoomBookingRequest, 'id' | 'submittedAt' | 'status'>) => Promise<void>;
+  approveBookingRequest: (bookingId: string, feedback?: string) => Promise<void>;
+  rejectBookingRequest: (bookingId: string, feedback?: string) => Promise<void>;
+  withdrawBookingRequest: (bookingId: string) => Promise<void>;
+  cancelBookingRequest: (bookingId: string) => Promise<void>;
+  markNotificationRead: (notificationId: string) => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
+  deleteNotification: (notificationId: string) => Promise<void>;
+
   // Generator & schedule actions
   runGeneration: (options?: GenerationOptions) => Promise<GenerationResult>;
   generateOptimizedTimetable: () => number;
@@ -138,6 +159,8 @@ const STORAGE_KEY_LECTURERS = 'schedula_lecturers_v1';
 const STORAGE_KEY_TIMESLOTS = 'schedula_timeslots_v1';
 const STORAGE_KEY_SCHEDULES = 'schedula_schedules_v1';
 const STORAGE_KEY_ACTIVITIES = 'schedula_activities_v1';
+const STORAGE_KEY_BOOKINGS = 'schedula_bookings_v1';
+const STORAGE_KEY_NOTIFICATIONS = 'schedula_notifications_v1';
 
 export function TimetableProvider({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -227,6 +250,28 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     return INITIAL_SYSTEM_ACTIVITIES;
   });
 
+  const [bookingRequests, setBookingRequests] = useState<RoomBookingRequest[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_BOOKINGS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_NOTIFICATIONS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
   const [activeView, setActiveView] = useState<DashboardViewType>('dashboard');
   const [selectedSemester, setSelectedSemester] = useState<'All' | 'Semester 1' | 'Semester 2'>('Semester 1');
   const [selectedLevel, setSelectedLevel] = useState<'All' | 100 | 200 | 300 | 400>('All');
@@ -244,8 +289,10 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEY_TIMESLOTS, JSON.stringify(timeSlots));
       localStorage.setItem(STORAGE_KEY_SCHEDULES, JSON.stringify(schedules));
       localStorage.setItem(STORAGE_KEY_ACTIVITIES, JSON.stringify(systemActivities));
+      localStorage.setItem(STORAGE_KEY_BOOKINGS, JSON.stringify(bookingRequests));
+      localStorage.setItem(STORAGE_KEY_NOTIFICATIONS, JSON.stringify(notifications));
     } catch {}
-  }, [courses, facilities, lecturers, timeSlots, schedules, systemActivities]);
+  }, [courses, facilities, lecturers, timeSlots, schedules, systemActivities, bookingRequests, notifications]);
 
   // Firestore Real-Time Subscriptions & Initialization
   useEffect(() => {
@@ -331,6 +378,26 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
           console.warn('[Firestore] Activities sync notice:', err.message);
         });
         unsubscribes.push(unsubActivities);
+
+        // Step 8: Subscribe to Bookings
+        const unsubBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
+          const remoteBookings = snapshot.docs.map((docSnap) => docSnap.data() as RoomBookingRequest);
+          setBookingRequests(remoteBookings);
+        }, (err) => {
+          console.warn('[Firestore] Bookings sync notice:', err.message);
+        });
+        unsubscribes.push(unsubBookings);
+
+        // Step 9: Subscribe to Notifications
+        const unsubNotifications = onSnapshot(collection(db, 'notifications'), (snapshot) => {
+          const remoteNotifs = snapshot.docs.map((docSnap) => docSnap.data() as NotificationItem);
+          // Sort by creation time newest first
+          remoteNotifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setNotifications(remoteNotifs);
+        }, (err) => {
+          console.warn('[Firestore] Notifications sync notice:', err.message);
+        });
+        unsubscribes.push(unsubNotifications);
 
       } catch (error) {
         console.warn('[Firestore] Initialization sync notice:', error);
@@ -754,6 +821,226 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
   };
 
+  // ---------------- BOOKING & NOTIFICATION ACTIONS ---------------- //
+
+  const submitBookingRequest = async (request: Omit<RoomBookingRequest, 'id' | 'submittedAt' | 'status'>): Promise<void> => {
+    const bookingId = `REQ-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    const newBooking: RoomBookingRequest = {
+      ...request,
+      id: bookingId,
+      status: 'Pending',
+      submittedAt: new Date().toISOString()
+    };
+
+    // Optimistic update
+    setBookingRequests(prev => [newBooking, ...prev.filter(b => b.id !== bookingId)]);
+
+    try {
+      await saveBookingRequestToFirestore(newBooking);
+
+      // Create Admin Notification
+      const adminNotif: NotificationItem = {
+        id: `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        recipientRole: 'admin',
+        title: 'New Room Booking Request',
+        message: `${newBooking.lecturerName} requested ${newBooking.hallName} on ${newBooking.day} (${newBooking.timeSlot}) for ${newBooking.courseCode}.`,
+        type: 'booking_request',
+        referenceId: bookingId,
+        createdAt: new Date().toISOString(),
+        isRead: false
+      };
+      await createNotificationInFirestore(adminNotif);
+
+      addActivity(
+        'Room Booking Requested', 
+        `${newBooking.lecturerName} requested ${newBooking.hallName} on ${newBooking.day} (${newBooking.timeSlot})`, 
+        'create'
+      );
+    } catch (err) {
+      console.warn('[Context] submitBookingRequest error:', err);
+      throw err;
+    }
+  };
+
+  const approveBookingRequest = async (bookingId: string, feedback?: string): Promise<void> => {
+    const targetBooking = bookingRequests.find(b => b.id === bookingId);
+    const reviewerName = user?.name || user?.email || 'Administrator';
+    const nowIso = new Date().toISOString();
+
+    // Optimistic update
+    setBookingRequests(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          status: 'Approved',
+          reviewedAt: nowIso,
+          reviewedBy: reviewerName,
+          adminFeedback: feedback || b.adminFeedback
+        };
+      }
+      return b;
+    }));
+
+    try {
+      await updateBookingStatusInFirestore(bookingId, 'Approved', {
+        reviewedBy: reviewerName,
+        reviewedAt: nowIso,
+        adminFeedback: feedback
+      });
+
+      if (targetBooking) {
+        // Create Lecturer Notification
+        const lecturerNotif: NotificationItem = {
+          id: `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          recipientRole: 'lecturer',
+          recipientId: targetBooking.lecturerId,
+          recipientEmail: targetBooking.lecturerEmail,
+          title: 'Room Booking Approved',
+          message: `Your reservation for ${targetBooking.hallName} on ${targetBooking.day} (${targetBooking.timeSlot}) has been approved.${feedback ? ` Note: "${feedback}"` : ''}`,
+          type: 'booking_approved',
+          referenceId: bookingId,
+          createdAt: nowIso,
+          isRead: false
+        };
+        await createNotificationInFirestore(lecturerNotif);
+
+        addActivity(
+          'Booking Approved', 
+          `Approved ${targetBooking.hallName} for ${targetBooking.lecturerName} on ${targetBooking.day}`, 
+          'create'
+        );
+      }
+    } catch (err) {
+      console.warn('[Context] approveBookingRequest error:', err);
+      throw err;
+    }
+  };
+
+  const rejectBookingRequest = async (bookingId: string, feedback?: string): Promise<void> => {
+    const targetBooking = bookingRequests.find(b => b.id === bookingId);
+    const reviewerName = user?.name || user?.email || 'Administrator';
+    const nowIso = new Date().toISOString();
+
+    // Optimistic update
+    setBookingRequests(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          status: 'Rejected',
+          reviewedAt: nowIso,
+          reviewedBy: reviewerName,
+          adminFeedback: feedback || 'Venue unavailable or conflicts with scheduled academic session.'
+        };
+      }
+      return b;
+    }));
+
+    try {
+      await updateBookingStatusInFirestore(bookingId, 'Rejected', {
+        reviewedBy: reviewerName,
+        reviewedAt: nowIso,
+        adminFeedback: feedback || 'Venue unavailable or conflicts with scheduled academic session.'
+      });
+
+      if (targetBooking) {
+        // Create Lecturer Notification
+        const lecturerNotif: NotificationItem = {
+          id: `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          recipientRole: 'lecturer',
+          recipientId: targetBooking.lecturerId,
+          recipientEmail: targetBooking.lecturerEmail,
+          title: 'Room Booking Declined',
+          message: `Your reservation for ${targetBooking.hallName} on ${targetBooking.day} (${targetBooking.timeSlot}) could not be accommodated.${feedback ? ` Reason: "${feedback}"` : ''}`,
+          type: 'booking_rejected',
+          referenceId: bookingId,
+          createdAt: nowIso,
+          isRead: false
+        };
+        await createNotificationInFirestore(lecturerNotif);
+
+        addActivity(
+          'Booking Rejected', 
+          `Declined booking for ${targetBooking.hallName} requested by ${targetBooking.lecturerName}`, 
+          'conflict'
+        );
+      }
+    } catch (err) {
+      console.warn('[Context] rejectBookingRequest error:', err);
+      throw err;
+    }
+  };
+
+  const withdrawBookingRequest = async (bookingId: string): Promise<void> => {
+    const targetBooking = bookingRequests.find(b => b.id === bookingId);
+    const nowIso = new Date().toISOString();
+
+    // Optimistic update
+    setBookingRequests(prev => prev.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          status: 'Withdrawn',
+          reviewedAt: nowIso
+        };
+      }
+      return b;
+    }));
+
+    try {
+      await updateBookingStatusInFirestore(bookingId, 'Withdrawn', {
+        reviewedAt: nowIso
+      });
+
+      if (targetBooking) {
+        // Create Admin Notification
+        const adminNotif: NotificationItem = {
+          id: `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          recipientRole: 'admin',
+          title: 'Booking Request Withdrawn',
+          message: `${targetBooking.lecturerName} withdrew the room request for ${targetBooking.hallName} on ${targetBooking.day} (${targetBooking.timeSlot}).`,
+          type: 'booking_request',
+          referenceId: bookingId,
+          createdAt: nowIso,
+          isRead: false
+        };
+        await createNotificationInFirestore(adminNotif);
+
+        addActivity(
+          'Booking Withdrawn', 
+          `${targetBooking.lecturerName} withdrew booking request for ${targetBooking.hallName}`, 
+          'update'
+        );
+      }
+    } catch (err) {
+      console.warn('[Context] withdrawBookingRequest error:', err);
+      // Revert if error
+      if (targetBooking) {
+        setBookingRequests(prev => prev.map(b => b.id === bookingId ? targetBooking : b));
+      }
+      throw err;
+    }
+  };
+
+  const cancelBookingRequest = async (bookingId: string): Promise<void> => {
+    await withdrawBookingRequest(bookingId);
+  };
+
+  const markNotificationRead = async (notificationId: string): Promise<void> => {
+    setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n));
+    await markNotificationAsReadInFirestore(notificationId);
+  };
+
+  const markAllNotificationsRead = async (): Promise<void> => {
+    const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    await markAllNotificationsAsReadInFirestore(unreadIds);
+  };
+
+  const deleteNotification = async (notificationId: string): Promise<void> => {
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    await deleteNotificationFromFirestore(notificationId);
+  };
+
   // Dynamically compute all dashboard metrics and analytics whenever state updates
   const analytics = useMemo(() => {
     return calculateDashboardAnalytics(courses, facilities, lecturers, timeSlots, schedules);
@@ -769,6 +1056,8 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         residentialHalls,
         schedules,
         systemActivities,
+        bookingRequests,
+        notifications,
         activeView,
         setActiveView,
         selectedSemester,
@@ -799,6 +1088,14 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         updateTimeSlot,
         deleteTimeSlot,
         bulkDeleteTimeSlots,
+        submitBookingRequest,
+        approveBookingRequest,
+        rejectBookingRequest,
+        withdrawBookingRequest,
+        cancelBookingRequest,
+        markNotificationRead,
+        markAllNotificationsRead,
+        deleteNotification,
         runGeneration,
         generateOptimizedTimetable,
         updateScheduleEntry,
