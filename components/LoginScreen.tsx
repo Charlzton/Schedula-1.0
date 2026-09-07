@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Mail, 
@@ -49,6 +49,18 @@ export function LoginScreen({ onOpenDashboard }: LoginScreenProps) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
 
+  // Direct auto-redirect when user is authenticated (No intermediate screen)
+  useEffect(() => {
+    if (user && !isLoading) {
+      const target = user.role === 'lecturer' ? '/lecturer' : '/dashboard';
+      if (onOpenDashboard && target === '/dashboard') {
+        onOpenDashboard();
+      } else {
+        router.replace(target);
+      }
+    }
+  }, [user, isLoading, router, onOpenDashboard]);
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -77,11 +89,12 @@ export function LoginScreen({ onOpenDashboard }: LoginScreenProps) {
             setErrorMsg(res.error || 'Incorrect email or password.');
           }
         } else {
-          setSubmitting(false);
-          if (res.targetRoute) {
-            router.replace(res.targetRoute);
-          } else if (onOpenDashboard) {
+          // Direct navigation without intermediate screen
+          const target = res.targetRoute || (role === 'lecturer' ? '/lecturer' : '/dashboard');
+          if (onOpenDashboard && target === '/dashboard') {
             onOpenDashboard();
+          } else {
+            router.replace(target);
           }
         }
       } else {
@@ -115,11 +128,11 @@ export function LoginScreen({ onOpenDashboard }: LoginScreenProps) {
         setSubmitting(false);
         setErrorMsg(res.error || 'Google authentication failed.');
       } else {
-        setSubmitting(false);
-        if (res.targetRoute) {
-          router.replace(res.targetRoute);
-        } else if (onOpenDashboard) {
+        const target = res.targetRoute || (role === 'lecturer' ? '/lecturer' : '/dashboard');
+        if (onOpenDashboard && target === '/dashboard') {
           onOpenDashboard();
+        } else {
+          router.replace(target);
         }
       }
     } catch (err: any) {
@@ -167,82 +180,24 @@ export function LoginScreen({ onOpenDashboard }: LoginScreenProps) {
       <div className="relative rounded-3xl p-6 sm:p-7 glass-panel shadow-2xl transition-all">
         
         {/* Brand Header */}
-        <div className="flex flex-col items-center text-center space-y-2 mb-4">
+        <div className="flex flex-col items-center text-center space-y-3 mb-5">
           <SchedulaLogo size="lg" isDark={isDark} />
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            {user 
-              ? 'Account Overview' 
-              : showForgotPassword 
+            {showForgotPassword 
               ? 'Reset Password' 
               : mode === 'signin' 
               ? 'Welcome back' 
               : 'Create account'}
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {user 
-              ? 'Signed into Schedula Academic Console'
-              : showForgotPassword
-              ? 'Enter your email to receive recovery instructions'
-              : 'Academic Timetable & Facility Scheduling'}
-          </p>
         </div>
 
-        {/* 1. Logged-in State */}
+        {/* 1. Authenticated State: Direct Redirecting (No intermediate card) */}
         {user ? (
-          <div className="space-y-4 text-center py-1">
-            <div className="relative w-16 h-16 mx-auto rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-white/10 shadow-sm">
-              {user.avatar ? (
-                <Image
-                  src={user.avatar}
-                  alt={user.name || 'User'}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center text-xl font-bold">
-                  {(user.name || user.email || 'U').charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-0.5">
-              <span className="inline-block text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 mb-1">
-                {user.role === 'admin' ? 'Administrator' : 'Faculty Member'}
-              </span>
-              <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-                {user.name}
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {user.email}
-              </p>
-            </div>
-
-            <div className="space-y-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (user.role === 'lecturer') {
-                    router.push('/lecturer');
-                  } else if (onOpenDashboard) {
-                    onOpenDashboard();
-                  } else {
-                    router.push('/dashboard');
-                  }
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-xs transition-all shadow-xs active:scale-[0.98] cursor-pointer"
-              >
-                {user.role === 'lecturer' ? 'Open Lecturer Portal' : 'Open Administrator Dashboard'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="w-full py-2 px-4 rounded-xl border border-zinc-200/80 dark:border-white/10 text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 font-medium text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Sign Out</span>
-              </button>
-            </div>
+          <div className="py-12 text-center space-y-3">
+            <Loader2 className="w-7 h-7 animate-spin text-blue-600 dark:text-blue-400 mx-auto" />
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+              Redirecting to {user.role === 'lecturer' ? 'Lecturer Portal' : 'Dashboard'}...
+            </p>
           </div>
         ) : (
           /* 2. Unauthenticated Flows */

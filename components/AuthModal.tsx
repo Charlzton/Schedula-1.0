@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Loader2, AlertCircle, CheckCircle2, Sun, Moon, Eye, EyeOff } from 'lucide-react';
-import { SchedulaLogo } from './SchedulaLogo';
 import { useAuth, UserRole } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -57,11 +56,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
       const res = await signInWithGoogle(role);
       if (res.success) {
         onClose();
-        if (res.targetRoute) {
-          router.replace(res.targetRoute);
-        } else if (onAuthSuccess) {
-          onAuthSuccess();
-        }
+        const target = res.targetRoute || (role === 'lecturer' ? '/lecturer' : '/dashboard');
+        router.replace(target);
       } else {
         setError(res.error || 'Failed to sign in with Google');
       }
@@ -100,9 +96,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
         const res = await signUpWithEmail(name, cleanEmail, password, 'University of Ghana', role);
         if (res.success) {
           onClose();
-          if (onAuthSuccess) {
-            onAuthSuccess();
-          }
+          const target = res.targetRoute || (role === 'lecturer' ? '/lecturer' : '/dashboard');
+          router.replace(target);
         } else {
           setError(res.error || 'Failed to create account');
         }
@@ -110,11 +105,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
         const res = await signInWithEmail(cleanEmail, password, role);
         if (res.success) {
           onClose();
-          if (res.targetRoute) {
-            router.replace(res.targetRoute);
-          } else if (onAuthSuccess) {
-            onAuthSuccess();
-          }
+          const target = res.targetRoute || (role === 'lecturer' ? '/lecturer' : '/dashboard');
+          router.replace(target);
         } else {
           setError(res.error || 'Incorrect email or password');
         }
@@ -201,9 +193,8 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="relative w-full max-w-[420px] rounded-3xl p-6 sm:p-7 glass-panel shadow-2xl z-10 my-auto"
           >
-            {/* Schedula Insignia & Heading */}
-            <div className="flex flex-col items-center text-center space-y-2 mb-4">
-              <SchedulaLogo size="lg" isDark={isDark} />
+            {/* Clean Minimalist Heading */}
+            <div className="text-center mb-5">
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
                 {showForgotPassword
                   ? 'Reset Password'
@@ -211,11 +202,6 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', onAuthSucce
                   ? 'Welcome back'
                   : 'Create account'}
               </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {showForgotPassword
-                  ? 'Enter your email to receive recovery instructions'
-                  : 'Academic Timetable & Facility Scheduling'}
-              </p>
             </div>
 
             {showForgotPassword ? (

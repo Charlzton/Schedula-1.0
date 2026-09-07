@@ -12,15 +12,17 @@ import {
   Clock,
   MapPin,
   Users,
-  BookOpen
+  BookOpen,
+  User
 } from 'lucide-react';
 
 interface LecturerOverviewViewProps {
   onNavigate: (view: LecturerViewType) => void;
   bookingRequests: RoomBookingRequest[];
+  onOpenProfileModal?: () => void;
 }
 
-export function LecturerOverviewView({ onNavigate, bookingRequests }: LecturerOverviewViewProps) {
+export function LecturerOverviewView({ onNavigate, bookingRequests, onOpenProfileModal }: LecturerOverviewViewProps) {
   const { user, lecturerProfile } = useAuth();
   const { schedules, courses, lecturers } = useTimetable();
 
@@ -353,6 +355,31 @@ export function LecturerOverviewView({ onNavigate, bookingRequests }: LecturerOv
                 <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
               </div>
             </button>
+
+            {onOpenProfileModal && (
+              <button
+                type="button"
+                onClick={onOpenProfileModal}
+                className="w-full p-4 rounded-2xl liquid-glass-interactive border border-zinc-200/70 dark:border-white/10 text-left transition-all group cursor-pointer"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/20">
+                      <User className="w-4.5 h-4.5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-xs text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        Faculty Profile
+                      </h3>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        Manage contact details & availability
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </button>
+            )}
           </div>
         </div>
 

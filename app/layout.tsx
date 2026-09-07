@@ -6,7 +6,7 @@ import { TimetableProvider } from '@/context/TimetableContext';
 
 export const metadata: Metadata = {
   title: 'Schedula | Intelligent University Timetable Scheduling System',
-  description: 'Automated timetable scheduling and lecture hall allocation system for University of Ghana Department of Computer Science.',
+  description: 'Manage your schedule. Stay in control. Intelligent university timetable scheduling and hall allocation management system for academic administrators.',
   keywords: [
     'Schedula',
     'University Timetable',

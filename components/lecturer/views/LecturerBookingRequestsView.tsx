@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { RoomBookingRequest, LecturerViewType } from '@/lib/lecturerTypes';
 import { useTimetable } from '@/context/TimetableContext';
-import { DoorOpen, Plus, Search, Undo2, AlertCircle } from 'lucide-react';
+import { DoorOpen, Plus, Search, AlertCircle } from 'lucide-react';
 
 interface LecturerBookingRequestsViewProps {
   bookingRequests: RoomBookingRequest[];
@@ -15,7 +15,7 @@ export function LecturerBookingRequestsView({
   bookingRequests,
   onNavigate,
 }: LecturerBookingRequestsViewProps) {
-  const { withdrawBookingRequest } = useTimetable();
+  const { withdrawBookingRequest, highlightedBookingId, setHighlightedBookingId } = useTimetable();
 
   const [filterStatus, setFilterStatus] = useState<'All' | 'Pending' | 'Approved' | 'Rejected' | 'Withdrawn'>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +24,20 @@ export function LecturerBookingRequestsView({
   const [requestToWithdraw, setRequestToWithdraw] = useState<RoomBookingRequest | null>(null);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
+
+  // Auto-scroll and expand filter when navigated to a specific booking from a notification
+  React.useEffect(() => {
+    if (highlightedBookingId) {
+      setFilterStatus('All');
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`lecturer-booking-row-${highlightedBookingId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedBookingId]);
 
   const filteredRequests = bookingRequests.filter(req => {
     if (filterStatus !== 'All' && req.status !== filterStatus) return false;
@@ -144,13 +158,37 @@ export function LecturerBookingRequestsView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200/50 dark:divide-white/5">
-                {filteredRequests.map(req => (
-                  <tr key={req.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                {filteredRequests.map(req => {
+                  const isHighlighted = highlightedBookingId === req.id;
+                  return (
+                  <tr 
+                    key={req.id} 
+                    id={`lecturer-booking-row-${req.id}`}
+                    className={`transition-colors ${
+                      isHighlighted 
+                        ? 'bg-blue-50/20 dark:bg-blue-950/30 ring-1 ring-blue-500' 
+                        : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
+                    }`}
+                  >
                     
                     {/* Venue & Course */}
                     <td className="py-3.5 px-4 sm:px-5">
-                      <div className="font-bold text-zinc-900 dark:text-white">
-                        {req.hallName}
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-zinc-900 dark:text-white">
+                          {req.hallName}
+                        </div>
+                        {isHighlighted && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white shadow-xs">
+                            <span>Focused</span>
+                            <button
+                              type="button"
+                              onClick={() => setHighlightedBookingId(null)}
+                              className="hover:opacity-75 cursor-pointer ml-0.5"
+                            >
+                              &times;
+                            </button>
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                         {req.courseCode} — {req.courseTitle}
@@ -172,9 +210,16 @@ export function LecturerBookingRequestsView({
                       {req.expectedAttendance}
                     </td>
 
-                    {/* Purpose */}
-                    <td className="py-3.5 px-4 text-xs text-zinc-600 dark:text-zinc-400 max-w-xs truncate">
-                      {req.purpose || '—'}
+                    {/* Purpose & Admin Note */}
+                    <td className="py-3.5 px-4 text-xs max-w-xs">
+                      <div className="text-zinc-600 dark:text-zinc-400">
+                        {req.purpose || '—'}
+                      </div>
+                      {req.adminFeedback && (
+                        <div className="mt-1 text-[11px] font-medium text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 inline-block">
+                          Note: &ldquo;{req.adminFeedback}&rdquo;
+                        </div>
+                      )}
                     </td>
 
                     {/* Status */}
@@ -211,10 +256,9 @@ export function LecturerBookingRequestsView({
                               setWithdrawError(null);
                               setRequestToWithdraw(req);
                             }}
-                            className="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition-all cursor-pointer flex items-center gap-1"
+                            className="px-3 py-1 rounded-lg text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition-all cursor-pointer inline-flex items-center justify-center"
                           >
-                            <Undo2 className="w-3 h-3" />
-                            <span>Withdraw</span>
+                            Withdraw
                           </button>
                         )}
                         <span className="text-zinc-500 dark:text-zinc-400">
@@ -229,7 +273,8 @@ export function LecturerBookingRequestsView({
                     </td>
 
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>

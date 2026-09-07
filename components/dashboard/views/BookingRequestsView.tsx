@@ -26,12 +26,28 @@ export function BookingRequestsView() {
     approveBookingRequest, 
     rejectBookingRequest, 
     facilities, 
-    schedules 
+    schedules,
+    highlightedBookingId,
+    setHighlightedBookingId
   } = useTimetable();
 
   const [filterStatus, setFilterStatus] = useState<'All' | 'Pending' | 'Approved' | 'Rejected' | 'Withdrawn'>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [processingId, setProcessingId] = useState<string | null>(null);
+
+  // Auto-scroll and expand filter when navigated to a specific booking from a notification
+  React.useEffect(() => {
+    if (highlightedBookingId) {
+      setFilterStatus('All');
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`booking-card-${highlightedBookingId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedBookingId]);
 
   // Modal / Feedback state for Approving with Note or Rejecting with Reason
   const [actionModal, setActionModal] = useState<{
@@ -122,7 +138,7 @@ export function BookingRequestsView() {
     setFeedbackNote(
       type === 'approve' 
         ? 'Approved for scheduled session' 
-        : 'Venue is currently scheduled for official academic departmental lectures.'
+        : 'Conflicting departmental event'
     );
   };
 
@@ -221,10 +237,17 @@ export function BookingRequestsView() {
             const availability = checkVenueAvailability(req);
             const isProcessing = processingId === req.id;
 
+            const isHighlighted = highlightedBookingId === req.id;
+
             return (
               <div 
                 key={req.id} 
-                className="liquid-glass rounded-3xl border border-zinc-200/70 dark:border-white/10 p-4 sm:p-5 transition-all hover:border-zinc-300 dark:hover:border-white/20"
+                id={`booking-card-${req.id}`}
+                className={`liquid-glass rounded-3xl border p-4 sm:p-5 transition-all ${
+                  isHighlighted
+                    ? 'border-blue-500 ring-2 ring-blue-500/50 shadow-xl shadow-blue-500/10 bg-blue-50/10 dark:bg-blue-950/20'
+                    : 'border-zinc-200/70 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                }`}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   
@@ -239,6 +262,24 @@ export function BookingRequestsView() {
                       <span className="text-xs text-zinc-500 dark:text-zinc-400">
                         ({req.buildingLocation})
                       </span>
+
+                      {/* Focused Highlight Pill */}
+                      {isHighlighted && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-xs animate-pulse">
+                          <span>Focused from Notification</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setHighlightedBookingId(null);
+                            }}
+                            className="hover:opacity-75 cursor-pointer ml-0.5"
+                            title="Dismiss highlight"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
 
                       {/* Status Badge */}
                       {req.status === 'Pending' && (
@@ -358,6 +399,11 @@ export function BookingRequestsView() {
                           <span>Decline</span>
                         </button>
                       </>
+                    ) : req.status === 'Withdrawn' ? (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 text-xs font-semibold select-none">
+                        <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>Withdrawn by Lecturer</span>
+                      </div>
                     ) : (
                       <button
                         type="button"

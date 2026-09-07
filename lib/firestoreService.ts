@@ -22,7 +22,10 @@ import {
   INITIAL_COURSES,
   INITIAL_FACILITIES,
   INITIAL_LECTURERS,
-  INITIAL_TIME_SLOTS
+  INITIAL_TIME_SLOTS,
+  INITIAL_SYSTEM_ACTIVITIES,
+  INITIAL_BOOKING_REQUESTS,
+  INITIAL_NOTIFICATIONS
 } from './dataset';
 import { RoomBookingRequest, NotificationItem } from './lecturerTypes';
 import { handleFirestoreError, OperationType } from './firestoreErrors';
@@ -470,6 +473,31 @@ export async function ensureFirestoreInitialized(): Promise<{
       console.log('[Firestore] Seeding initial time slots dataset...');
       await bulkSaveTimeSlotsToFirestore(INITIAL_TIME_SLOTS);
       result.seededTimeSlots = true;
+    }
+
+    // 5. Check Activities
+    const activitiesSnap = await getDocs(collection(db, 'activities'));
+    if (activitiesSnap.empty && INITIAL_SYSTEM_ACTIVITIES.length > 0) {
+      console.log('[Firestore] Seeding initial system activity...');
+      await saveActivityToFirestore(INITIAL_SYSTEM_ACTIVITIES[0]);
+    }
+
+    // 6. Check Bookings
+    const bookingsSnap = await getDocs(collection(db, 'bookings'));
+    if (bookingsSnap.empty && INITIAL_BOOKING_REQUESTS.length > 0) {
+      console.log('[Firestore] Seeding initial room booking requests...');
+      for (const req of INITIAL_BOOKING_REQUESTS) {
+        await saveBookingRequestToFirestore(req as RoomBookingRequest);
+      }
+    }
+
+    // 7. Check Notifications
+    const notifsSnap = await getDocs(collection(db, 'notifications'));
+    if (notifsSnap.empty && INITIAL_NOTIFICATIONS.length > 0) {
+      console.log('[Firestore] Seeding initial notifications...');
+      for (const notif of INITIAL_NOTIFICATIONS) {
+        await createNotificationInFirestore(notif as NotificationItem);
+      }
     }
   } catch (error) {
     console.warn('[Firestore] Note during initial collections seed check:', error);

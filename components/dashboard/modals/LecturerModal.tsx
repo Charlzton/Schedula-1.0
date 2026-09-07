@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, Mail, Phone, BookOpen, Check, AlertCircle } from 'lucide-react';
 import { generateLowestAvailableId } from '@/lib/idHelper';
 import { useTimetable } from '@/context/TimetableContext';
+import { Lecturer } from '@/lib/dataset';
 
 interface LecturerModalProps {
   isOpen: boolean;
@@ -45,7 +46,7 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
       setSelectedCourses([]);
     }
     setValidationError(null);
-  }, [initialLecturer, isOpen]);
+  }, [initialLecturer, isOpen, lecturers]);
 
   if (!isOpen) return null;
 

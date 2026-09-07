@@ -75,31 +75,26 @@ export function HeroSection({
             </p>
           </motion.div>
 
-          {/* Hero CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-6 sm:mt-8 flex items-center justify-center"
-          >
-            <button
-              type="button"
-              disabled={isNavigatingDashboard}
-              aria-busy={isNavigatingDashboard}
-              onClick={handleCtaClick}
-              className="px-8 py-3.5 sm:py-4 rounded-full text-xs sm:text-sm font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 shadow-xl shadow-slate-900/15 dark:shadow-white/10 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[140px]"
-              id="hero-primary-coral-cta"
+          {/* Hero CTA Button (Only when unauthenticated to avoid redundant dual dashboard buttons) */}
+          {!user && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-6 sm:mt-8 flex items-center justify-center"
             >
-              {isNavigatingDashboard && user ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                  <span>Loading...</span>
-                </>
-              ) : (
-                <span>{user ? 'Dashboard' : 'Get Started'}</span>
-              )}
-            </button>
-          </motion.div>
+              <button
+                type="button"
+                disabled={isNavigatingDashboard}
+                aria-busy={isNavigatingDashboard}
+                onClick={handleCtaClick}
+                className="px-8 py-3.5 sm:py-4 rounded-full text-xs sm:text-sm font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 shadow-xl shadow-slate-900/15 dark:shadow-white/10 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[140px]"
+                id="hero-primary-coral-cta"
+              >
+                <span>Get Started</span>
+              </button>
+            </motion.div>
+          )}
         </div>
       </section>
     </div>

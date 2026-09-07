@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { DashboardHeader } from './DashboardHeader';
-import { HeroBackground } from '@/components/HeroBackground';
 import { useTheme } from '@/context/ThemeContext';
 import { DashboardOverviewView } from './views/DashboardOverviewView';
 import { CoursesView } from './views/CoursesView';
@@ -24,6 +23,7 @@ import { ImportExportModal } from './modals/ImportExportModal';
 import { AdvancedImportModal } from './modals/AdvancedImportModal';
 import { FloatingSchedulerButton } from './FloatingSchedulerButton';
 import { ScrollToTop } from '@/components/ScrollToTop';
+import { HeroBackground } from '@/components/HeroBackground';
 
 import { useTimetable } from '@/context/TimetableContext';
 import { Course, LectureFacility, Lecturer, TimeSlot } from '@/lib/dataset';
@@ -174,12 +174,9 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="h-screen w-full flex overflow-hidden relative text-zinc-900 dark:text-zinc-100 antialiased selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-950">
-      
-      {/* Reused Animated Glassmorphism Background (Fixed layer behind dashboard interface) */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 no-print">
-        <HeroBackground isDark={isDark} />
-      </div>
+    <div className="h-screen w-full flex overflow-hidden relative bg-[#F7F9FB] dark:bg-[#0A0B10] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-950">
+      {/* Subtle Animated Glassmorphism Background */}
+      <HeroBackground isDark={isDark} subdued={true} />
 
       {/* Sidebar navigation (Desktop static sidebar, Mobile slide-in drawer) */}
       <Sidebar 

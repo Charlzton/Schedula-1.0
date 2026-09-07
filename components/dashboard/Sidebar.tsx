@@ -74,7 +74,6 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
     { id: 'facilities', label: 'Facilities', icon: Building2, badge: analytics.kpi.totalFacilities },
     { id: 'lecturers', label: 'Lecturers', icon: Users, badge: analytics.kpi.totalLecturers },
     { id: 'generated_timetables', label: 'Schedule', icon: CalendarDays, badge: analytics.kpi.successfullyScheduled > 0 ? `${analytics.kpi.successfullyScheduled}` : undefined },
-    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   const handleNavClick = (view: DashboardViewType) => {
@@ -103,7 +102,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
         <div className={`flex items-center min-h-[36px] ${isExpanded ? 'justify-between' : 'justify-center'}`}>
           <div className={`flex items-center min-w-0 ${isExpanded ? 'gap-2.5' : 'justify-center w-full'}`}>
             <div className="w-10.5 h-10.5 rounded-xl flex items-center justify-center shrink-0">
-              <SchedulaLogo size="md" isDark={true} showText={false} />
+              <SchedulaLogo size="md" isDark={isDark} showText={false} />
             </div>
             <div className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
               <span className="font-bold text-[17px] tracking-[-0.025em] text-zinc-900 dark:text-zinc-50">
@@ -126,8 +125,8 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
       </div>
 
       {/* Middle: Navigation Items */}
-      <div className="flex-1 flex flex-col justify-evenly px-2 sm:px-3 py-1.5 sm:py-2 min-h-0 overflow-y-auto custom-scrollbar">
-        <div className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 shrink-0 h-4 flex items-center justify-center">
+      <div className="flex-1 flex flex-col justify-start gap-1 sm:gap-1.5 px-2 sm:px-3 py-2.5 min-h-0 overflow-y-auto custom-scrollbar">
+        <div className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 shrink-0 h-4 flex items-center justify-center mb-1">
           <span className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
             Navigation
           </span>
@@ -150,7 +149,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
                 ${isExpanded 
                   ? `px-2.5 py-1.5 justify-between ${
                       isActive 
-                        ? 'bg-blue-600/15 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 font-bold border border-blue-500/25 shadow-xs' 
+                        ? 'bg-zinc-200/70 dark:bg-white/10 text-zinc-900 dark:text-white font-semibold border border-zinc-300/60 dark:border-white/15 shadow-2xs' 
                         : 'text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white border border-transparent'
                     }`
                   : 'p-0 justify-center bg-transparent border-transparent'
@@ -165,7 +164,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
                     rounded-xl flex items-center justify-center shrink-0 transition-all duration-200
                     ${isExpanded ? 'w-9 h-9' : 'w-10.5 h-10.5'}
                     ${isActive
-                      ? 'bg-blue-600/15 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-500/35 ring-1 ring-blue-500/25 shadow-[0_0_12px_rgba(59,130,246,0.22)]'
+                      ? 'bg-zinc-200/80 dark:bg-white/15 text-zinc-900 dark:text-white border border-zinc-300/60 dark:border-white/20'
                       : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white group-hover:bg-black/5 dark:group-hover:bg-white/10 border border-transparent'
                     }
                   `}
@@ -174,15 +173,15 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
                 </div>
 
                 <div className={`sidebar-text-reveal text-left ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
-                  <span className={`truncate block text-[13px] ${isActive ? 'font-bold text-blue-700 dark:text-blue-400' : 'font-medium'}`}>{item.label}</span>
+                  <span className={`truncate block text-[13px] ${isActive ? 'font-semibold text-zinc-900 dark:text-white' : 'font-medium'}`}>{item.label}</span>
                 </div>
               </div>
 
-              {/* Right Group: Badge */}
+              {/* Right Group: Raw Number Count (No pill container) */}
               {item.badge !== undefined && (
                 <div className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ml-1.5 ${
-                    item.badgeColor || (isActive ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white' : 'bg-black/5 dark:bg-white/10 text-zinc-600 dark:text-zinc-400')
+                  <span className={`text-xs font-semibold ml-1.5 ${
+                    isActive ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'
                   }`}>
                     {item.badge}
                   </span>

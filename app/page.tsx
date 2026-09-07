@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
@@ -9,7 +9,6 @@ import { FaqSection } from '@/components/FaqSection';
 import { Footer } from '@/components/Footer';
 import { AuthModal } from '@/components/AuthModal';
 import { LandingScrollToTop } from '@/components/LandingScrollToTop';
-import { SignInSuccessNotification } from '@/components/SignInSuccessNotification';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -20,25 +19,17 @@ export default function SchedulaApp() {
   const isDark = theme === 'dark';
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signup');
-  const [showSignInSuccess, setShowSignInSuccess] = useState(false);
   const [isNavigatingDashboard, setIsNavigatingDashboard] = useState(false);
-
-  useEffect(() => {
-    // Check if user just signed in from another view/redirect
-    if (typeof window !== 'undefined') {
-      const justSignedIn = sessionStorage.getItem('schedula_sign_in_success');
-      if (justSignedIn === 'true') {
-        sessionStorage.removeItem('schedula_sign_in_success');
-        setShowSignInSuccess(true);
-      }
-    }
-  }, []);
 
   const handleOpenDashboard = () => {
     if (isNavigatingDashboard) return;
     if (user) {
       setIsNavigatingDashboard(true);
-      router.push('/dashboard');
+      if (user.role === 'lecturer') {
+        router.push('/lecturer');
+      } else {
+        router.push('/dashboard');
+      }
     } else {
       router.push('/login');
     }
@@ -48,15 +39,15 @@ export default function SchedulaApp() {
     if (isNavigatingDashboard) return;
     if (user) {
       setIsNavigatingDashboard(true);
-      router.push('/dashboard');
+      if (user.role === 'lecturer') {
+        router.push('/lecturer');
+      } else {
+        router.push('/dashboard');
+      }
     } else {
       setAuthModalMode(mode);
       setAuthModalOpen(true);
     }
-  };
-
-  const handleAuthSuccess = () => {
-    setShowSignInSuccess(true);
   };
 
   const handleScrollToHome = () => {
@@ -72,12 +63,6 @@ export default function SchedulaApp() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F7F9FB] dark:bg-[#0A0B10] text-[#111827] dark:text-[#F9FAFB] font-system selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-900 relative transition-colors duration-300">
-      {/* Sign-in Success Dropdown Glassmorphism Notification */}
-      <SignInSuccessNotification
-        show={showSignInSuccess}
-        onClose={() => setShowSignInSuccess(false)}
-      />
-
       {/* Schedula Top Navigation Bar */}
       <Navbar
         onDashboardClick={handleOpenDashboard}
@@ -110,7 +95,6 @@ export default function SchedulaApp() {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         initialMode={authModalMode}
-        onAuthSuccess={handleAuthSuccess}
       />
 
       {/* Landing Page Back To Top Floating Action */}

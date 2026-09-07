@@ -6,11 +6,13 @@ import {
   DoorOpen, 
   CalendarDays, 
   ClipboardList, 
+  Settings,
   LogOut,
   X,
   Loader2
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { SchedulaLogo } from '@/components/SchedulaLogo';
 import { LecturerViewType } from '@/lib/lecturerTypes';
@@ -21,6 +23,7 @@ interface LecturerSidebarProps {
   pendingRequestsCount?: number;
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  onOpenProfileModal?: () => void;
 }
 
 export function LecturerSidebar({
@@ -28,9 +31,12 @@ export function LecturerSidebar({
   setActiveView,
   pendingRequestsCount = 0,
   mobileOpen = false,
-  onCloseMobile
+  onCloseMobile,
+  onOpenProfileModal
 }: LecturerSidebarProps) {
   const { signOut, user, lecturerProfile, isSigningOut: authIsSigningOut } = useAuth();
+  const { theme, mounted } = useTheme();
+  const isDark = mounted ? theme === 'dark' : false;
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const router = useRouter();
@@ -71,7 +77,8 @@ export function LecturerSidebar({
       label: 'Requests', 
       icon: ClipboardList, 
       badge: pendingRequestsCount > 0 ? pendingRequestsCount : undefined 
-    }
+    },
+    { id: 'settings', label: 'Settings', icon: Settings }
   ];
 
   const handleNavClick = (view: LecturerViewType) => {
@@ -103,7 +110,7 @@ export function LecturerSidebar({
         <div className={`flex items-center min-h-[36px] ${isExpanded ? 'justify-between' : 'justify-center'}`}>
           <div className={`flex items-center min-w-0 ${isExpanded ? 'gap-2.5' : 'justify-center w-full'}`}>
             <div className="w-10.5 h-10.5 rounded-xl flex items-center justify-center shrink-0">
-              <SchedulaLogo size="md" isDark={true} showText={false} />
+              <SchedulaLogo size="md" isDark={isDark} showText={false} />
             </div>
             <div className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
               <div className="leading-tight">
@@ -131,7 +138,7 @@ export function LecturerSidebar({
       </div>
 
       {/* Middle: Navigation Items */}
-      <div className="flex-1 flex flex-col justify-start gap-1.5 px-2 sm:px-3 py-3 min-h-0 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 flex flex-col justify-start gap-1 sm:gap-1.5 px-2 sm:px-3 py-2.5 min-h-0 overflow-y-auto custom-scrollbar">
         <div className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 shrink-0 h-4 flex items-center justify-center mb-1">
           <span className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
             Faculty Portal
@@ -155,7 +162,7 @@ export function LecturerSidebar({
                 ${isExpanded 
                   ? `px-2.5 py-1.5 justify-between ${
                       isActive 
-                        ? 'bg-blue-600/15 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 font-bold border border-blue-500/25 shadow-xs' 
+                        ? 'bg-zinc-200/70 dark:bg-white/10 text-zinc-900 dark:text-white font-semibold border border-zinc-300/60 dark:border-white/15 shadow-2xs' 
                         : 'text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white border border-transparent'
                     }`
                   : 'p-0 justify-center bg-transparent border-transparent'
@@ -169,7 +176,7 @@ export function LecturerSidebar({
                     rounded-xl flex items-center justify-center shrink-0 transition-all duration-200
                     ${isExpanded ? 'w-9 h-9' : 'w-10.5 h-10.5'}
                     ${isActive
-                      ? 'bg-blue-600/15 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-500/35 ring-1 ring-blue-500/25 shadow-[0_0_12px_rgba(59,130,246,0.22)]'
+                      ? 'bg-zinc-200/80 dark:bg-white/15 text-zinc-900 dark:text-white border border-zinc-300/60 dark:border-white/20'
                       : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white group-hover:bg-black/5 dark:group-hover:bg-white/10 border border-transparent'
                     }
                   `}
@@ -178,17 +185,17 @@ export function LecturerSidebar({
                 </div>
 
                 <div className={`sidebar-text-reveal text-left ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
-                  <span className={`truncate block text-[13px] ${isActive ? 'font-bold text-blue-700 dark:text-blue-400' : 'font-medium'}`}>
+                  <span className={`truncate block text-[13px] ${isActive ? 'font-semibold text-zinc-900 dark:text-white' : 'font-medium'}`}>
                     {item.label}
                   </span>
                 </div>
               </div>
 
-              {/* Right Group: Badge */}
+              {/* Right Group: Raw Number Count (No pill container) */}
               {item.badge !== undefined && (
                 <div className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ml-1.5 ${
-                    isActive ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white' : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/20'
+                  <span className={`text-xs font-semibold ml-1.5 ${
+                    isActive ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400'
                   }`}>
                     {item.badge}
                   </span>
@@ -202,9 +209,12 @@ export function LecturerSidebar({
       {/* Bottom: Current Faculty Profile & Sign Out */}
       <div className="p-2.5 sm:p-3 border-t border-zinc-200/70 dark:border-white/10 bg-black/5 dark:bg-black/20 shrink-0 space-y-2">
         <div 
-          onClick={() => setActiveView('overview')}
+          onClick={() => {
+            setActiveView('settings');
+            if (onCloseMobile) onCloseMobile();
+          }}
           className={`flex items-center p-1 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer group ${isExpanded ? 'gap-3 px-2 py-1.5' : 'justify-center w-full'}`}
-          title={!isExpanded ? displayName : 'Faculty Profile'}
+          title={!isExpanded ? displayName : 'Faculty Profile & Settings'}
         >
           {user?.avatar ? (
             <div className="w-10.5 h-10.5 rounded-full overflow-hidden border border-blue-500/40 ring-1 ring-white/50 dark:ring-white/10 shrink-0 shadow-xs flex items-center justify-center">

@@ -12,8 +12,10 @@ import { LecturerOverviewView } from '@/components/lecturer/views/LecturerOvervi
 import { LecturerRoomAvailabilityView } from '@/components/lecturer/views/LecturerRoomAvailabilityView';
 import { LecturerTeachingScheduleView } from '@/components/lecturer/views/LecturerTeachingScheduleView';
 import { LecturerBookingRequestsView } from '@/components/lecturer/views/LecturerBookingRequestsView';
-import { HeroBackground } from '@/components/HeroBackground';
+import { LecturerSettingsView } from '@/components/lecturer/views/LecturerSettingsView';
+import { LecturerProfileModal } from '@/components/lecturer/modals/LecturerProfileModal';
 import { ScrollToTop } from '@/components/ScrollToTop';
+import { HeroBackground } from '@/components/HeroBackground';
 import { Loader2 } from 'lucide-react';
 
 export default function LecturerPage() {
@@ -28,6 +30,7 @@ export default function LecturerPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Authentication check
   useEffect(() => {
@@ -80,12 +83,9 @@ export default function LecturerPage() {
   const pendingCount = myBookingRequests.filter(r => r.status === 'Pending').length;
 
   return (
-    <div className="h-screen w-full flex overflow-hidden relative text-zinc-900 dark:text-zinc-100 antialiased selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-950 font-system">
-      
-      {/* Reused Animated Glassmorphism Background (Fixed layer behind dashboard interface) */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 no-print">
-        <HeroBackground isDark={isDark} />
-      </div>
+    <div className="h-screen w-full flex overflow-hidden relative bg-[#F7F9FB] dark:bg-[#0A0B10] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-950 font-system">
+      {/* Subtle Animated Glassmorphism Background */}
+      <HeroBackground isDark={isDark} subdued={true} />
 
       {/* Fixed Sidebar navigation */}
       <LecturerSidebar
@@ -94,6 +94,7 @@ export default function LecturerPage() {
         pendingRequestsCount={pendingCount}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
+        onOpenProfileModal={() => setIsProfileModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -105,6 +106,7 @@ export default function LecturerPage() {
           onOpenMobileMenu={() => setMobileOpen(prev => !prev)}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          onOpenProfileModal={() => setIsProfileModalOpen(true)}
         />
 
         {/* Toast Notification */}
@@ -131,6 +133,7 @@ export default function LecturerPage() {
               <LecturerOverviewView
                 onNavigate={setActiveView}
                 bookingRequests={myBookingRequests}
+                onOpenProfileModal={() => setIsProfileModalOpen(true)}
               />
             )}
 
@@ -151,12 +154,22 @@ export default function LecturerPage() {
                 onCancelRequest={cancelBookingRequest}
               />
             )}
+
+            {activeView === 'settings' && (
+              <LecturerSettingsView />
+            )}
           </div>
         </main>
       </div>
 
       {/* Floating Action Controls */}
       <ScrollToTop />
+
+      {/* Faculty Profile Modal */}
+      <LecturerProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </div>
   );
 }

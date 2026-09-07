@@ -38,10 +38,11 @@ interface AuthContextType {
   isLoading: boolean;
   isSigningOut: boolean;
   signInWithEmail: (email: string, password: string, portalRole?: UserRole) => Promise<{ success: boolean; error?: string; unverified?: boolean; email?: string; code?: string; targetRoute?: string }>;
-  signUpWithEmail: (name: string, email: string, password: string, institution?: string, portalRole?: UserRole) => Promise<{ success: boolean; error?: string; code?: string }>;
+  signUpWithEmail: (name: string, email: string, password: string, institution?: string, portalRole?: UserRole) => Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }>;
   sendPasswordReset: (email: string) => Promise<{ success: boolean; error?: string; code?: string }>;
   signInWithGoogle: (portalRole?: UserRole) => Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }>;
   updateUserProfile: (name: string, avatar?: any) => Promise<{ success: boolean; error?: string }>;
+  updateLecturerProfileDetails: (details: Partial<Lecturer>) => Promise<{ success: boolean; error?: string }>;
   changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   removeProfilePicture: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
@@ -326,7 +327,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     institution?: string,
     portalRole: UserRole = 'lecturer'
-  ): Promise<{ success: boolean; error?: string; code?: string }> => {
+  ): Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }> => {
     setIsLoading(true);
     try {
       // 1. Explicitly disallow public Admin self-registration
@@ -402,7 +403,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {}
 
       setIsLoading(false);
-      return { success: true };
+      const targetRoute = assignedRole === 'lecturer' ? '/lecturer' : '/dashboard';
+      return { success: true, targetRoute };
     } catch (err: any) {
       setIsLoading(false);
       const code = err?.code || '';
@@ -694,6 +696,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateLecturerProfileDetails = async (details: Partial<Lecturer>): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const current = lecturerProfile || {
+        lecturerId: user?.lecturerId || `LEC-${user?.id?.slice(0, 6) || 'UG'}`,
+        fullName: user?.name || 'Faculty Member',
+        title: 'Lecturer',
+        officeEmail: user?.email || '',
+        email: user?.email || '',
+        department: 'Computer Science',
+      };
+
+      const updated: Lecturer = {
+        ...current,
+        ...details,
+        fullName: details.fullName?.trim() || current.fullName,
+        department: details.department?.trim() || current.department,
+        email: details.email?.trim() || details.officeEmail?.trim() || current.email,
+        officeEmail: details.officeEmail?.trim() || details.email?.trim() || current.officeEmail,
+        phone: details.phone !== undefined ? details.phone.trim() : current.phone,
+        officeLocation: details.officeLocation !== undefined ? details.officeLocation.trim() : current.officeLocation,
+      };
+
+      setLecturerProfile(updated);
+      try {
+        localStorage.setItem(LECTURER_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+
+      // Save to Firestore lecturers collection
+      try {
+        const docId = (updated.lecturerId || 'unknown').replace(/[^\w-]/g, '_');
+        await setDoc(doc(db, 'lecturers', docId), updated, { merge: true });
+      } catch (fErr) {
+        console.warn('Firestore lecturer save note:', fErr);
+      }
+
+      // If user is logged in, also update user display name and user doc in Firestore
+      if (user && updated.fullName && updated.fullName !== user.name) {
+        setUser(prev => prev ? { ...prev, name: updated.fullName } : null);
+        try {
+          if (auth.currentUser) {
+            await updateProfile(auth.currentUser, { displayName: updated.fullName });
+          }
+          await setDoc(doc(db, 'users', user.id), { name: updated.fullName }, { merge: true });
+        } catch {}
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to update lecturer profile.' };
+    }
+  };
+
   const signOut = async (): Promise<void> => {
     setIsSigningOut(true);
     try {
@@ -724,6 +778,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sendPasswordReset,
         signInWithGoogle,
         updateUserProfile,
+        updateLecturerProfileDetails,
         changePassword,
         removeProfilePicture,
         signOut,

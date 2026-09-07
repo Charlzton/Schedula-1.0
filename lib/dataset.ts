@@ -37,6 +37,8 @@ export interface Lecturer {
   maxWeeklyHours?: number;
   specializations?: string[];
   assignedCourses?: string | string[];
+  officeLocation?: string;
+  availability?: string[];
 }
 
 export interface ResidentialHall {
@@ -89,9 +91,11 @@ export interface SystemActivity {
   action: string;
   description: string;
   timestamp: string;
-  type: 'import' | 'update' | 'create' | 'generate' | 'conflict' | 'export';
+  type: 'import' | 'update' | 'create' | 'generate' | 'conflict' | 'export' | 'booking' | 'delete';
   badgeColor?: string;
   userEmail?: string;
+  userName?: string;
+  createdAt?: string;
 }
 
 // Master Course Catalog from User Dataset
@@ -226,11 +230,89 @@ export const INITIAL_TIME_SLOTS: TimeSlot[] = [
   { slotId: 'TS25', day: 'Friday', startTime: '15:30', endTime: '17:30', durationHours: 2, sessionType: 'Theory' }
 ];
 
-// Initial Realistic System Activities
+// Initial System Activity State (clean initialization)
 export const INITIAL_SYSTEM_ACTIVITIES: SystemActivity[] = [
-  { id: 'ACT-001', action: 'Course Dataset Imported', description: 'Imported 37 Computer Science DCIT courses (Level 100 to 400)', timestamp: '10 mins ago', type: 'import', badgeColor: 'blue' },
-  { id: 'ACT-002', action: 'Lecture Facilities Synced', description: 'Verified 14 university venues with 4,760 total seat capacity', timestamp: '25 mins ago', type: 'update', badgeColor: 'emerald' },
-  { id: 'ACT-003', action: 'Faculty Members Configured', description: 'Assigned 14 lecturers to departmental course allocations', timestamp: '1 hour ago', type: 'create', badgeColor: 'purple' },
-  { id: 'ACT-004', action: 'Constraint Optimizer Ready', description: 'Loaded room capacities, lab requirements & timeslot matrix', timestamp: '2 hours ago', type: 'generate', badgeColor: 'amber' },
-  { id: 'ACT-005', action: 'Conflict Detected and Resolved', description: 'Avoided Level 100 core clash between DCIT101 and DCIT105 on Monday slot', timestamp: '3 hours ago', type: 'conflict', badgeColor: 'rose' }
+  { 
+    id: 'ACT-INIT', 
+    action: 'System Initialized', 
+    description: 'Academic scheduling environment initialized', 
+    timestamp: 'Just now', 
+    type: 'create', 
+    badgeColor: 'blue',
+    userEmail: 'admin@ug.edu.gh',
+    userName: 'System Administrator'
+  }
+];
+
+// Initial Booking Requests
+export const INITIAL_BOOKING_REQUESTS = [
+  {
+    id: 'REQ-DEMO-001',
+    lecturerId: 'LEC01',
+    lecturerName: 'Dr. Kwame Mensah',
+    lecturerEmail: 'kmensah@ug.edu.gh',
+    hallId: 'JQB01',
+    hallName: 'Jones Quartey Building - Room 01',
+    buildingLocation: 'JQB Main Complex',
+    day: 'Wednesday' as const,
+    timeSlot: '09:30 - 11:30',
+    courseCode: 'DCIT 101',
+    courseTitle: 'Introduction to Computer Science',
+    expectedAttendance: 180,
+    purpose: 'Mid-semester review & practical session',
+    status: 'Pending' as const,
+    submittedAt: new Date(Date.now() - 3600000).toISOString()
+  },
+  {
+    id: 'REQ-DEMO-002',
+    lecturerId: 'LEC02',
+    lecturerName: 'Prof. Abena Osei',
+    lecturerEmail: 'aosei@ug.edu.gh',
+    hallId: 'N1',
+    hallName: 'N Block Room 1',
+    buildingLocation: 'N Block Complex',
+    day: 'Thursday' as const,
+    timeSlot: '13:30 - 15:30',
+    courseCode: 'DCIT 201',
+    courseTitle: 'Programming I',
+    expectedAttendance: 140,
+    purpose: 'Extra tutorial class for Level 200 cohort',
+    status: 'Pending' as const,
+    submittedAt: new Date(Date.now() - 7200000).toISOString()
+  }
+];
+
+// Initial Notification Items for Admin & Lecturers
+export const INITIAL_NOTIFICATIONS = [
+  {
+    id: 'NOTIF-DEMO-001',
+    recipientRole: 'admin' as const,
+    title: 'New Room Request',
+    message: 'Dr. Kwame Mensah requested Jones Quartey Building - Room 01 for Wednesday 09:30 - 11:30 (DCIT 101)',
+    type: 'booking_request' as const,
+    referenceId: 'REQ-DEMO-001',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+    isRead: false
+  },
+  {
+    id: 'NOTIF-DEMO-002',
+    recipientRole: 'admin' as const,
+    title: 'New Room Request',
+    message: 'Prof. Abena Osei requested N Block Room 1 for Thursday 13:30 - 15:30 (DCIT 201)',
+    type: 'booking_request' as const,
+    referenceId: 'REQ-DEMO-002',
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+    isRead: false
+  },
+  {
+    id: 'NOTIF-DEMO-003',
+    recipientRole: 'lecturer' as const,
+    recipientId: 'LEC01',
+    recipientEmail: 'kmensah@ug.edu.gh',
+    title: 'Welcome to Faculty Portal',
+    message: 'You can check real-time lecture hall availability and submit room reservation requests directly.',
+    type: 'system' as const,
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    isRead: false
+  }
 ];

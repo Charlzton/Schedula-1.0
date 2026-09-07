@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Building2, Armchair, Check, AlertCircle } from 'lucide-react';
 import { generateLowestAvailableId } from '@/lib/idHelper';
 import { useTimetable } from '@/context/TimetableContext';
+import { LectureFacility } from '@/lib/dataset';
 
 interface FacilityModalProps {
   isOpen: boolean;
@@ -54,7 +55,7 @@ export function FacilityModal({ isOpen, onClose, initialFacility }: FacilityModa
       setStatus('Active');
     }
     setValidationError(null);
-  }, [initialFacility, isOpen]);
+  }, [initialFacility, isOpen, facilities]);
 
   if (!isOpen) return null;
 

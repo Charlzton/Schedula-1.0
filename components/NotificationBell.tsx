@@ -18,12 +18,12 @@ import { useAuth } from '@/context/AuthContext';
 import { NotificationItem } from '@/lib/lecturerTypes';
 
 interface NotificationBellProps {
-  onNavigateToRequests?: () => void;
+  onNavigateToRequests?: (referenceId?: string) => void;
   variant?: 'admin' | 'lecturer';
 }
 
 export function NotificationBell({ onNavigateToRequests, variant }: NotificationBellProps) {
-  const { notifications, markNotificationRead, markAllNotificationsRead, deleteNotification } = useTimetable();
+  const { notifications, markNotificationRead, markAllNotificationsRead, deleteNotification, setHighlightedBookingId } = useTimetable();
   const { user, lecturerProfile } = useAuth();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -47,17 +47,28 @@ export function NotificationBell({ onNavigateToRequests, variant }: Notification
 
   // Filter notifications relevant to current user role / ID
   const userNotifications = useMemo(() => {
-    if (!notifications) return [];
+    if (!notifications || !Array.isArray(notifications)) return [];
 
     return notifications.filter(n => {
       if (isAdmin) {
-        if (n.recipientRole === 'admin' || n.recipientRole === 'all') return true;
-        if (n.recipientId === user?.id || n.recipientEmail?.toLowerCase() === userEmail) return true;
+        if (n.recipientRole === 'admin' || n.recipientRole === 'all' || !n.recipientRole) return true;
+        if (n.recipientId && user?.id && n.recipientId === user.id) return true;
+        if (userEmail && n.recipientEmail && n.recipientEmail.toLowerCase() === userEmail) return true;
         return false;
       } else {
-        if (n.recipientRole === 'lecturer' || n.recipientRole === 'all') return true;
-        if (lecturerId && n.recipientId === lecturerId) return true;
-        if (userEmail && n.recipientEmail?.toLowerCase() === userEmail) return true;
+        if (n.recipientRole === 'all') return true;
+        if (n.recipientRole === 'lecturer') {
+          // If no specific recipient is targeted, broadcast to all faculty
+          if (!n.recipientId && !n.recipientEmail) return true;
+          // Match by lecturer ID
+          if (lecturerId && n.recipientId && n.recipientId.toLowerCase() === lecturerId.toLowerCase()) return true;
+          // Match by email
+          if (userEmail && n.recipientEmail && n.recipientEmail.toLowerCase() === userEmail) return true;
+          // Match by user auth ID
+          if (user?.id && n.recipientId === user.id) return true;
+          // If in lecturer portal and notification is for lecturers
+          return true;
+        }
         return false;
       }
     });
@@ -73,6 +84,8 @@ export function NotificationBell({ onNavigateToRequests, variant }: Notification
         return <XCircle className="w-4 h-4 text-rose-500 shrink-0" />;
       case 'booking_request':
         return <DoorOpen className="w-4 h-4 text-blue-500 shrink-0" />;
+      case 'booking_withdrawn':
+        return <Clock className="w-4 h-4 text-amber-500 shrink-0" />;
       case 'schedule_update':
       case 'system':
         return <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />;
@@ -102,20 +115,22 @@ export function NotificationBell({ onNavigateToRequests, variant }: Notification
 
   return (
     <div className="relative" ref={bellRef}>
-      {/* Bell Button */}
+      {/* Bell Button with Unread Red Indicator */}
       <button
         type="button"
+        id="notification-bell-button"
         onClick={() => setIsOpen(prev => !prev)}
         className="relative p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
-        aria-label="Notifications"
+        aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
         aria-expanded={isOpen}
       >
         <Bell className="w-4 h-4" />
         
         {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-rose-600 text-white font-bold text-[9px] flex items-center justify-center shadow-xs">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+          <span 
+            className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-zinc-900 animate-pulse pointer-events-none" 
+            aria-hidden="true"
+          />
         )}
       </button>
 
@@ -161,8 +176,11 @@ export function NotificationBell({ onNavigateToRequests, variant }: Notification
                     if (!notification.isRead) {
                       markNotificationRead(notification.id);
                     }
+                    if (notification.referenceId) {
+                      setHighlightedBookingId(notification.referenceId);
+                    }
                     if (onNavigateToRequests) {
-                      onNavigateToRequests();
+                      onNavigateToRequests(notification.referenceId);
                       setIsOpen(false);
                     }
                   }}

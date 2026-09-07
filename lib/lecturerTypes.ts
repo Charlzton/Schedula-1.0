@@ -26,10 +26,10 @@ export interface NotificationItem {
   recipientEmail?: string;
   title: string;
   message: string;
-  type: 'booking_request' | 'booking_approved' | 'booking_rejected' | 'schedule_update' | 'system';
+  type: 'booking_request' | 'booking_approved' | 'booking_rejected' | 'booking_withdrawn' | 'schedule_update' | 'system';
   referenceId?: string;
   createdAt: string;
   isRead: boolean;
 }
 
-export type LecturerViewType = 'overview' | 'rooms' | 'schedule' | 'requests';
+export type LecturerViewType = 'overview' | 'rooms' | 'schedule' | 'requests' | 'settings';
