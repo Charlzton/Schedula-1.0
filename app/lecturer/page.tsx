@@ -45,11 +45,11 @@ export default function LecturerPage() {
     const currentLecturerId = lecturerProfile?.lecturerId || user.lecturerId;
     const currentEmail = user.email?.toLowerCase();
     
-    // If specific lecturer profile, filter strictly to this lecturer
+    // If specific lecturer profile or userId, filter strictly to this lecturer
     return bookingRequests.filter(req => {
+      if (req.userId && req.userId === user.id) return true;
       if (currentLecturerId && req.lecturerId === currentLecturerId) return true;
       if (currentEmail && req.lecturerEmail?.toLowerCase() === currentEmail) return true;
-      // If demo user or general faculty member, show requests created in this session
       return false;
     });
   }, [bookingRequests, lecturerProfile, user]);

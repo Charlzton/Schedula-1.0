@@ -23,6 +23,7 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
   const [department, setDepartment] = useState('Department of Computer Science');
   const [maxWeeklyHours, setMaxWeeklyHours] = useState(12);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [accountStatus, setAccountStatus] = useState<'active' | 'unclaimed' | 'suspended'>('unclaimed');
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,11 +31,12 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
       setLecturerId(initialLecturer.lecturerId);
       setFullName(initialLecturer.fullName);
       setTitle(initialLecturer.title || 'Dr.');
-      setEmail(initialLecturer.email || '');
+      setEmail(initialLecturer.email || initialLecturer.officeEmail || '');
       setPhone(initialLecturer.phone || '');
       setDepartment(initialLecturer.department || 'Department of Computer Science');
       setMaxWeeklyHours(initialLecturer.maxWeeklyHours ?? 12);
       setSelectedCourses(initialLecturer.specializations || []);
+      setAccountStatus(initialLecturer.accountStatus || (initialLecturer.authUid ? 'active' : 'unclaimed'));
     } else {
       setLecturerId(generateLowestAvailableId(lecturers.map(l => l.lecturerId), 'LEC'));
       setFullName('');
@@ -44,6 +46,7 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
       setDepartment('Department of Computer Science');
       setMaxWeeklyHours(12);
       setSelectedCourses([]);
+      setAccountStatus('unclaimed');
     }
     setValidationError(null);
   }, [initialLecturer, isOpen, lecturers]);
@@ -68,7 +71,10 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
     }
     if (!initialLecturer) {
       const idExists = lecturers.some(l => l.lecturerId.trim().toUpperCase() === cleanId);
-      const emailExists = cleanEmail && lecturers.some(l => l.email?.trim().toLowerCase() === cleanEmail);
+      const emailExists = cleanEmail && lecturers.some(l => 
+        (l.email?.trim().toLowerCase() === cleanEmail) || 
+        (l.officeEmail?.trim().toLowerCase() === cleanEmail)
+      );
       if (idExists) {
         setValidationError(`A lecturer with ID "${cleanId}" already exists.`);
         return;
@@ -79,15 +85,21 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
       }
     }
 
+    const resolvedEmail = cleanEmail || `${cleanName.toLowerCase().replace(/\s+/g, '.')}@ug.edu.gh`;
+
     const lecturerData: Lecturer = {
-      lecturerId: lecturerId.trim().toUpperCase(),
+      lecturerId: cleanId,
       fullName: cleanName,
       title,
-      email: email.trim() || `${cleanName.toLowerCase().replace(/\s+/g, '.')}@ug.edu.gh`,
+      email: resolvedEmail,
+      officeEmail: resolvedEmail,
       phone: phone.trim() || '+233 24 000 0000',
       department: department.trim(),
       maxWeeklyHours: Number(maxWeeklyHours),
-      specializations: selectedCourses
+      specializations: selectedCourses,
+      accountStatus: initialLecturer ? accountStatus : 'unclaimed',
+      authUid: initialLecturer?.authUid,
+      registeredAt: initialLecturer?.registeredAt
     };
 
     if (initialLecturer) {
@@ -240,6 +252,23 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
               />
             </div>
           </div>
+
+          {initialLecturer && (
+            <div>
+              <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
+                Account Status
+              </label>
+              <select
+                value={accountStatus}
+                onChange={(e) => setAccountStatus(e.target.value as 'active' | 'unclaimed' | 'suspended')}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white/60 dark:bg-white/5 backdrop-blur-md border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all cursor-pointer"
+              >
+                <option value="active" className="dark:bg-zinc-900">Active (Linked & Authorized)</option>
+                <option value="unclaimed" className="dark:bg-zinc-900">Unclaimed (Pending Faculty Sign-up)</option>
+                <option value="suspended" className="dark:bg-zinc-900">Suspended (Access Disabled)</option>
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-2">

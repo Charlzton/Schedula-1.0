@@ -4,28 +4,34 @@ import React, { useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTimetable } from '@/context/TimetableContext';
 import { ScheduleAssignment } from '@/lib/dataset';
-import { Clock, MapPin, Users } from 'lucide-react';
+import { Clock, MapPin, Users, Calendar, AlertCircle } from 'lucide-react';
 
 export function LecturerTeachingScheduleView() {
   const { user, lecturerProfile } = useAuth();
   const { schedules, lecturers } = useTimetable();
 
-  // Active lecturer resolution
-  const [selectedLecturerId, setSelectedLecturerId] = useState<string>(
-    lecturerProfile?.lecturerId || user?.lecturerId || 'L308'
-  );
-
   const [selectedSemester, setSelectedSemester] = useState<'All' | 'Semester 1' | 'Semester 2'>('All');
   const [viewMode, setViewMode] = useState<'agenda' | 'grid'>('agenda');
 
-  // Find active lecturer object
+  // Authenticated lecturer resolution (Strict isolation: no fallback to arbitrary IDs)
   const currentLecturer = useMemo(() => {
-    return lecturers.find(l => l.lecturerId === selectedLecturerId) || 
-           lecturers.find(l => l.lecturerId === 'L308') || 
-           lecturers[0];
-  }, [lecturers, selectedLecturerId]);
+    if (lecturerProfile) return lecturerProfile;
+    if (user?.lecturerId) {
+      const found = lecturers.find(l => l.lecturerId === user.lecturerId);
+      if (found) return found;
+    }
+    if (user?.email) {
+      const emailLower = user.email.toLowerCase();
+      const found = lecturers.find(l => 
+        (l.officeEmail && l.officeEmail.toLowerCase() === emailLower) ||
+        (l.email && l.email.toLowerCase() === emailLower)
+      );
+      if (found) return found;
+    }
+    return null;
+  }, [lecturerProfile, user, lecturers]);
 
-  // Lecturer schedules
+  // Lecturer schedules strictly filtered by current lecturer
   const lecturerSchedules = useMemo(() => {
     if (!currentLecturer) return [];
     const id = currentLecturer.lecturerId;
@@ -77,6 +83,44 @@ export function LecturerTeachingScheduleView() {
     return lecturerSchedules.reduce((acc, s) => acc + (s.durationHours || 2), 0);
   }, [lecturerSchedules]);
 
+  // If the account has no associated faculty profile, show a dedicated graceful state
+  if (!currentLecturer) {
+    return (
+      <div className="space-y-6 pb-12 font-system">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              Teaching Schedule
+            </h1>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+              Personal faculty course timetable
+            </p>
+          </div>
+        </div>
+
+        <div className="p-8 sm:p-12 rounded-3xl liquid-glass border border-amber-500/30 dark:border-amber-500/20 text-center max-w-2xl mx-auto space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+              No Faculty Profile Linked
+            </h2>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              Your user account ({user?.email}) is not currently associated with an academic faculty profile in the university registry. Your teaching allocations cannot be loaded until an academic administrator links your account.
+            </p>
+          </div>
+          <div className="pt-2">
+            <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-xl border border-zinc-200/60 dark:border-white/10">
+              <Users className="w-3.5 h-3.5" />
+              Contact: Academic Affairs / Timetable Office
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12 font-system">
       
@@ -92,11 +136,11 @@ export function LecturerTeachingScheduleView() {
             </span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            {currentLecturer?.fullName} • {totalWeeklyTeachingHours} weekly contact hours
+            {currentLecturer.fullName} ({currentLecturer.lecturerId}) • {totalWeeklyTeachingHours} weekly contact hours
           </p>
         </div>
 
-        {/* View Mode Toggle (Admin Style) */}
+        {/* View Mode Toggle */}
         <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs self-start sm:self-auto">
           <button
             type="button"
@@ -123,36 +167,35 @@ export function LecturerTeachingScheduleView() {
         </div>
       </div>
 
-      {/* 2. Controls & Filter Bar */}
+      {/* 2. Controls & Filter Bar (Restricted exclusively to current lecturer's profile) */}
       <div className="p-4 sm:p-5 rounded-3xl liquid-glass border border-zinc-200/70 dark:border-white/10 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Instructor Selector */}
-          <div>
-            <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider mb-1">
-              Instructor
-            </label>
-            <select
-              value={selectedLecturerId}
-              onChange={(e) => setSelectedLecturerId(e.target.value)}
-              className="glass-input px-3 py-1.5 text-xs text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
-            >
-              {lecturers.map(l => (
-                <option key={l.lecturerId} value={l.lecturerId}>
-                  {l.fullName} ({l.lecturerId})
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Read-only Faculty Identity */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-500/20 font-bold text-xs">
+              {currentLecturer.fullName.charAt(0)}
+            </div>
+            <div>
+              <div className="text-xs font-bold text-zinc-900 dark:text-white">
+                {currentLecturer.fullName}
+              </div>
+              <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                {currentLecturer.department} • {currentLecturer.lecturerId}
+              </div>
+            </div>
           </div>
+
+          <div className="h-6 w-px bg-zinc-200 dark:bg-white/10 hidden sm:block" />
 
           {/* Academic Semester Filter */}
           <div>
-            <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider mb-1">
+            <label className="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
               Semester
             </label>
             <select
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(e.target.value as any)}
-              className="glass-input px-3 py-1.5 text-xs text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium"
+              className="glass-input px-3 py-1.5 text-xs text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium cursor-pointer"
             >
               <option value="All">All Semesters</option>
               <option value="Semester 1">Semester 1</option>
@@ -182,7 +225,7 @@ export function LecturerTeachingScheduleView() {
             No scheduled teaching sessions found for this selection.
           </p>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            Select &apos;All Semesters&apos; or inspect course allocations.
+            Select &apos;All Semesters&apos; or inspect published courses.
           </p>
         </div>
       ) : viewMode === 'agenda' ? (
@@ -338,3 +381,4 @@ export function LecturerTeachingScheduleView() {
     </div>
   );
 }
+

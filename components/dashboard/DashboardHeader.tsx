@@ -155,7 +155,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
                               <span className="font-semibold text-zinc-900 dark:text-white shrink-0">{c.courseCode}</span>
                               <span className="text-zinc-500 dark:text-zinc-400 truncate">{c.courseTitle}</span>
                             </div>
-                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">L{c.level}</span>
+                            <span className="text-xs text-zinc-500 shrink-0">L{c.level}</span>
                           </div>
                         ))}
                       </div>
@@ -177,11 +177,11 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
                             className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs transition-colors group"
                           >
                             <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-                              <Building2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              <Building2 className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
                               <span className="font-semibold text-zinc-900 dark:text-white shrink-0">{f.hallName}</span>
                               <span className="text-zinc-500 dark:text-zinc-400 text-[11px] truncate">({f.venueType})</span>
                             </div>
-                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">{f.capacity} seats</span>
+                            <span className="text-xs text-zinc-500 shrink-0">{f.capacity} seats</span>
                           </div>
                         ))}
                       </div>

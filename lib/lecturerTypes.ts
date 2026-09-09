@@ -1,5 +1,8 @@
+export type { Lecturer } from '@/lib/dataset';
+
 export interface RoomBookingRequest {
   id: string;
+  userId?: string;
   lecturerId: string;
   lecturerName: string;
   lecturerEmail: string;

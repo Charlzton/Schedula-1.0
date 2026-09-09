@@ -19,13 +19,15 @@ import {
   TimeSlot, 
   TimetableEntry, 
   SystemActivity,
+  AcademicPeriod,
   INITIAL_COURSES,
   INITIAL_FACILITIES,
   INITIAL_LECTURERS,
   INITIAL_TIME_SLOTS,
   INITIAL_SYSTEM_ACTIVITIES,
   INITIAL_BOOKING_REQUESTS,
-  INITIAL_NOTIFICATIONS
+  INITIAL_NOTIFICATIONS,
+  INITIAL_ACADEMIC_PERIODS
 } from './dataset';
 import { RoomBookingRequest, NotificationItem } from './lecturerTypes';
 import { handleFirestoreError, OperationType } from './firestoreErrors';
@@ -286,20 +288,176 @@ export async function bulkDeleteSchedulesFromFirestore(scheduleIds: string[]): P
   }
 }
 
-export async function saveAllSchedulesToFirestore(schedulesList: TimetableEntry[]): Promise<void> {
+/**
+ * Saves timetable schedules scoped to a specific Academic Year and Semester.
+ * Crucially preserves historical data from other semesters and academic years.
+ */
+export async function savePeriodSchedulesToFirestore(
+  academicYear: string,
+  semester: string,
+  schedulesList: TimetableEntry[]
+): Promise<void> {
   try {
-    // First retrieve existing timetable IDs to overwrite cleanly
     const existingSnap = await getDocs(collection(db, 'timetables'));
-    const existingIds = existingSnap.docs.map((d) => d.id);
-    const newIdSet = new Set(schedulesList.map((s) => sanitizeDocId(s.id)));
+    // Find IDs belonging ONLY to this specific academicYear and semester
+    const periodOldIds: string[] = [];
+    existingSnap.docs.forEach((d) => {
+      const data = d.data() as TimetableEntry;
+      const dataYear = data.academicYear || '2026/2027';
+      const dataSem = data.semester || 'Semester 1';
+      if (dataYear === academicYear && dataSem === semester) {
+        periodOldIds.push(d.id);
+      }
+    });
 
-    // IDs to delete (those that are no longer in the new schedule)
-    const toDeleteIds = existingIds.filter((id) => !newIdSet.has(id));
+    const newIdSet = new Set(schedulesList.map((s) => sanitizeDocId(s.id)));
+    const toDeleteIds = periodOldIds.filter((id) => !newIdSet.has(id));
     if (toDeleteIds.length > 0) {
       await bulkDeleteSchedulesFromFirestore(toDeleteIds);
     }
 
-    // Now batch write new entries in chunks of 400
+    // Batch write new entries in chunks of 400
+    const chunks = [];
+    for (let i = 0; i < schedulesList.length; i += 400) {
+      chunks.push(schedulesList.slice(i, i + 400));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      for (const entry of chunk) {
+        const docRef = doc(db, 'timetables', sanitizeDocId(entry.id));
+        batch.set(docRef, cleanFirestoreData({
+          ...entry,
+          academicYear,
+          semester
+        }), { merge: true });
+      }
+      await batch.commit();
+    }
+  } catch (error) {
+    console.warn(`[Firestore] Failed to save period schedules (${academicYear} ${semester}):`, error);
+  }
+}
+
+export async function publishPeriodTimetableInFirestore(
+  academicYear: string,
+  semester: string,
+  publisherName: string
+): Promise<void> {
+  try {
+    const existingSnap = await getDocs(collection(db, 'timetables'));
+    const matchingDocs = existingSnap.docs.filter((d) => {
+      const data = d.data() as TimetableEntry;
+      const dataYear = data.academicYear || '2026/2027';
+      const dataSem = data.semester || 'Semester 1';
+      return dataYear === academicYear && dataSem === semester;
+    });
+
+    const now = new Date().toISOString();
+    const chunks = [];
+    for (let i = 0; i < matchingDocs.length; i += 400) {
+      chunks.push(matchingDocs.slice(i, i + 400));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      for (const d of chunk) {
+        batch.update(d.ref, {
+          status: 'published',
+          publishedAt: now,
+          publishedBy: publisherName
+        });
+      }
+      await batch.commit();
+    }
+
+    // Also update the academic period record
+    const periodId = `${academicYear.replace('/', '-')}-${semester.toLowerCase().replace(' ', '')}`;
+    const periodDocRef = doc(db, 'academic_periods', periodId);
+    await setDoc(periodDocRef, {
+      id: periodId,
+      academicYear,
+      semester,
+      isPublished: true,
+      publishedAt: now,
+      publishedBy: publisherName
+    }, { merge: true });
+
+  } catch (error) {
+    console.warn(`[Firestore] Failed to publish period timetable (${academicYear} ${semester}):`, error);
+  }
+}
+
+export async function unpublishPeriodTimetableInFirestore(
+  academicYear: string,
+  semester: string
+): Promise<void> {
+  try {
+    const existingSnap = await getDocs(collection(db, 'timetables'));
+    const matchingDocs = existingSnap.docs.filter((d) => {
+      const data = d.data() as TimetableEntry;
+      const dataYear = data.academicYear || '2026/2027';
+      const dataSem = data.semester || 'Semester 1';
+      return dataYear === academicYear && dataSem === semester;
+    });
+
+    const chunks = [];
+    for (let i = 0; i < matchingDocs.length; i += 400) {
+      chunks.push(matchingDocs.slice(i, i + 400));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      for (const d of chunk) {
+        batch.update(d.ref, {
+          status: 'generated'
+        });
+      }
+      await batch.commit();
+    }
+
+    const periodId = `${academicYear.replace('/', '-')}-${semester.toLowerCase().replace(' ', '')}`;
+    const periodDocRef = doc(db, 'academic_periods', periodId);
+    await setDoc(periodDocRef, {
+      id: periodId,
+      academicYear,
+      semester,
+      isPublished: false
+    }, { merge: true });
+
+  } catch (error) {
+    console.warn(`[Firestore] Failed to unpublish period timetable (${academicYear} ${semester}):`, error);
+  }
+}
+
+// ---------------- ACADEMIC PERIOD OPERATIONS ---------------- //
+
+export async function saveAcademicPeriodToFirestore(period: AcademicPeriod): Promise<void> {
+  const docId = sanitizeDocId(period.id);
+  try {
+    await setDoc(doc(db, 'academic_periods', docId), cleanFirestoreData(period), { merge: true });
+  } catch (error) {
+    console.warn(`[Firestore] Failed to save academic period ${period.id}:`, error);
+  }
+}
+
+export async function bulkSaveAcademicPeriodsToFirestore(periods: AcademicPeriod[]): Promise<void> {
+  if (!periods.length) return;
+  try {
+    const batch = writeBatch(db);
+    for (const p of periods) {
+      const docRef = doc(db, 'academic_periods', sanitizeDocId(p.id));
+      batch.set(docRef, cleanFirestoreData(p), { merge: true });
+    }
+    await batch.commit();
+  } catch (error) {
+    console.warn('[Firestore] Failed bulk academic periods save:', error);
+  }
+}
+
+export async function saveAllSchedulesToFirestore(schedulesList: TimetableEntry[]): Promise<void> {
+  try {
+    // If schedules have academicYear and semester, save scoped; otherwise default chunk save
     const chunks = [];
     for (let i = 0; i < schedulesList.length; i += 400) {
       chunks.push(schedulesList.slice(i, i + 400));
@@ -498,6 +656,13 @@ export async function ensureFirestoreInitialized(): Promise<{
       for (const notif of INITIAL_NOTIFICATIONS) {
         await createNotificationInFirestore(notif as NotificationItem);
       }
+    }
+
+    // 8. Check Academic Periods
+    const periodsSnap = await getDocs(collection(db, 'academic_periods'));
+    if (periodsSnap.empty && INITIAL_ACADEMIC_PERIODS.length > 0) {
+      console.log('[Firestore] Seeding initial academic periods...');
+      await bulkSaveAcademicPeriodsToFirestore(INITIAL_ACADEMIC_PERIODS);
     }
   } catch (error) {
     console.warn('[Firestore] Note during initial collections seed check:', error);

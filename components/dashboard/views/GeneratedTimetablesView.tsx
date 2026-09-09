@@ -23,7 +23,9 @@ import {
   RefreshCw,
   SlidersHorizontal,
   Check,
-  Loader2
+  Loader2,
+  Globe,
+  Calendar
 } from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
 import { TimetableEntry } from '@/lib/dataset';
@@ -45,6 +47,11 @@ export function GeneratedTimetablesView() {
     deleteScheduleEntry, 
     selectedSemester, 
     setSelectedSemester,
+    academicPeriods,
+    currentAcademicYear,
+    setCurrentAcademicYear,
+    publishCurrentTimetable,
+    unpublishCurrentTimetable,
     generateOptimizedTimetable
   } = useTimetable();
 
@@ -61,9 +68,29 @@ export function GeneratedTimetablesView() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateMessage, setGenerateMessage] = useState<string | null>(null);
 
+  // Publishing state
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishMessage, setPublishMessage] = useState<string | null>(null);
+
   // Delete modal state
   const [deleteEntryId, setDeleteEntryId] = useState<string | null>(null);
   const [deleteEntryName, setDeleteEntryName] = useState<string>('');
+
+  const targetSemester = selectedSemester === 'All' ? 'Semester 1' : selectedSemester;
+  const currentPeriod = useMemo(() => {
+    return academicPeriods.find(
+      p => p.academicYear === currentAcademicYear && p.semester === targetSemester
+    );
+  }, [academicPeriods, currentAcademicYear, targetSemester]);
+
+  const isCurrentPeriodPublished = useMemo(() => {
+    if (currentPeriod) return currentPeriod.isPublished;
+    return schedules.some(
+      s => s.status === 'published' && 
+           (!s.academicYear || s.academicYear === currentAcademicYear) && 
+           (selectedSemester === 'All' || s.semester === selectedSemester)
+    );
+  }, [currentPeriod, schedules, currentAcademicYear, selectedSemester]);
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const timePeriods = [
@@ -108,12 +135,31 @@ export function GeneratedTimetablesView() {
     setGenerateMessage(null);
     try {
       const count = generateOptimizedTimetable();
-      setGenerateMessage(`Successfully generated ${count} collision-free timetable allocations.`);
+      setGenerateMessage(`Successfully generated ${count} collision-free timetable allocations for ${currentAcademicYear} (${targetSemester}).`);
       setTimeout(() => setGenerateMessage(null), 4000);
     } catch (err: any) {
       setGenerateMessage('Failed to generate timetable.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleTogglePublish = async () => {
+    setIsPublishing(true);
+    setPublishMessage(null);
+    try {
+      if (isCurrentPeriodPublished) {
+        await unpublishCurrentTimetable(currentAcademicYear, targetSemester);
+        setPublishMessage(`Timetable for ${currentAcademicYear} ${targetSemester} reverted to Draft status.`);
+      } else {
+        await publishCurrentTimetable(currentAcademicYear, targetSemester);
+        setPublishMessage(`Timetable for ${currentAcademicYear} ${targetSemester} published to all lecturers and students.`);
+      }
+      setTimeout(() => setPublishMessage(null), 4000);
+    } catch (err: any) {
+      setPublishMessage(err?.message || 'Failed to update publishing status.');
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -136,9 +182,9 @@ export function GeneratedTimetablesView() {
             <h3 className="text-sm font-bold text-black mt-1">Master Academic Timetable Schedule</h3>
           </div>
           <div className="text-right text-xs text-black leading-tight">
-            <p className="font-semibold">Academic Year: 2026/2027</p>
+            <p className="font-semibold">Academic Year: {currentAcademicYear}</p>
             <p className="font-semibold">Semester: {selectedSemester}</p>
-            <p className="text-zinc-600 text-[10px] mt-1">Status: Official Schedule Grid</p>
+            <p className="text-zinc-600 text-[10px] mt-1">Status: {isCurrentPeriodPublished ? 'Official Published' : 'Working Draft'}</p>
           </div>
         </div>
       </div>
@@ -154,12 +200,61 @@ export function GeneratedTimetablesView() {
               {filteredSchedules.length} Sessions
             </span>
           </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Department of Computer Science • {selectedSemester}
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              Department of Computer Science • {currentAcademicYear} {selectedSemester}
+            </span>
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+              isCurrentPeriodPublished
+                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20'
+            }`}>
+              {isCurrentPeriodPublished ? (
+                <>
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Official Published
+                </>
+              ) : (
+                <>
+                  <Clock className="w-3 h-3 text-amber-600" />
+                  Draft Working Mode
+                </>
+              )}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center flex-wrap gap-2.5 self-start sm:self-auto no-print">
+          {/* Publish / Unpublish Official Timetable Button */}
+          <button
+            id="publish-timetable-btn"
+            onClick={handleTogglePublish}
+            disabled={isPublishing}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50 ${
+              isCurrentPeriodPublished
+                ? 'bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20'
+            }`}
+            title={isCurrentPeriodPublished ? 'Click to unpublish timetable back to draft' : 'Publish official timetable to lecturers and students'}
+          >
+            {isPublishing ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Updating...</span>
+              </>
+            ) : isCurrentPeriodPublished ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Published (Revert)</span>
+              </>
+            ) : (
+              <>
+                <Globe className="w-3.5 h-3.5" />
+                <span>Publish Timetable</span>
+              </>
+            )}
+          </button>
+
           {/* Auto-Generate AI Button */}
           <button
             onClick={handleGenerate}
@@ -241,7 +336,7 @@ export function GeneratedTimetablesView() {
         </div>
       </div>
 
-      {/* Generation Alert Feedback */}
+      {/* Generation & Publishing Alert Feedback */}
       {generateMessage && (
         <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in-50 no-print">
           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -249,25 +344,49 @@ export function GeneratedTimetablesView() {
         </div>
       )}
 
-      {/* Filter Toolbar: Semester Selector, Level Filters, Search */}
+      {publishMessage && (
+        <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in-50 no-print">
+          <Globe className="w-4 h-4 text-blue-600 shrink-0" />
+          <span>{publishMessage}</span>
+        </div>
+      )}
+
+      {/* Filter Toolbar: Academic Year, Semester Selector, Level Filters, Search */}
       <div className="space-y-3 no-print">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           
-          {/* Semester Selector on the Schedule View */}
-          <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs self-start max-w-full overflow-x-auto custom-scrollbar">
-            {(['Semester 1', 'Semester 2', 'All'] as const).map((sem) => (
-              <button
-                key={sem}
-                onClick={() => setSelectedSemester(sem)}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedSemester === sem
-                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }`}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Academic Year Selector */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs">
+              <Calendar className="w-3.5 h-3.5 text-zinc-500" />
+              <select
+                id="academic-year-select"
+                value={currentAcademicYear}
+                onChange={(e) => setCurrentAcademicYear(e.target.value)}
+                className="bg-transparent font-bold text-zinc-800 dark:text-zinc-200 outline-hidden cursor-pointer"
               >
-                {sem}
-              </button>
-            ))}
+                <option value="2026/2027" className="dark:bg-zinc-900">2026/2027</option>
+                <option value="2025/2026" className="dark:bg-zinc-900">2025/2026</option>
+                <option value="2027/2028" className="dark:bg-zinc-900">2027/2028</option>
+              </select>
+            </div>
+
+            {/* Semester Selector on the Schedule View */}
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs self-start max-w-full overflow-x-auto custom-scrollbar">
+              {(['Semester 1', 'Semester 2', 'All'] as const).map((sem) => (
+                <button
+                  key={sem}
+                  onClick={() => setSelectedSemester(sem)}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    selectedSemester === sem
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
+                      : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                  }`}
+                >
+                  {sem}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Academic Level Filter Tabs */}

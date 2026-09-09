@@ -77,8 +77,7 @@ export function LecturerSidebar({
       label: 'Requests', 
       icon: ClipboardList, 
       badge: pendingRequestsCount > 0 ? pendingRequestsCount : undefined 
-    },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    }
   ];
 
   const handleNavClick = (view: LecturerViewType) => {
@@ -169,19 +168,19 @@ export function LecturerSidebar({
                 }
               `}
             >
-              {/* Left Group: Centered Icon + Revealable Label */}
+              {/* Left Group: Direct Icon + Revealable Label */}
               <div className={`flex items-center min-w-0 ${isExpanded ? 'gap-3' : 'justify-center w-full'}`}>
                 <div 
                   className={`
-                    rounded-xl flex items-center justify-center shrink-0 transition-all duration-200
-                    ${isExpanded ? 'w-9 h-9' : 'w-10.5 h-10.5'}
+                    flex items-center justify-center shrink-0 transition-colors
+                    ${isExpanded ? 'w-5 h-5' : 'w-10.5 h-10.5 rounded-xl'}
                     ${isActive
-                      ? 'bg-zinc-200/80 dark:bg-white/15 text-zinc-900 dark:text-white border border-zinc-300/60 dark:border-white/20'
-                      : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white group-hover:bg-black/5 dark:group-hover:bg-white/10 border border-transparent'
+                      ? 'text-zinc-950 dark:text-white'
+                      : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white'
                     }
                   `}
                 >
-                  <Icon className="w-5 h-5 shrink-0 stroke-[1.85]" />
+                  <Icon className="w-4.5 h-4.5 shrink-0 stroke-[1.85]" />
                 </div>
 
                 <div className={`sidebar-text-reveal text-left ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
@@ -217,7 +216,7 @@ export function LecturerSidebar({
           title={!isExpanded ? displayName : 'Faculty Profile & Settings'}
         >
           {user?.avatar ? (
-            <div className="w-10.5 h-10.5 rounded-full overflow-hidden border border-blue-500/40 ring-1 ring-white/50 dark:ring-white/10 shrink-0 shadow-xs flex items-center justify-center">
+            <div className="w-10.5 h-10.5 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shrink-0 shadow-2xs flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={user.avatar}
@@ -226,7 +225,7 @@ export function LecturerSidebar({
               />
             </div>
           ) : (
-            <div className="w-10.5 h-10.5 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold shrink-0 shadow-inner">
+            <div className="w-10.5 h-10.5 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center text-xs font-bold shrink-0">
               {displayName.charAt(0).toUpperCase()}
             </div>
           )}
@@ -246,19 +245,17 @@ export function LecturerSidebar({
           onClick={handleLogout}
           disabled={isSigningOut || authIsSigningOut}
           title={!isExpanded ? 'Sign Out' : undefined}
-          className={`w-full flex items-center rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/5 hover:bg-rose-500/15 border border-rose-500/15 dark:border-rose-500/20 transition-all cursor-pointer disabled:opacity-60 shadow-2xs ${
-            isExpanded ? 'px-3.5 py-2 justify-center gap-2' : 'p-0 justify-center h-10.5'
+          className={`w-full flex items-center rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-60 ${
+            isExpanded ? 'px-3 py-2 justify-start gap-2.5' : 'p-0 justify-center h-10.5'
           }`}
         >
-          <div className="w-10.5 h-10.5 rounded-xl flex items-center justify-center shrink-0">
-            {isSigningOut || authIsSigningOut ? (
-              <Loader2 className="w-4.5 h-4.5 animate-spin shrink-0" />
-            ) : (
-              <LogOut className="w-4.5 h-4.5 shrink-0" />
-            )}
-          </div>
+          {isSigningOut || authIsSigningOut ? (
+            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          ) : (
+            <LogOut className="w-4 h-4 shrink-0" />
+          )}
           <div className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
-            <span className="font-semibold">{isSigningOut || authIsSigningOut ? 'Signing out...' : 'Sign Out'}</span>
+            <span>{isSigningOut || authIsSigningOut ? 'Signing out...' : 'Sign out'}</span>
           </div>
         </button>
       </div>

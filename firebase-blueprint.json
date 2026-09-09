@@ -143,6 +143,23 @@
         "isRead": { "type": "boolean" }
       },
       "required": ["id", "recipientRole", "title", "message", "type", "createdAt", "isRead"]
+    },
+    "AcademicPeriod": {
+      "title": "AcademicPeriod",
+      "description": "Academic year and semester scheduling cycle",
+      "type": "object",
+      "properties": {
+        "periodId": { "type": "string", "maxLength": 60 },
+        "academicYear": { "type": "string", "maxLength": 30 },
+        "semester": { "type": "string", "maxLength": 30 },
+        "isActive": { "type": "boolean" },
+        "isPublished": { "type": "boolean" },
+        "startDate": { "type": "string", "maxLength": 30 },
+        "endDate": { "type": "string", "maxLength": 30 },
+        "publishedAt": { "type": "string", "maxLength": 50 },
+        "publishedBy": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["periodId", "academicYear", "semester", "isActive", "isPublished"]
     }
   },
   "firestore": {
@@ -161,6 +178,10 @@
     "/timeslots/{slotId}": {
       "schema": "TimeSlot",
       "description": "Timetable periods"
+    },
+    "/academic_periods/{periodId}": {
+      "schema": "AcademicPeriod",
+      "description": "Academic periods and timetable publishing status"
     },
     "/timetables/{scheduleId}": {
       "schema": "TimetableSchedule",

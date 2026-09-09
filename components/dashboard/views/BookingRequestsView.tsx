@@ -167,27 +167,27 @@ export function BookingRequestsView() {
       {/* 1. Header & Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              Faculty Booking Requests
-            </h1>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              Booking Requests
+            </h2>
             {counts.pending > 0 && (
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 animate-pulse">
-                {counts.pending} Action Required
+              <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                {counts.pending} pending
               </span>
             )}
           </div>
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Review and manage ad-hoc room reservation requests from academic instructors and department faculty.
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            Room reservations submitted by academic faculty
           </p>
         </div>
       </div>
 
       {/* 2. Status Navigation & Search Bar */}
-      <div className="p-3 sm:p-4 rounded-3xl liquid-glass border border-zinc-200/70 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="p-3 rounded-2xl glass-panel flex flex-col md:flex-row md:items-center justify-between gap-3">
         
         {/* Status Filter Buttons */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs overflow-x-auto max-w-full">
           {(['All', 'Pending', 'Approved', 'Rejected', 'Withdrawn'] as const).map(status => {
             const count = status === 'All' ? counts.total : counts[status.toLowerCase() as keyof typeof counts];
             const isSelected = filterStatus === status;
@@ -197,19 +197,19 @@ export function BookingRequestsView() {
                 key={status}
                 type="button"
                 onClick={() => setFilterStatus(status)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
                     : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
                 }`}
               >
                 <span>{status}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                <span className={`text-[11px] ${
                   isSelected 
-                    ? 'bg-white/20 dark:bg-black/20 text-white dark:text-zinc-950 font-bold' 
-                    : 'bg-zinc-200/70 dark:bg-white/10 text-zinc-600 dark:text-zinc-400'
+                    ? 'opacity-80' 
+                    : 'text-zinc-400'
                 }`}>
-                  {count}
+                  ({count})
                 </span>
               </button>
             );
@@ -217,14 +217,14 @@ export function BookingRequestsView() {
         </div>
 
         {/* Search */}
-        <div className="relative w-full md:w-72">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+        <div className="relative w-full md:w-64">
+          <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search lecturer, course, venue..."
-            className="w-full glass-input pl-9.5 pr-4 py-2 text-xs sm:text-sm text-zinc-900 dark:text-white rounded-2xl placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="Search bookings..."
+            className="w-full pl-9 pr-4 py-1.5 text-xs text-zinc-900 dark:text-white rounded-xl bg-white/60 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
 
@@ -236,17 +236,16 @@ export function BookingRequestsView() {
           {filteredRequests.map(req => {
             const availability = checkVenueAvailability(req);
             const isProcessing = processingId === req.id;
-
             const isHighlighted = highlightedBookingId === req.id;
 
             return (
               <div 
                 key={req.id} 
                 id={`booking-card-${req.id}`}
-                className={`liquid-glass rounded-3xl border p-4 sm:p-5 transition-all ${
+                className={`glass-panel rounded-2xl p-4 sm:p-5 transition-all ${
                   isHighlighted
-                    ? 'border-blue-500 ring-2 ring-blue-500/50 shadow-xl shadow-blue-500/10 bg-blue-50/10 dark:bg-blue-950/20'
-                    : 'border-zinc-200/70 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20'
+                    ? 'border-blue-500 ring-1 ring-blue-500/50 bg-blue-500/5'
+                    : 'hover:border-zinc-300 dark:hover:border-white/20'
                 }`}
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -260,13 +259,13 @@ export function BookingRequestsView() {
                         {req.hallName}
                       </span>
                       <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        ({req.buildingLocation})
+                        {req.buildingLocation}
                       </span>
 
-                      {/* Focused Highlight Pill */}
+                      {/* Focused Highlight Indicator */}
                       {isHighlighted && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-xs animate-pulse">
-                          <span>Focused from Notification</span>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                          <span>Focused</span>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -281,70 +280,66 @@ export function BookingRequestsView() {
                         </span>
                       )}
 
-                      {/* Status Badge */}
+                      {/* Status Text */}
                       {req.status === 'Pending' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                          <Clock className="w-3 h-3" />
-                          Pending Review
+                        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                          Pending review
                         </span>
                       )}
                       {req.status === 'Approved' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                          <CheckCircle2 className="w-3 h-3" />
+                        <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
                           Approved
                         </span>
                       )}
                       {req.status === 'Rejected' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
-                          <XCircle className="w-3 h-3" />
+                        <span className="text-xs font-medium text-rose-600 dark:text-rose-400">
                           Declined
                         </span>
                       )}
                       {req.status === 'Withdrawn' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20">
-                          <Clock className="w-3 h-3" />
+                        <span className="text-xs font-medium text-zinc-400">
                           Withdrawn
                         </span>
                       )}
 
                       {/* Conflict Warning Notice (If pending) */}
                       {req.status === 'Pending' && availability.hasWarning && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-500/10">
                           <AlertCircle className="w-3 h-3" />
                           {availability.timetableConflict 
                             ? `Conflict: ${availability.timetableConflict.courseCode}` 
                             : availability.bookingConflict
                             ? 'Conflict with another reservation'
-                            : 'Capacity Warning'}
+                            : 'Capacity warning'}
                         </span>
                       )}
                     </div>
 
                     {/* Middle Row: Course & Faculty Information */}
-                    <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-zinc-600 dark:text-zinc-300">
-                      <div className="flex items-center gap-1.5 font-semibold text-zinc-900 dark:text-zinc-100">
-                        <User className="w-3.5 h-3.5 text-blue-500" />
+                    <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-zinc-600 dark:text-zinc-400">
+                      <div className="flex items-center gap-1.5 font-medium text-zinc-900 dark:text-zinc-100">
+                        <User className="w-3.5 h-3.5 text-zinc-400" />
                         <span>{req.lecturerName}</span>
                         <span className="text-zinc-400 font-normal">({req.lecturerEmail})</span>
                       </div>
 
                       <div className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">{req.day}</span>
+                        <span className="font-medium text-zinc-800 dark:text-zinc-200">{req.day}</span>
                         <span>•</span>
                         <span>{req.timeSlot}</span>
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 rounded-md bg-zinc-200 dark:bg-zinc-800 font-mono text-[11px] font-bold">
+                        <span className="font-mono text-[11px] font-semibold text-zinc-800 dark:text-zinc-200">
                           {req.courseCode}
                         </span>
                         <span className="truncate max-w-xs">{req.courseTitle}</span>
                       </div>
 
                       <div className="flex items-center gap-1">
-                        <span>Expected Attendance:</span>
-                        <span className="font-bold text-zinc-900 dark:text-white">
+                        <span>Attendance:</span>
+                        <span className="font-semibold text-zinc-900 dark:text-white">
                           {req.expectedAttendance}
                         </span>
                         {availability.facility && (
@@ -355,16 +350,15 @@ export function BookingRequestsView() {
 
                     {/* Purpose / Notes */}
                     {req.purpose && (
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400 bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-xl border border-zinc-200/50 dark:border-white/5">
-                        <span className="font-semibold text-zinc-700 dark:text-zinc-300">Notes:</span> {req.purpose}
+                      <div className="text-xs text-zinc-600 dark:text-zinc-400 bg-black/[0.02] dark:bg-white/[0.02] p-2 rounded-xl border border-zinc-200/50 dark:border-white/5">
+                        <span className="font-medium text-zinc-700 dark:text-zinc-300">Notes:</span> {req.purpose}
                       </div>
                     )}
 
                     {/* Admin Feedback (If reviewed) */}
                     {req.adminFeedback && (
-                      <div className="text-xs text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 pt-0.5">
-                        <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
-                        <span>Admin Note: <em>&ldquo;{req.adminFeedback}&rdquo;</em></span>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 pt-0.5">
+                        <span>Feedback: <em>&ldquo;{req.adminFeedback}&rdquo;</em></span>
                         {req.reviewedBy && <span className="text-zinc-400">— {req.reviewedBy}</span>}
                       </div>
                     )}
@@ -379,7 +373,7 @@ export function BookingRequestsView() {
                           type="button"
                           onClick={() => handleQuickApprove(req)}
                           disabled={isProcessing}
-                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 transition-colors cursor-pointer disabled:opacity-50"
                         >
                           {isProcessing ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -393,25 +387,24 @@ export function BookingRequestsView() {
                           type="button"
                           onClick={() => handleOpenActionModal('reject', req)}
                           disabled={isProcessing}
-                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/20 transition-all cursor-pointer disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-500/10 dark:text-rose-400 transition-colors cursor-pointer disabled:opacity-50"
                         >
                           <X className="w-3.5 h-3.5" />
                           <span>Decline</span>
                         </button>
                       </>
                     ) : req.status === 'Withdrawn' ? (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 text-xs font-semibold select-none">
-                        <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                        <span>Withdrawn by Lecturer</span>
+                      <div className="text-zinc-400 text-xs select-none">
+                        Withdrawn
                       </div>
                     ) : (
                       <button
                         type="button"
                         onClick={() => handleOpenActionModal(req.status === 'Approved' ? 'reject' : 'approve', req)}
                         disabled={isProcessing}
-                        className="px-3 py-1.5 rounded-xl text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
                       >
-                        Change Status
+                        Change status
                       </button>
                     )}
                   </div>
@@ -423,20 +416,15 @@ export function BookingRequestsView() {
         </div>
       ) : (
         /* Empty State */
-        <div className="rounded-3xl liquid-glass border border-zinc-200/70 dark:border-white/10 p-12 text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto border border-blue-500/20">
-            <DoorOpen className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-white">
-              No booking requests found
-            </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto mt-1">
-              {searchQuery 
-                ? `No requests match "${searchQuery}". Try clearing your search query.` 
-                : 'When faculty members submit ad-hoc room reservation requests, they will appear here in real-time.'}
-            </p>
-          </div>
+        <div className="rounded-2xl glass-panel p-12 text-center space-y-2">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+            No booking requests
+          </h3>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto">
+            {searchQuery 
+              ? `No requests match "${searchQuery}".` 
+              : 'When faculty submit room reservation requests, they will appear here.'}
+          </p>
         </div>
       )}
 

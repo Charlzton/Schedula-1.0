@@ -41,7 +41,8 @@ export function LecturerOverviewView({ onNavigate, bookingRequests, onOpenProfil
       );
       if (found) return found;
     }
-    return lecturers.find(l => l.lecturerId === 'L308') || lecturers[0] || null;
+    // Strict isolation: NEVER fall back to another lecturer's schedule or mock ID
+    return null;
   }, [lecturerProfile, user, lecturers]);
 
   const lecturerName = activeLecturer?.fullName || user?.name || 'Faculty Member';
@@ -126,6 +127,18 @@ export function LecturerOverviewView({ onNavigate, bookingRequests, onOpenProfil
           </button>
         </div>
       </div>
+
+      {/* Unlinked Profile Notice */}
+      {!activeLecturer && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Users className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              <strong>Faculty Profile Unlinked:</strong> Your account is not currently associated with a verified teaching profile. Contact administration to assign your courses.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* 2. Key Metrics Strip (Admin Style) */}
       <section aria-label="Key Faculty Metrics" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -267,7 +280,9 @@ export function LecturerOverviewView({ onNavigate, bookingRequests, onOpenProfil
           ) : (
             <div className="liquid-glass rounded-3xl border border-zinc-200/70 dark:border-white/10 p-8 text-center space-y-3">
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                No teaching sessions scheduled for {isWeekend ? 'Monday' : 'today'}.
+                {!activeLecturer 
+                  ? 'No teaching schedule available. Contact administration to assign your courses.' 
+                  : `No teaching sessions scheduled for ${isWeekend ? 'Monday' : 'today'}.`}
               </p>
               <button
                 type="button"

@@ -58,7 +58,8 @@ export function RoomBookingModal({
     setIsSubmitting(true);
     try {
       await onSubmit({
-        lecturerId: lecturerProfile?.lecturerId || user?.lecturerId || 'FACULTY',
+        userId: user?.id,
+        lecturerId: lecturerProfile?.lecturerId || user?.lecturerId || '',
         lecturerName: lecturerProfile?.fullName || user?.name || 'Faculty Member',
         lecturerEmail: user?.email || '',
         hallId: facility.hallId,

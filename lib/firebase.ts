@@ -7,6 +7,7 @@ import {
   createUserWithEmailAndPassword, 
   sendEmailVerification,
   sendPasswordResetEmail,
+  deleteUser,
   signOut as fbSignOut, 
   onAuthStateChanged,
   updateProfile,
@@ -17,7 +18,7 @@ import { getFirestore, Firestore } from "firebase/firestore";
 import appletConfig from "@/firebase-applet-config.json";
 
 // Firebase configuration supporting process.env overrides with appletConfig fallbacks
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || appletConfig.apiKey || "AIzaSyAJlg589_YKwgqoESAz6wsh_i6qbI4D9EU",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || appletConfig.authDomain || "schedula-bc58e.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || appletConfig.projectId || "schedula-bc58e",
@@ -41,6 +42,7 @@ export {
   createUserWithEmailAndPassword, 
   sendEmailVerification,
   sendPasswordResetEmail,
+  deleteUser,
   updateProfile,
   updatePassword,
   fbSignOut, 

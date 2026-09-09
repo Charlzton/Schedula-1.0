@@ -10,23 +10,31 @@ import {
   createUserWithEmailAndPassword, 
   sendEmailVerification,
   sendPasswordResetEmail,
+  deleteUser,
   updateProfile,
   updatePassword,
   fbSignOut, 
   onAuthStateChanged,
   FirebaseUser 
 } from '@/lib/firebase';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { Lecturer, INITIAL_LECTURERS } from '@/lib/dataset';
+import { 
+  createAdministratorAccount, 
+  getAdministratorAccounts, 
+  updateAdministratorRole, 
+  deleteUserAccount,
+  AdminUserRecord 
+} from '@/lib/adminAuthService';
 
-export type UserRole = 'admin' | 'lecturer';
+export type UserRole = 'super_admin' | 'admin' | 'lecturer';
 
 export interface User {
   id: string;
   name: string;
   email: string;
   avatar?: string;
-  role?: string;
+  role?: UserRole;
   institution?: string;
   provider: 'email' | 'google';
   lecturerId?: string;
@@ -41,17 +49,45 @@ interface AuthContextType {
   signUpWithEmail: (name: string, email: string, password: string, institution?: string, portalRole?: UserRole) => Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }>;
   sendPasswordReset: (email: string) => Promise<{ success: boolean; error?: string; code?: string }>;
   signInWithGoogle: (portalRole?: UserRole) => Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }>;
-  updateUserProfile: (name: string, avatar?: any) => Promise<{ success: boolean; error?: string }>;
+  updateUserProfile: (nameOrData: string | { name?: string; avatar?: any }, avatar?: any) => Promise<{ success: boolean; error?: string }>;
+  updateLecturerProfile: (details: Partial<Lecturer>) => Promise<{ success: boolean; error?: string }>;
   updateLecturerProfileDetails: (details: Partial<Lecturer>) => Promise<{ success: boolean; error?: string }>;
   changePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   removeProfilePicture: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
+  createAdmin: (params: { fullName: string; email: string; password: string; role: 'admin' | 'super_admin'; institution?: string }) => Promise<{ success: boolean; error?: string }>;
+  updateAdminRole: (userId: string, newRole: 'admin' | 'super_admin') => Promise<{ success: boolean; error?: string }>;
+  deleteAdminAccount: (userId: string) => Promise<{ success: boolean; error?: string }>;
+  deleteCurrentUserAccount: () => Promise<{ success: boolean; error?: string }>;
+  getAdministrators: () => Promise<AdminUserRecord[]>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_STORAGE_KEY = 'schedula-auth-user';
 const LECTURER_STORAGE_KEY = 'schedula-auth-lecturer';
+
+async function findLecturerById(lecturerId: string): Promise<Lecturer | null> {
+  const cleanId = lecturerId.trim();
+  if (!cleanId) return null;
+
+  try {
+    const docSnap = await getDoc(doc(db, 'lecturers', cleanId));
+    if (docSnap.exists()) {
+      const data = docSnap.data() as Lecturer;
+      return {
+        ...data,
+        lecturerId: data.lecturerId || docSnap.id,
+        accountStatus: data.accountStatus || (data.authUid ? 'active' : 'unclaimed')
+      };
+    }
+  } catch (err) {
+    console.warn('Firestore lecturer search by ID note:', err);
+  }
+
+  const match = INITIAL_LECTURERS.find(l => l.lecturerId === cleanId);
+  return match ? { ...match, accountStatus: match.accountStatus || 'unclaimed' } : null;
+}
 
 /**
  * Helper to match an email against the lecturer catalog (Firestore first, then INITIAL_LECTURERS fallback)
@@ -70,7 +106,8 @@ async function findLecturerByEmail(email: string): Promise<Lecturer | null> {
         if (offEmail === cleanEmail || persEmail === cleanEmail) {
           return {
             ...data,
-            lecturerId: data.lecturerId || docSnap.id
+            lecturerId: data.lecturerId || docSnap.id,
+            accountStatus: data.accountStatus || (data.authUid ? 'active' : 'unclaimed')
           };
         }
       }
@@ -85,7 +122,7 @@ async function findLecturerByEmail(email: string): Promise<Lecturer | null> {
     (l.email && l.email.trim().toLowerCase() === cleanEmail)
   );
 
-  return match || null;
+  return match ? { ...match, accountStatus: match.accountStatus || 'unclaimed' } : null;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -95,11 +132,119 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isSigningOut, setIsSigningOut] = useState<boolean>(false);
 
   useEffect(() => {
+    let unsubUserDoc: Unsubscribe | null = null;
+    let unsubLecturerDoc: Unsubscribe | null = null;
+    let activeLecturerIdSubscribed: string | null = null;
+    let isTerminatingSession = false;
+    let initialUserDocResolved = false;
+
+    const cleanupListeners = () => {
+      if (unsubUserDoc) {
+        try { unsubUserDoc(); } catch {}
+        unsubUserDoc = null;
+      }
+      if (unsubLecturerDoc) {
+        try { unsubLecturerDoc(); } catch {}
+        unsubLecturerDoc = null;
+      }
+      activeLecturerIdSubscribed = null;
+      initialUserDocResolved = false;
+    };
+
+    const terminateSession = async (reason?: string) => {
+      if (isTerminatingSession) return;
+      isTerminatingSession = true;
+      cleanupListeners();
+
+      setUser(null);
+      setLecturerProfile(null);
+      try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(LECTURER_STORAGE_KEY);
+      } catch {}
+
+      try {
+        await fbSignOut(auth);
+      } catch (err) {
+        console.warn('Real-time session termination notice:', err);
+      } finally {
+        setIsLoading(false);
+        isTerminatingSession = false;
+      }
+    };
+
+    const subscribeToLecturerDoc = (lecturerId: string) => {
+      const cleanId = (lecturerId || '').trim();
+      if (!cleanId || activeLecturerIdSubscribed === cleanId) return;
+
+      if (unsubLecturerDoc) {
+        try { unsubLecturerDoc(); } catch {}
+        unsubLecturerDoc = null;
+      }
+
+      activeLecturerIdSubscribed = cleanId;
+      const lecturerDocRef = doc(db, 'lecturers', cleanId);
+
+      unsubLecturerDoc = onSnapshot(
+        lecturerDocRef,
+        (lecSnap) => {
+          if (!lecSnap.exists()) {
+            return;
+          }
+          const lecData = lecSnap.data() as Lecturer;
+
+          // 1. Account suspension detection:
+          // Immediately terminate session if lecturer is suspended
+          if (lecData.accountStatus === 'suspended') {
+            terminateSession('Lecturer account suspended');
+            return;
+          }
+
+          // 2. Normal profile updates (name, avatar, title, department, email, phone, etc.)
+          // Seamlessly update lecturer profile and app user without terminating session
+          setLecturerProfile(prev => {
+            const updated: Lecturer = {
+              ...(prev || {}),
+              ...lecData,
+              lecturerId: lecData.lecturerId || lecSnap.id,
+              accountStatus: lecData.accountStatus || 'active'
+            };
+            try {
+              localStorage.setItem(LECTURER_STORAGE_KEY, JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+
+          setUser(prev => {
+            if (!prev) return null;
+            const updated: User = {
+              ...prev,
+              name: lecData.fullName || prev.name,
+              avatar: lecData.avatar !== undefined ? lecData.avatar : prev.avatar
+            };
+            try {
+              localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+        },
+        (error) => {
+          console.warn('Real-time lecturer doc listener notice:', error);
+        }
+      );
+    };
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
+        // Clean up any stale listeners from previous account
+        cleanupListeners();
+
+        const cleanEmail = (firebaseUser.email || '').toLowerCase().trim();
+        const isPrimarySuperAdmin = cleanEmail === 'charlestonkyeremeh6@gmail.com';
+
         let fetchedAvatar = firebaseUser.photoURL || undefined;
         let fetchedName = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User';
-        let fetchedRole = 'admin';
+        let fetchedRole: UserRole = 'lecturer'; // Default role, resolved authoritatively via Firestore
         let cachedLecturer: Lecturer | null = null;
 
         // Check local storage cache as the first source of truth for custom settings before Firestore responds
@@ -112,7 +257,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (parsed.name) fetchedName = parsed.name;
               if (parsed.role) {
                 const r = String(parsed.role).toLowerCase();
-                fetchedRole = r.includes('lecturer') ? 'lecturer' : 'admin';
+                if (r === 'super_admin') fetchedRole = 'super_admin';
+                else if (r === 'admin') fetchedRole = 'admin';
+                else if (r === 'lecturer') fetchedRole = 'lecturer';
               }
             }
           }
@@ -124,6 +271,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (cachedLecturer) {
           setLecturerProfile(cachedLecturer);
+          if (cachedLecturer.lecturerId) {
+            subscribeToLecturerDoc(cachedLecturer.lecturerId);
+          }
         }
 
         const appUser: User = {
@@ -140,55 +290,119 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(appUser);
         setIsLoading(false);
 
-        // Fetch user profile & check lecturer linkage from Firestore asynchronously in the background
-        (async () => {
-          try {
-            const userDocRef = doc(db, 'users', firebaseUser.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            let finalRole = fetchedRole;
-            let finalAvatar = fetchedAvatar;
-            let finalName = fetchedName;
+        // Attach real-time snapshot listener on /users/{uid}
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        unsubUserDoc = onSnapshot(
+          userDocRef,
+          async (userDocSnap) => {
+            // Handle deletion of /users/{uid}
+            if (!userDocSnap.exists()) {
+              if (initialUserDocResolved) {
+                // User document was deleted in real time by an administrator
+                terminateSession('User document deleted');
+                return;
+              }
 
-            if (userDocSnap.exists()) {
-              const data = userDocSnap.data();
-              if (data.role) {
-                const r = String(data.role).toLowerCase();
-                finalRole = r.includes('lecturer') ? 'lecturer' : 'admin';
-              }
-              if (!fetchedAvatar && data.avatar) {
-                finalAvatar = data.avatar;
-              }
-              if (!fetchedName && data.name) {
-                finalName = data.name;
-              }
+              // Initial snapshot grace period to prevent race condition during active sign-up
+              setTimeout(() => {
+                if (!initialUserDocResolved && !isTerminatingSession) {
+                  getDoc(userDocRef).then((checkSnap) => {
+                    if (!checkSnap.exists() && !isTerminatingSession) {
+                      if (isPrimarySuperAdmin) {
+                        setDoc(userDocRef, {
+                          id: firebaseUser.uid,
+                          name: fetchedName || 'Lead Academic Administrator',
+                          email: cleanEmail,
+                          role: 'super_admin',
+                          institution: 'University of Ghana'
+                        }, { merge: true }).catch(() => {});
+                      } else {
+                        terminateSession('User document not found');
+                      }
+                    }
+                  }).catch(() => {});
+                }
+              }, 1500);
+              return;
             }
 
-            // Also check if user email is associated with a lecturer record
-            const userEmail = firebaseUser.email || '';
-            const matchedLecturer = await findLecturerByEmail(userEmail);
-            if (matchedLecturer) {
-              setLecturerProfile(matchedLecturer);
+            initialUserDocResolved = true;
+            const userData = userDocSnap.data();
+
+            // 1. Suspension check on /users/{uid}
+            if (userData?.status === 'suspended' || userData?.accountStatus === 'suspended') {
+              terminateSession('User account suspended');
+              return;
+            }
+
+            // 2. Resolve authoritative role
+            let finalRole: UserRole = fetchedRole;
+            if (isPrimarySuperAdmin) {
+              finalRole = 'super_admin';
+              if (userData?.role !== 'super_admin') {
+                setDoc(userDocRef, {
+                  id: firebaseUser.uid,
+                  name: userData?.name || fetchedName || 'Lead Academic Administrator',
+                  email: cleanEmail,
+                  role: 'super_admin',
+                  institution: 'University of Ghana'
+                }, { merge: true }).catch(() => {});
+              }
+            } else if (userData?.role) {
+              const r = String(userData.role).toLowerCase();
+              if (r === 'super_admin') finalRole = 'super_admin';
+              else if (r === 'admin') finalRole = 'admin';
+              else if (r === 'lecturer') finalRole = 'lecturer';
+            }
+
+            const finalName = userData?.name || fetchedName;
+            const finalAvatar = userData?.avatar !== undefined ? userData.avatar : fetchedAvatar;
+
+            // 3. Resolve and listen to associated lecturer directory record
+            let currentLecturerId = userData?.lecturerId;
+            if (!currentLecturerId && cleanEmail) {
               try {
-                localStorage.setItem(LECTURER_STORAGE_KEY, JSON.stringify(matchedLecturer));
+                const matched = await findLecturerByEmail(cleanEmail);
+                if (matched) {
+                  currentLecturerId = matched.lecturerId;
+                  setDoc(userDocRef, { lecturerId: matched.lecturerId }, { merge: true }).catch(() => {});
+                }
               } catch {}
             }
 
-            const updatedUser: User = {
-              ...appUser,
-              name: finalName,
-              avatar: finalAvatar,
-              role: finalRole,
-              lecturerId: matchedLecturer?.lecturerId || appUser.lecturerId
-            };
-            setUser(updatedUser);
-            try {
-              localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));
-            } catch {}
-          } catch (dbErr) {
-            console.warn('Firestore active user background fetch warning:', dbErr);
+            if (currentLecturerId) {
+              subscribeToLecturerDoc(currentLecturerId);
+            }
+
+            // 4. Update user state smoothly for profile edits (name, avatar, title, department, institution)
+            setUser(prev => {
+              const updated: User = {
+                id: firebaseUser.uid,
+                name: finalName,
+                email: firebaseUser.email || cleanEmail || 'user@example.com',
+                avatar: finalAvatar,
+                role: finalRole,
+                provider: firebaseUser.providerData.some(p => p.providerId === 'google.com') ? 'google' : 'email',
+                institution: userData?.institution || prev?.institution,
+                lecturerId: currentLecturerId || prev?.lecturerId
+              };
+              try {
+                localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
+              } catch {}
+              return updated;
+            });
+
+            setIsLoading(false);
+          },
+          (error) => {
+            console.warn('Real-time user doc listener notice:', error);
+            if (error.code === 'permission-denied' && initialUserDocResolved) {
+              terminateSession('Access revoked');
+            }
           }
-        })();
+        );
       } else {
+        cleanupListeners();
         setUser(null);
         setLecturerProfile(null);
         try {
@@ -199,7 +413,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      cleanupListeners();
+      unsubscribe();
+    };
   }, []);
 
   const signInWithEmail = async (
@@ -209,7 +426,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ): Promise<{ success: boolean; error?: string; unverified?: boolean; email?: string; code?: string; targetRoute?: string }> => {
     setIsLoading(true);
     try {
-      const cleanEmail = email.trim();
+      const cleanEmail = email.trim().toLowerCase();
       if (!cleanEmail) {
         setIsLoading(false);
         return { success: false, error: 'Please enter your email address.', code: 'auth/missing-email' };
@@ -226,20 +443,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 2. Fetch authoritative user document from Firestore
       const userDocRef = doc(db, 'users', fbUser.uid);
       const userDocSnap = await getDoc(userDocRef);
-      const userData = userDocSnap.exists() ? userDocSnap.data() : null;
+      let finalUserData = userDocSnap.exists() ? userDocSnap.data() : null;
 
-      // Determine user's assigned role in Firestore (default 'admin' if existing administrator profile, or fallback)
-      const rawStoredRole = (userData?.role || 'admin').toLowerCase();
-      const isAdminUser = rawStoredRole.includes('admin');
-      const isExplicitLecturerUser = rawStoredRole.includes('lecturer');
+      // Determine user's assigned role in Firestore
+      const isPrimarySuperAdmin = cleanEmail.toLowerCase() === 'charlestonkyeremeh6@gmail.com';
+      if (!finalUserData && isPrimarySuperAdmin) {
+        const bootstrapRecord = {
+          id: fbUser.uid,
+          name: fbUser.displayName || 'Lead Academic Administrator',
+          email: cleanEmail,
+          role: 'super_admin' as const,
+          institution: 'University of Ghana',
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(userDocRef, bootstrapRecord);
+        finalUserData = bootstrapRecord;
+      }
 
-      // 3. Find if user email is in the verified /lecturers directory
-      const matchedLecturer = await findLecturerByEmail(cleanEmail);
+      const rawStoredRole = (finalUserData?.role || 'lecturer').toLowerCase();
+      const isSuperAdminUser = rawStoredRole === 'super_admin';
+      const isAdminUser = isSuperAdminUser || rawStoredRole === 'admin';
+      const isExplicitLecturerUser = rawStoredRole === 'lecturer';
+
+      // 3. Find if user email or stored lecturerId is in the verified /lecturers directory
+      let matchedLecturer: Lecturer | null = null;
+      if (finalUserData?.lecturerId) {
+        matchedLecturer = await findLecturerById(finalUserData.lecturerId);
+      }
+      if (!matchedLecturer) {
+        matchedLecturer = await findLecturerByEmail(cleanEmail);
+      }
+
+      // Check account suspension
+      if (matchedLecturer && matchedLecturer.accountStatus === 'suspended') {
+        await fbSignOut(auth);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'This faculty account is currently suspended. Please contact your department administrator.',
+          code: 'auth/account-suspended'
+        };
+      }
 
       // 4. ROLE-BASED ACCESS CONTROL VALIDATION
       if (portalRole === 'admin') {
         // ADMIN PORTAL VALIDATION:
-        // Must be an admin account. If it is a lecturer-only account without admin privileges, deny access.
+        // Must be an admin or super_admin account. If it is a lecturer-only account without admin privileges, deny access.
         if (isExplicitLecturerUser && !isAdminUser) {
           await fbSignOut(auth);
           setIsLoading(false);
@@ -263,17 +512,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      let fetchedAvatar = fbUser.photoURL || userData?.avatar || undefined;
-      let fetchedName = fbUser.displayName || userData?.name || fbUser.email?.split('@')[0] || 'User';
+      let fetchedAvatar = fbUser.photoURL || finalUserData?.avatar || undefined;
+      let fetchedName = fbUser.displayName || finalUserData?.name || fbUser.email?.split('@')[0] || 'User';
 
       if (matchedLecturer) {
+        // Link authUid and set status to active if unclaimed
+        if (!matchedLecturer.authUid || matchedLecturer.accountStatus === 'unclaimed') {
+          try {
+            const lecturerDocRef = doc(db, 'lecturers', matchedLecturer.lecturerId);
+            await setDoc(lecturerDocRef, {
+              authUid: fbUser.uid,
+              accountStatus: 'active',
+              registeredAt: matchedLecturer.registeredAt || new Date().toISOString()
+            }, { merge: true });
+            matchedLecturer = {
+              ...matchedLecturer,
+              authUid: fbUser.uid,
+              accountStatus: 'active'
+            };
+          } catch (e) {
+            console.warn('Auto-link lecturer on sign-in note:', e);
+          }
+        }
+
         setLecturerProfile(matchedLecturer);
         try {
           localStorage.setItem(LECTURER_STORAGE_KEY, JSON.stringify(matchedLecturer));
         } catch {}
+        if (userDocSnap.exists() && finalUserData?.lecturerId !== matchedLecturer.lecturerId) {
+          await setDoc(userDocRef, { lecturerId: matchedLecturer.lecturerId }, { merge: true });
+        }
+      } else {
+        setLecturerProfile(null);
+        try {
+          localStorage.removeItem(LECTURER_STORAGE_KEY);
+        } catch {}
       }
 
-      const activeRole: UserRole = portalRole === 'lecturer' ? 'lecturer' : (isAdminUser ? 'admin' : (userData?.role?.toLowerCase() || 'admin'));
+      const activeRole: UserRole = portalRole === 'lecturer' 
+        ? 'lecturer' 
+        : (isSuperAdminUser ? 'super_admin' : (isAdminUser ? 'admin' : 'admin'));
 
       const appUser: User = {
         id: fbUser.uid,
@@ -340,7 +618,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
-      const cleanEmail = email.trim();
+      const cleanEmail = email.trim().toLowerCase();
       if (!cleanEmail || !password) {
         setIsLoading(false);
         return { success: false, error: 'Please enter all required fields.', code: 'auth/missing-fields' };
@@ -357,6 +635,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
+      // 3. Check existing account status on lecturer profile
+      if (matchedLecturer.accountStatus === 'active' || matchedLecturer.authUid) {
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'This lecturer already has an account. Please sign in instead.',
+          code: 'auth/already-registered'
+        };
+      }
+
+      if (matchedLecturer.accountStatus === 'suspended') {
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'This faculty account is currently suspended. Please contact your department administrator.',
+          code: 'auth/account-suspended'
+        };
+      }
+
+      // 4. Create Firebase Authentication user
       const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
       const fbUser = userCredential.user;
 
@@ -365,8 +663,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {}
 
       const assignedRole: UserRole = 'lecturer';
+      const nowIso = new Date().toISOString();
 
+      // 5. Atomic profile creation & bidirectional linking with rollback
       try {
+        // A. Create /users/{uid} document
         const userDocRef = doc(db, 'users', fbUser.uid);
         await setDoc(userDocRef, {
           id: fbUser.uid,
@@ -374,28 +675,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: cleanEmail,
           avatar: '',
           role: assignedRole,
+          lecturerId: matchedLecturer.lecturerId,
           institution: institution || 'University of Ghana',
-          createdAt: new Date().toISOString()
+          createdAt: nowIso
         }, { merge: true });
-      } catch (dbErr) {
-        console.warn('Firestore initial profile creation note:', dbErr);
+
+        // B. Bidirectionally update /lecturers/{lecturerId} document
+        const lecturerDocRef = doc(db, 'lecturers', matchedLecturer.lecturerId);
+        await setDoc(lecturerDocRef, {
+          authUid: fbUser.uid,
+          accountStatus: 'active',
+          registeredAt: nowIso
+        }, { merge: true });
+      } catch (dbErr: any) {
+        console.error('Firestore rollback triggered due to linking failure:', dbErr);
+        try {
+          await deleteUser(fbUser);
+        } catch (delErr) {
+          console.warn('Rollback user delete failed:', delErr);
+        }
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'Account creation could not be completed due to a database sync error. Please try again.',
+          code: 'auth/linking-failed'
+        };
       }
 
-      if (matchedLecturer) {
-        setLecturerProfile(matchedLecturer);
-        try {
-          localStorage.setItem(LECTURER_STORAGE_KEY, JSON.stringify(matchedLecturer));
-        } catch {}
-      }
+      const activeLecturer: Lecturer = {
+        ...matchedLecturer,
+        authUid: fbUser.uid,
+        accountStatus: 'active',
+        registeredAt: nowIso
+      };
+
+      setLecturerProfile(activeLecturer);
+      try {
+        localStorage.setItem(LECTURER_STORAGE_KEY, JSON.stringify(activeLecturer));
+      } catch {}
 
       const appUser: User = {
         id: fbUser.uid,
-        name: name || matchedLecturer.fullName || cleanEmail.split('@')[0] || 'User',
+        name: name || activeLecturer.fullName || cleanEmail.split('@')[0] || 'User',
         email: cleanEmail,
         institution: institution || undefined,
         role: assignedRole,
         provider: 'email',
-        lecturerId: matchedLecturer.lecturerId
+        lecturerId: activeLecturer.lecturerId
       };
       setUser(appUser);
       try {
@@ -403,13 +729,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {}
 
       setIsLoading(false);
-      const targetRoute = assignedRole === 'lecturer' ? '/lecturer' : '/dashboard';
+      const targetRoute = '/lecturer';
       return { success: true, targetRoute };
     } catch (err: any) {
       setIsLoading(false);
       const code = err?.code || '';
       if (code === 'auth/email-already-in-use') {
-        return { success: false, error: 'An account with this email already exists.', code };
+        return { success: false, error: 'An account with this email already exists. Please sign in.', code };
       } else if (code === 'auth/operation-not-allowed') {
         return { success: false, error: 'Email/Password sign-up is disabled in your Firebase console. Please sign in with Google or enable Email/Password provider in the Firebase Console.', code };
       } else if (code === 'auth/weak-password') {
@@ -445,26 +771,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
-      const cleanEmail = fbUser.email || '';
+      const cleanEmail = (fbUser.email || '').trim().toLowerCase();
 
       // Check Firestore user doc
       const userDocRef = doc(db, 'users', fbUser.uid);
       const userDocSnap = await getDoc(userDocRef);
-      const userData = userDocSnap.exists() ? userDocSnap.data() : null;
+      let finalUserData = userDocSnap.exists() ? userDocSnap.data() : null;
 
-      const rawStoredRole = (userData?.role || '').toLowerCase();
-      const isAdminUser = rawStoredRole.includes('admin');
-      const isExplicitLecturerUser = rawStoredRole.includes('lecturer');
+      const isPrimarySuperAdmin = cleanEmail === 'charlestonkyeremeh6@gmail.com';
+      if (!finalUserData && isPrimarySuperAdmin) {
+        const bootstrapRecord = {
+          id: fbUser.uid,
+          name: fbUser.displayName || 'Lead Academic Administrator',
+          email: cleanEmail,
+          role: 'super_admin' as const,
+          institution: 'University of Ghana',
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(userDocRef, bootstrapRecord);
+        finalUserData = bootstrapRecord;
+      }
+
+      const rawStoredRole = (finalUserData?.role || '').toLowerCase();
+      const isSuperAdminUser = rawStoredRole === 'super_admin';
+      const isAdminUser = isSuperAdminUser || rawStoredRole === 'admin';
+      const isExplicitLecturerUser = rawStoredRole === 'lecturer';
 
       // Find lecturer profile match
-      const matchedLecturer = await findLecturerByEmail(cleanEmail);
+      let matchedLecturer: Lecturer | null = null;
+      if (finalUserData?.lecturerId) {
+        matchedLecturer = await findLecturerById(finalUserData.lecturerId);
+      }
+      if (!matchedLecturer) {
+        matchedLecturer = await findLecturerByEmail(cleanEmail);
+      }
+
+      // Check suspended state
+      if (matchedLecturer && matchedLecturer.accountStatus === 'suspended') {
+        await fbSignOut(auth);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'This faculty account is currently suspended. Please contact your department administrator.',
+          code: 'auth/account-suspended'
+        };
+      }
 
       // ROLE-BASED ACCESS CONTROL VALIDATION FOR GOOGLE SIGN-IN
       if (portalRole === 'admin') {
         // Only existing admin users in Firestore or users without explicit lecturer-only role can sign in
-        if (!userDocSnap.exists() && !isAdminUser) {
+        if (!finalUserData && !isAdminUser) {
           // If a new user signs in with Google while Admin is selected, deny if not an authorized administrator
-          // Allow existing legacy admins or let them access if already configured in Firestore as admin
           await fbSignOut(auth);
           setIsLoading(false);
           return {
@@ -495,17 +852,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      let fetchedAvatar = fbUser.photoURL || userData?.avatar || undefined;
-      let fetchedName = fbUser.displayName || userData?.name || 'User';
+      let fetchedAvatar = fbUser.photoURL || finalUserData?.avatar || undefined;
+      let fetchedName = fbUser.displayName || finalUserData?.name || 'User';
 
       if (matchedLecturer) {
+        // Auto-link unclaimed lecturer to this Google account
+        if (!matchedLecturer.authUid || matchedLecturer.accountStatus === 'unclaimed') {
+          try {
+            const lecturerDocRef = doc(db, 'lecturers', matchedLecturer.lecturerId);
+            await setDoc(lecturerDocRef, {
+              authUid: fbUser.uid,
+              accountStatus: 'active',
+              registeredAt: matchedLecturer.registeredAt || new Date().toISOString()
+            }, { merge: true });
+            matchedLecturer = {
+              ...matchedLecturer,
+              authUid: fbUser.uid,
+              accountStatus: 'active'
+            };
+          } catch (e) {
+            console.warn('Auto-link lecturer on Google sign-in note:', e);
+          }
+        }
+
         setLecturerProfile(matchedLecturer);
         try {
           localStorage.setItem(LECTURER_STORAGE_KEY, JSON.stringify(matchedLecturer));
         } catch {}
       }
 
-      const activeRole: UserRole = portalRole === 'lecturer' ? 'lecturer' : (isAdminUser ? 'admin' : 'lecturer');
+      const activeRole: UserRole = portalRole === 'lecturer' 
+        ? 'lecturer' 
+        : (isSuperAdminUser ? 'super_admin' : (isAdminUser ? 'admin' : 'admin'));
 
       const googleUser: User = {
         id: fbUser.uid,
@@ -531,6 +909,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: googleUser.email,
             avatar: googleUser.avatar || '',
             role: 'lecturer',
+            lecturerId: matchedLecturer?.lecturerId,
             createdAt: new Date().toISOString()
           }, { merge: true });
         } catch (dbErr) {
@@ -552,9 +931,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateUserProfile = async (name: string, avatar?: any): Promise<{ success: boolean; error?: string }> => {
+  const updateUserProfile = async (
+    nameOrData: string | { name?: string; avatar?: any }, 
+    avatarInput?: any
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const cleanName = name.trim();
+      let cleanName = '';
+      let avatar: any = avatarInput;
+
+      if (typeof nameOrData === 'object' && nameOrData !== null) {
+        if (nameOrData.name !== undefined) {
+          cleanName = nameOrData.name.trim();
+        } else if (user?.name) {
+          cleanName = user.name;
+        }
+        if (nameOrData.avatar !== undefined) {
+          avatar = nameOrData.avatar;
+        }
+      } else {
+        cleanName = (nameOrData || '').trim();
+      }
+
+      if (!cleanName && user?.name) {
+        cleanName = user.name;
+      }
+
       if (!cleanName) {
         return { success: false, error: 'Display name cannot be empty.' };
       }
@@ -766,6 +1167,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const createAdmin = async (params: {
+    fullName: string;
+    email: string;
+    password: string;
+    role: 'admin' | 'super_admin';
+    institution?: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    if (user?.role !== 'super_admin') {
+      return {
+        success: false,
+        error: 'Unauthorized: Only a Super Administrator can provision new administrator accounts.'
+      };
+    }
+    return await createAdministratorAccount(user.role, user.id, params);
+  };
+
+  const updateAdminRole = async (userId: string, newRole: 'admin' | 'super_admin'): Promise<{ success: boolean; error?: string }> => {
+    if (user?.role !== 'super_admin') {
+      return {
+        success: false,
+        error: 'Unauthorized: Only a Super Administrator can modify administrator privilege levels.'
+      };
+    }
+    return await updateAdministratorRole(user.role, userId, newRole);
+  };
+
+  const deleteAdminAccount = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    if (user?.role !== 'super_admin') {
+      return {
+        success: false,
+        error: 'Unauthorized: Only a Super Administrator can permanently delete administrator accounts.'
+      };
+    }
+    return await deleteUserAccount(userId, { deleteLecturerRecord: false });
+  };
+
+  const deleteCurrentUserAccount = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.id) {
+      return { success: false, error: 'No authenticated user found.' };
+    }
+    const targetUserId = user.id;
+    const res = await deleteUserAccount(targetUserId, { deleteLecturerRecord: false });
+    if (res.success) {
+      await signOut();
+    }
+    return res;
+  };
+
+  const getAdministrators = async (): Promise<AdminUserRecord[]> => {
+    return await getAdministratorAccounts(user?.role);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -778,10 +1231,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         sendPasswordReset,
         signInWithGoogle,
         updateUserProfile,
+        updateLecturerProfile: updateLecturerProfileDetails,
         updateLecturerProfileDetails,
         changePassword,
         removeProfilePicture,
         signOut,
+        createAdmin,
+        updateAdminRole,
+        deleteAdminAccount,
+        deleteCurrentUserAccount,
+        getAdministrators,
       }}
     >
       {children}

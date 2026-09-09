@@ -2,49 +2,176 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // User profile documents
+    // Authorization helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserRole() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : 'unknown';
+    }
+
+    function getUserLecturerId() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             'lecturerId' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.lecturerId
+        : '';
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserRole() == 'super_admin';
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        isSuperAdmin() ||
+        getUserRole() == 'admin'
+      );
+    }
+
+    // User accounts
     match /users/{userId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      // Only Super Admin can provision administrative accounts; users can self-register only with 'lecturer' role
+      allow create: if isAuthenticated() && (
+        isSuperAdmin() || 
+        (request.auth.uid == userId && request.resource.data.role == 'lecturer')
+      );
+      // Only Super Admin can modify user roles, lecturer IDs, or edit other accounts. Normal users cannot tamper with role or lecturerId.
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() || (
+          request.auth.uid == userId && 
+          (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'lecturerId']) || 
+           (request.resource.data.role == resource.data.role && 
+            (!('lecturerId' in resource.data) || request.resource.data.lecturerId == resource.data.lecturerId)
+           )
+          )
+        )
+      );
+      allow delete: if isSuperAdmin();
     }
     
     // Academic courses catalog
     match /courses/{courseId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
     
     // Lecture halls, auditoriums, and computer labs
     match /facilities/{facilityId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
     
     // Faculty lecturers and instructors
     match /lecturers/{lecturerId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      // Admins have full management access.
+      // An authenticated user claiming their directory record may ONLY link their authUid and set status to active if email matches.
+      allow update: if isAuthenticated() && (
+        isAdmin() || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['authUid', 'accountStatus', 'registeredAt']) &&
+          request.resource.data.authUid == request.auth.uid &&
+          request.resource.data.accountStatus == 'active' &&
+          (resource.data.authUid == null || resource.data.authUid == request.auth.uid || resource.data.accountStatus == 'unclaimed') &&
+          (
+            (resource.data.officeEmail != null && resource.data.officeEmail.lower() == request.auth.token.email.lower()) ||
+            (resource.data.email != null && resource.data.email.lower() == request.auth.token.email.lower())
+          )
+        )
+      );
+      allow create, delete: if isAdmin();
     }
     
     // Scheduling time periods and slots
     match /timeslots/{slotId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Academic scheduling cycles and publishing state
+    match /academic_periods/{periodId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
     
     // Generated and manual timetable allocations
     match /timetables/{scheduleId} {
-      allow read, write: if true;
+      // Admins read all schedules (draft and published).
+      // Lecturers can ONLY read their own published schedules.
+      allow read: if isAuthenticated() && (
+        isAdmin() || (
+          resource.data.status == 'published' && (
+            (getUserLecturerId() != '' && resource.data.lecturerId == getUserLecturerId()) ||
+            (resource.data.lecturerEmail != null && resource.data.lecturerEmail.lower() == request.auth.token.email.lower())
+          )
+        )
+      );
+      allow write: if isAdmin();
     }
     
     // System audit logs and activity events
     match /activities/{activityId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
     
     // Faculty room reservation requests
     match /bookings/{bookingId} {
-      allow read, write: if true;
+      // Admins read all requests; lecturers can ONLY read their own booking requests
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        (getUserLecturerId() != '' && resource.data.lecturerId == getUserLecturerId()) ||
+        (resource.data.lecturerEmail != null && resource.data.lecturerEmail.lower() == request.auth.token.email.lower())
+      );
+      // Lecturers can create booking requests only in Pending status for themselves
+      allow create: if isAuthenticated() && (
+        isAdmin() || (
+          request.resource.data.status == 'Pending' && (
+            request.resource.data.userId == request.auth.uid ||
+            (getUserLecturerId() != '' && request.resource.data.lecturerId == getUserLecturerId()) ||
+            (request.resource.data.lecturerEmail != null && request.resource.data.lecturerEmail.lower() == request.auth.token.email.lower())
+          )
+        )
+      );
+      // Admins can approve/reject/modify. Lecturers can ONLY withdraw their own pending request.
+      allow update: if isAuthenticated() && (
+        isAdmin() || (
+          (
+            resource.data.userId == request.auth.uid ||
+            (getUserLecturerId() != '' && resource.data.lecturerId == getUserLecturerId()) ||
+            (resource.data.lecturerEmail != null && resource.data.lecturerEmail.lower() == request.auth.token.email.lower())
+          ) &&
+          resource.data.status == 'Pending' &&
+          request.resource.data.status == 'Withdrawn'
+        )
+      );
+      allow delete: if isAdmin();
     }
     
     // User notification messages
     match /notifications/{notificationId} {
-      allow read, write: if true;
+      // Admins read admin notifications; lecturers read notifications addressed to them
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (getUserLecturerId() != '' && resource.data.recipientId == getUserLecturerId()) ||
+        (resource.data.recipientEmail != null && resource.data.recipientEmail.lower() == request.auth.token.email.lower())
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (getUserLecturerId() != '' && resource.data.recipientId == getUserLecturerId()) ||
+        (resource.data.recipientEmail != null && resource.data.recipientEmail.lower() == request.auth.token.email.lower())
+      );
+      allow delete: if isAuthenticated() && (
+        isAdmin() ||
+        (getUserLecturerId() != '' && resource.data.recipientId == getUserLecturerId()) ||
+        (resource.data.recipientEmail != null && resource.data.recipientEmail.lower() == request.auth.token.email.lower())
+      );
     }
   }
 }

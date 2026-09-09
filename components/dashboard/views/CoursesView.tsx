@@ -50,7 +50,8 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
       const matchesSearch = 
         c.courseCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.assignedLecturerName && c.assignedLecturerName.toLowerCase().includes(searchTerm.toLowerCase()));
+        (c.assignedLecturerName && c.assignedLecturerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (c.department && c.department.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchesSemester = selectedSemester === 'All' || c.semester === selectedSemester;
       const matchesLevel = levelFilter === 'All' || c.level.toString() === levelFilter;
@@ -125,7 +126,7 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
               Courses
             </h2>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
               {filteredCourses.length}
             </span>
           </div>
@@ -138,7 +139,7 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
           <button
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent('open-advanced-import'))}
-            className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 border border-blue-500/20 font-bold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-medium text-xs transition-colors cursor-pointer"
           >
             <UploadCloud className="w-4 h-4" />
             <span>Import</span>
@@ -146,10 +147,10 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
           <button
             id="add-new-course-btn"
             onClick={onOpenAddCourse}
-            className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-semibold text-xs transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Course</span>
+            <span>Add course</span>
           </button>
         </div>
       </div>
@@ -158,50 +159,77 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
       <div className="space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           
-          {/* Semester Selector */}
-          <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs self-start max-w-full overflow-x-auto custom-scrollbar">
-            {(['Semester 1', 'Semester 2', 'All'] as const).map((sem) => (
-              <button
-                key={sem}
-                onClick={() => setSelectedSemester(sem)}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  selectedSemester === sem
-                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }`}
-              >
-                {sem}
-              </button>
-            ))}
+          {/* Left group: Semester & Level */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Semester Selector */}
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs overflow-x-auto custom-scrollbar">
+              {(['Semester 1', 'Semester 2', 'All'] as const).map((sem) => (
+                <button
+                  key={sem}
+                  onClick={() => setSelectedSemester(sem)}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    selectedSemester === sem
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
+                      : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                  }`}
+                >
+                  {sem}
+                </button>
+              ))}
+            </div>
+
+            {/* Level Filter Tabs */}
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs overflow-x-auto custom-scrollbar">
+              {(['All', '100', '200', '300', '400'] as const).map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => setLevelFilter(lvl)}
+                  className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                    levelFilter === lvl
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
+                      : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+                  }`}
+                >
+                  {lvl === 'All' ? 'All Levels' : `Level ${lvl}`}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Level Filter Tabs */}
-          <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs overflow-x-auto custom-scrollbar max-w-full">
-            {(['All', '100', '200', '300', '400'] as const).map((lvl) => (
-              <button
-                key={lvl}
-                onClick={() => setLevelFilter(lvl)}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  levelFilter === lvl
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }`}
-              >
-                {lvl === 'All' ? 'All Levels' : `Level ${lvl}`}
-              </button>
-            ))}
-          </div>
+          {/* Right group: Sort selector & Search box */}
+          <div className="flex items-center gap-2">
+            <select
+              value={`${sortField}-${sortAsc ? 'asc' : 'desc'}`}
+              onChange={(e) => {
+                const [field, dir] = e.target.value.split('-');
+                setSortField(field as keyof Course);
+                setSortAsc(dir === 'asc');
+              }}
+              aria-label="Sort courses by"
+              className="px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="courseCode-asc">Code (A → Z)</option>
+              <option value="courseCode-desc">Code (Z → A)</option>
+              <option value="courseTitle-asc">Title (A → Z)</option>
+              <option value="courseTitle-desc">Title (Z → A)</option>
+              <option value="level-asc">Level (Low → High)</option>
+              <option value="level-desc">Level (High → Low)</option>
+              <option value="totalCredits-asc">Credits (Low → High)</option>
+              <option value="totalCredits-desc">Credits (High → Low)</option>
+              <option value="expectedEnrollment-desc">Size (Large → Small)</option>
+              <option value="department-asc">Department (A → Z)</option>
+            </select>
 
-          {/* Search box */}
-          <div className="relative w-full md:w-auto min-w-0 md:min-w-[200px]">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search code, title, faculty..."
-              className="w-full pl-9 pr-3.5 py-1.5 rounded-xl bg-white/60 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder:text-zinc-400 text-xs outline-none focus:ring-2 focus:ring-blue-500/30"
-            />
+            <div className="relative w-full md:w-auto min-w-0 md:min-w-[180px]">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search courses..."
+                className="w-full pl-9 pr-3.5 py-1.5 rounded-xl bg-white/60 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white placeholder:text-zinc-400 text-xs outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -270,7 +298,12 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
                     <ArrowUpDown className="w-3 h-3 text-zinc-400" />
                   </div>
                 </th>
-                <th className="p-3.5 text-left">Level</th>
+                <th className="p-3.5 text-left cursor-pointer select-none" onClick={() => handleSort('level')}>
+                  <div className="flex items-center gap-1.5">
+                    <span>Level</span>
+                    <ArrowUpDown className="w-3 h-3 text-zinc-400" />
+                  </div>
+                </th>
                 <th className="p-3.5 text-left">Semester</th>
                 <th className="p-3.5 text-left cursor-pointer select-none" onClick={() => handleSort('totalCredits')}>
                   <div className="flex items-center gap-1.5">
@@ -322,10 +355,8 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
                         <div className="font-semibold text-zinc-900 dark:text-white">{course.courseTitle}</div>
                         <div className="text-[11px] text-zinc-500 truncate max-w-xs">{course.department}</div>
                       </td>
-                      <td className="p-3.5">
-                        <span className="font-semibold px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                          L{course.level}
-                        </span>
+                      <td className="p-3.5 font-medium text-zinc-700 dark:text-zinc-300">
+                        L{course.level}
                       </td>
                       <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium">
                         {course.semester}
@@ -348,20 +379,20 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => onEditCourse(course)}
-                            className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-600 hover:bg-blue-500/10 transition-colors cursor-pointer"
+                            className="px-2 py-1 rounded-md text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                             title="Edit course"
                           >
-                            <Edit3 className="w-4 h-4" />
+                            Edit
                           </button>
                           <button
                             onClick={() => {
                               setDeletingCourseCode(course.courseCode);
                               setDeletingCourseTitle(`${course.courseCode} - ${course.courseTitle}`);
                             }}
-                            className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            className="px-2 py-1 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
                             title="Delete course"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            Delete
                           </button>
                         </div>
                       </td>

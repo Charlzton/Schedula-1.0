@@ -5,7 +5,8 @@ import {
   collection, 
   onSnapshot, 
   query, 
-  limit 
+  limit,
+  where
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { 
@@ -16,6 +17,7 @@ import {
   ResidentialHall,
   TimetableEntry, 
   SystemActivity,
+  AcademicPeriod,
   INITIAL_COURSES,
   INITIAL_FACILITIES,
   INITIAL_LECTURERS,
@@ -23,7 +25,8 @@ import {
   INITIAL_TIME_SLOTS,
   INITIAL_SYSTEM_ACTIVITIES,
   INITIAL_BOOKING_REQUESTS,
-  INITIAL_NOTIFICATIONS
+  INITIAL_NOTIFICATIONS,
+  INITIAL_ACADEMIC_PERIODS
 } from '@/lib/dataset';
 import { RoomBookingRequest, NotificationItem } from '@/lib/lecturerTypes';
 import { 
@@ -55,6 +58,9 @@ import {
   deleteScheduleEntryFromFirestore,
   bulkDeleteSchedulesFromFirestore,
   saveAllSchedulesToFirestore,
+  savePeriodSchedulesToFirestore,
+  publishPeriodTimetableInFirestore,
+  unpublishPeriodTimetableInFirestore,
   clearAllSchedulesFromFirestore,
   saveActivityToFirestore,
   saveBookingRequestToFirestore,
@@ -77,7 +83,8 @@ export type DashboardViewType =
   | 'generate'
   | 'generated_timetables'
   | 'reports'
-  | 'settings';
+  | 'settings'
+  | 'admin_management';
 
 interface TimetableContextType {
   courses: Course[];
@@ -86,6 +93,10 @@ interface TimetableContextType {
   timeSlots: TimeSlot[];
   residentialHalls: ResidentialHall[];
   schedules: TimetableEntry[];
+  academicPeriods: AcademicPeriod[];
+  activeAcademicPeriod: AcademicPeriod | null;
+  currentAcademicYear: string;
+  setCurrentAcademicYear: (year: string) => void;
   systemActivities: SystemActivity[];
   bookingRequests: RoomBookingRequest[];
   notifications: NotificationItem[];
@@ -102,6 +113,10 @@ interface TimetableContextType {
   lastGeneratedResult: GenerationResult | null;
   isFirestoreSyncing?: boolean;
   firestoreStatus?: 'connected' | 'syncing' | 'offline' | 'error';
+  
+  // Timetable Period & Publishing actions
+  publishCurrentTimetable: (academicYear?: string, semester?: 'Semester 1' | 'Semester 2') => Promise<void>;
+  unpublishCurrentTimetable: (academicYear?: string, semester?: 'Semester 1' | 'Semester 2') => Promise<void>;
   
   // CRUD actions
   addCourse: (course: Course, silent?: boolean) => void;
@@ -120,6 +135,8 @@ interface TimetableContextType {
   bulkAddLecturers: (lecturers: Lecturer[]) => void;
   updateLecturer: (id: string, updated: Partial<Lecturer>, silent?: boolean) => void;
   deleteLecturer: (id: string) => void;
+  suspendLecturer: (id: string) => void;
+  reactivateLecturer: (id: string) => void;
   bulkDeleteLecturers: (ids: string[]) => void;
 
   addTimeSlot: (slot: TimeSlot, silent?: boolean) => void;
@@ -166,9 +183,27 @@ const STORAGE_KEY_SCHEDULES = 'schedula_schedules_v1';
 const STORAGE_KEY_ACTIVITIES = 'schedula_activities_v1';
 const STORAGE_KEY_BOOKINGS = 'schedula_bookings_v1';
 const STORAGE_KEY_NOTIFICATIONS = 'schedula_notifications_v1';
+const STORAGE_KEY_PERIODS = 'schedula_periods_v1';
 
 export function TimetableProvider({ children }: { children: ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, lecturerProfile, isLoading } = useAuth();
+
+  const [academicPeriods, setAcademicPeriods] = useState<AcademicPeriod[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_PERIODS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return INITIAL_ACADEMIC_PERIODS;
+  });
+
+  const [currentAcademicYear, setCurrentAcademicYear] = useState<string>('2026/2027');
+
+  const activeAcademicPeriod = useMemo(() => {
+    return academicPeriods.find(p => p.isCurrent || p.isActive) || academicPeriods[0] || null;
+  }, [academicPeriods]);
 
   // Instant optimistic initialization from localStorage or dataset defaults
   const [courses, setCourses] = useState<Course[]>(() => {
@@ -364,16 +399,53 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         });
         unsubscribes.push(unsubTimeSlots);
 
-        // Step 6: Subscribe to Timetables
-        const unsubTimetables = onSnapshot(collection(db, 'timetables'), (snapshot) => {
+        // Step 6: Subscribe to Timetables (filtered for lecturers, full for admin)
+        const currentLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
+        let timetablesQuery = null;
+        let skipSubscription = false;
+
+        if (user?.role === 'lecturer') {
+          if (currentLecturerId) {
+            timetablesQuery = query(
+              collection(db, 'timetables'),
+              where('status', '==', 'published'),
+              where('lecturerId', '==', currentLecturerId)
+            );
+          } else {
+            setSchedules([]);
+            skipSubscription = true;
+          }
+        } else {
+          timetablesQuery = query(collection(db, 'timetables'));
+        }
+
+        if (!skipSubscription && timetablesQuery) {
+          const unsubTimetables = onSnapshot(timetablesQuery, (snapshot) => {
+            if (!snapshot.empty) {
+              const remoteSchedules = snapshot.docs.map((docSnap) => docSnap.data() as TimetableEntry);
+              setSchedules(remoteSchedules);
+            } else {
+              setSchedules([]);
+            }
+          }, (err) => {
+            console.warn('[Firestore] Timetables sync notice:', err.message);
+          });
+          unsubscribes.push(unsubTimetables);
+        }
+
+        // Step 6b: Subscribe to Academic Periods
+        const unsubAcademicPeriods = onSnapshot(collection(db, 'academic_periods'), (snapshot) => {
           if (!snapshot.empty) {
-            const remoteSchedules = snapshot.docs.map((docSnap) => docSnap.data() as TimetableEntry);
-            setSchedules(remoteSchedules);
+            const remotePeriods = snapshot.docs.map((docSnap) => docSnap.data() as AcademicPeriod);
+            setAcademicPeriods(remotePeriods);
+            try {
+              localStorage.setItem(STORAGE_KEY_PERIODS, JSON.stringify(remotePeriods));
+            } catch {}
           }
         }, (err) => {
-          console.warn('[Firestore] Timetables sync notice:', err.message);
+          console.warn('[Firestore] AcademicPeriods sync notice:', err.message);
         });
-        unsubscribes.push(unsubTimetables);
+        unsubscribes.push(unsubAcademicPeriods);
 
         // Step 7: Subscribe to Activities
         const unsubActivities = onSnapshot(collection(db, 'activities'), (snapshot) => {
@@ -428,7 +500,7 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       isMounted = false;
       unsubscribes.forEach((unsub) => unsub());
     };
-  }, [user, isLoading]);
+  }, [user, lecturerProfile, isLoading]);
 
   const addActivity = (
     action: string, 
@@ -560,19 +632,27 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
 
   // Lecturer CRUD
   const addLecturer = (lecturer: Lecturer, silent: boolean = false) => {
-    setLecturers(prev => [...prev.filter(l => l.lecturerId !== lecturer.lecturerId), lecturer]);
-    saveLecturerToFirestore(lecturer);
+    const enrichedLecturer: Lecturer = {
+      ...lecturer,
+      accountStatus: lecturer.accountStatus || 'unclaimed'
+    };
+    setLecturers(prev => [...prev.filter(l => l.lecturerId !== enrichedLecturer.lecturerId), enrichedLecturer]);
+    saveLecturerToFirestore(enrichedLecturer);
     if (!silent) {
-      addActivity('Lecturer Added', `Added ${lecturer.fullName} (${lecturer.title})`, 'create');
+      addActivity('Lecturer Added', `Added ${enrichedLecturer.fullName} (${enrichedLecturer.title})`, 'create');
     }
   };
 
   const bulkAddLecturers = (newLecturers: Lecturer[]) => {
     if (!newLecturers.length) return;
-    const newIds = new Set(newLecturers.map(l => l.lecturerId));
-    setLecturers(prev => [...prev.filter(l => !newIds.has(l.lecturerId)), ...newLecturers]);
-    bulkSaveLecturersToFirestore(newLecturers);
-    addActivity('Bulk Lecturers Added', `Added ${newLecturers.length} faculty member profiles`, 'create');
+    const enriched = newLecturers.map(l => ({
+      ...l,
+      accountStatus: l.accountStatus || 'unclaimed'
+    }));
+    const newIds = new Set(enriched.map(l => l.lecturerId));
+    setLecturers(prev => [...prev.filter(l => !newIds.has(l.lecturerId)), ...enriched]);
+    bulkSaveLecturersToFirestore(enriched);
+    addActivity('Bulk Lecturers Added', `Added ${enriched.length} faculty member profiles`, 'create');
   };
 
   const updateLecturer = (id: string, updated: Partial<Lecturer>, silent: boolean = false) => {
@@ -596,6 +676,18 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     setLecturers(prev => prev.filter(l => l.lecturerId !== id));
     deleteLecturerFromFirestore(id);
     addActivity('Lecturer Removed', `Removed lecturer record ${id}`, 'update');
+  };
+
+  const suspendLecturer = (id: string) => {
+    updateLecturer(id, { accountStatus: 'suspended' });
+    addActivity('Lecturer Suspended', `Suspended faculty profile for ${id}`, 'conflict');
+  };
+
+  const reactivateLecturer = (id: string) => {
+    const current = lecturers.find(l => l.lecturerId === id);
+    const newStatus = current?.authUid ? 'active' : 'unclaimed';
+    updateLecturer(id, { accountStatus: newStatus });
+    addActivity('Lecturer Reactivated', `Reactivated faculty profile for ${id} (${newStatus})`, 'create');
   };
 
   const bulkDeleteLecturers = (ids: string[]) => {
@@ -666,29 +758,50 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
 
   // Intelligent Timetable Generator
   const generateOptimizedTimetable = (): number => {
+    const targetSem = selectedSemester === 'All' ? 'Semester 1' : selectedSemester;
+    const targetYear = currentAcademicYear || '2026/2027';
+    const periodId = `PERIOD-${targetYear.replace('/', '-')}-${targetSem === 'Semester 1' ? 'S1' : 'S2'}`;
+
     const result = generateIntelligentTimetable(
       courses,
       facilities,
       lecturers,
       timeSlots,
       {
-        semester: selectedSemester === 'All' ? 'Semester 1' : selectedSemester,
+        semester: targetSem,
         separateTheoryAndPracticalDays: true,
         strictCapacityCheck: true
       }
     );
-    setSchedules(result.schedules);
-    setLastGeneratedResult(result);
-    saveAllSchedulesToFirestore(result.schedules);
-    addActivity('Optimized Timetable Generated', `Generated ${result.schedules.length} allocations with ${result.conflictCount} conflicts`, 'generate');
-    return result.schedules.length;
+
+    const periodSchedules: TimetableEntry[] = result.schedules.map(s => ({
+      ...s,
+      academicYear: targetYear,
+      semester: targetSem,
+      periodId: periodId,
+      status: 'draft' as const
+    }));
+
+    setSchedules(prev => {
+      const otherPeriods = prev.filter(s => !(s.academicYear === targetYear && s.semester === targetSem));
+      return [...otherPeriods, ...periodSchedules];
+    });
+    setLastGeneratedResult({ ...result, schedules: periodSchedules });
+    savePeriodSchedulesToFirestore(targetYear, targetSem, periodSchedules);
+    addActivity('Optimized Timetable Generated', `Generated ${periodSchedules.length} allocations for ${targetYear} (${targetSem}) with ${result.conflictCount} conflicts`, 'generate');
+    return periodSchedules.length;
   };
 
   const runGeneration = async (options: GenerationOptions = {}): Promise<GenerationResult> => {
     setIsGenerating(true);
-    addActivity('Timetable Generation Started', `Optimizing schedule for ${options.semester || selectedSemester} courses across ${facilities.length} venues`, 'generate');
+    const targetSem: 'Semester 1' | 'Semester 2' = (options.semester && options.semester !== 'All') 
+      ? options.semester 
+      : (selectedSemester === 'All' ? 'Semester 1' : selectedSemester);
+    const targetYear = currentAcademicYear || '2026/2027';
+    const periodId = `PERIOD-${targetYear.replace('/', '-')}-${targetSem === 'Semester 1' ? 'S1' : 'S2'}`;
 
-    // Perform intelligent optimization computation
+    addActivity('Timetable Generation Started', `Optimizing schedule for ${targetYear} ${targetSem} courses across ${facilities.length} venues`, 'generate');
+
     return new Promise<GenerationResult>((resolve) => {
       setTimeout(() => {
         const result = generateIntelligentTimetable(
@@ -697,28 +810,101 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
           lecturers,
           timeSlots,
           {
-            semester: options.semester || selectedSemester,
+            semester: targetSem,
             targetLevel: options.targetLevel || selectedLevel,
             separateTheoryAndPracticalDays: options.separateTheoryAndPracticalDays ?? true,
             strictCapacityCheck: options.strictCapacityCheck ?? true
           }
         );
 
-        setSchedules(result.schedules);
-        setLastGeneratedResult(result);
+        const periodSchedules: TimetableEntry[] = result.schedules.map(s => ({
+          ...s,
+          academicYear: targetYear,
+          semester: targetSem,
+          periodId: periodId,
+          status: 'draft' as const
+        }));
+
+        setSchedules(prev => {
+          const otherPeriods = prev.filter(s => !(s.academicYear === targetYear && s.semester === targetSem));
+          return [...otherPeriods, ...periodSchedules];
+        });
+        const finalResult = { ...result, schedules: periodSchedules };
+        setLastGeneratedResult(finalResult);
         setIsGenerating(false);
 
-        saveAllSchedulesToFirestore(result.schedules);
+        savePeriodSchedulesToFirestore(targetYear, targetSem, periodSchedules);
 
         if (result.conflictCount === 0) {
-          addActivity('Timetable Generated Successfully', `Scheduled ${result.successfullyScheduledCount} courses with 0 conflicts across Monday-Friday`, 'generate');
+          addActivity('Timetable Generated Successfully', `Scheduled ${result.successfullyScheduledCount} courses for ${targetYear} ${targetSem} with 0 conflicts across Monday-Friday`, 'generate');
         } else {
-          addActivity('Conflict Detected and Resolved', `Generated timetable with ${result.conflictCount} capacity/slot warnings flagged for administrator review`, 'conflict');
+          addActivity('Conflict Detected and Resolved', `Generated timetable for ${targetYear} ${targetSem} with ${result.conflictCount} capacity/slot warnings flagged for administrator review`, 'conflict');
         }
 
-        resolve(result);
+        resolve(finalResult);
       }, 750);
     });
+  };
+
+  const publishCurrentTimetable = async (academicYear?: string, semester?: 'Semester 1' | 'Semester 2'): Promise<void> => {
+    const targetYear = academicYear || currentAcademicYear || '2026/2027';
+    const targetSem = semester || (selectedSemester === 'All' ? 'Semester 1' : selectedSemester);
+    const publisher = user?.name || user?.email || 'Academic Administrator';
+
+    setSchedules(prev => prev.map(s => {
+      if (s.academicYear === targetYear && s.semester === targetSem) {
+        return {
+          ...s,
+          status: 'published',
+          publishedAt: new Date().toISOString(),
+          publishedBy: publisher
+        };
+      }
+      return s;
+    }));
+
+    setAcademicPeriods(prev => prev.map(p => {
+      if (p.academicYear === targetYear && p.semester === targetSem) {
+        return {
+          ...p,
+          isPublished: true,
+          publishedAt: new Date().toISOString(),
+          publishedBy: publisher
+        };
+      }
+      return p;
+    }));
+
+    await publishPeriodTimetableInFirestore(targetYear, targetSem, publisher);
+    addActivity('Timetable Published', `Official academic timetable for ${targetYear} ${targetSem} published for university faculty and students`, 'update');
+  };
+
+  const unpublishCurrentTimetable = async (academicYear?: string, semester?: 'Semester 1' | 'Semester 2'): Promise<void> => {
+    const targetYear = academicYear || currentAcademicYear || '2026/2027';
+    const targetSem = semester || (selectedSemester === 'All' ? 'Semester 1' : selectedSemester);
+
+    setSchedules(prev => prev.map(s => {
+      if (s.academicYear === targetYear && s.semester === targetSem) {
+        return {
+          ...s,
+          status: 'draft'
+        };
+      }
+      return s;
+    }));
+
+    setAcademicPeriods(prev => prev.map(p => {
+      if (p.academicYear === targetYear && p.semester === targetSem) {
+        return {
+          ...p,
+          isPublished: false
+        };
+      }
+      return p;
+    }));
+
+    await unpublishPeriodTimetableInFirestore(targetYear, targetSem);
+    addActivity('Timetable Unpublished', `Timetable for ${targetYear} ${targetSem} returned to draft status`, 'update');
   };
 
   const updateScheduleEntry = (id: string, updated: Partial<TimetableEntry>) => {
@@ -1077,10 +1263,30 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     await deleteNotificationFromFirestore(notificationId);
   };
 
+  // Secure schedules exposure for lecturers at the Context boundary
+  const securedSchedules = useMemo(() => {
+    if (user?.role === 'lecturer') {
+      const currentLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
+      if (!currentLecturerId) return [];
+      
+      const email = user.email?.toLowerCase();
+      const name = user.name?.toLowerCase();
+
+      return schedules.filter(s => {
+        if (s.status !== 'published') return false;
+        if (s.lecturerId && s.lecturerId === currentLecturerId) return true;
+        if (s.lecturerEmail && email && s.lecturerEmail.toLowerCase() === email) return true;
+        if (s.lecturerName && name && s.lecturerName.toLowerCase() === name) return true;
+        return false;
+      });
+    }
+    return schedules;
+  }, [schedules, user, lecturerProfile]);
+
   // Dynamically compute all dashboard metrics and analytics whenever state updates
   const analytics = useMemo(() => {
-    return calculateDashboardAnalytics(courses, facilities, lecturers, timeSlots, schedules);
-  }, [courses, facilities, lecturers, timeSlots, schedules]);
+    return calculateDashboardAnalytics(courses, facilities, lecturers, timeSlots, securedSchedules);
+  }, [courses, facilities, lecturers, timeSlots, securedSchedules]);
 
   return (
     <TimetableContext.Provider
@@ -1090,7 +1296,13 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         lecturers,
         timeSlots,
         residentialHalls,
-        schedules,
+        schedules: securedSchedules,
+        academicPeriods,
+        activeAcademicPeriod,
+        currentAcademicYear,
+        setCurrentAcademicYear,
+        publishCurrentTimetable,
+        unpublishCurrentTimetable,
         systemActivities,
         bookingRequests,
         notifications,
@@ -1120,6 +1332,8 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         bulkAddLecturers,
         updateLecturer,
         deleteLecturer,
+        suspendLecturer,
+        reactivateLecturer,
         bulkDeleteLecturers,
         addTimeSlot,
         bulkAddTimeSlots,

@@ -14,6 +14,7 @@ import { GeneratedTimetablesView } from './views/GeneratedTimetablesView';
 import { BookingRequestsView } from './views/BookingRequestsView';
 import { ReportsView } from './views/ReportsView';
 import { SettingsView } from './views/SettingsView';
+import { AdminManagementView } from './views/AdminManagementView';
 
 import { CourseModal } from './modals/CourseModal';
 import { FacilityModal } from './modals/FacilityModal';
@@ -249,6 +250,10 @@ export function AdminDashboard() {
 
             {activeView === 'settings' && (
               <SettingsView />
+            )}
+
+            {activeView === 'admin_management' && (
+              <AdminManagementView />
             )}
           </div>
         </main>

@@ -30,6 +30,7 @@ export interface Lecturer {
   lecturerId: string;
   fullName: string;
   title: 'Professor' | 'Associate Professor' | 'Senior Lecturer' | 'Lecturer' | 'Assistant Lecturer' | string;
+  avatar?: string;
   officeEmail?: string;
   email?: string;
   phone?: string;
@@ -39,6 +40,9 @@ export interface Lecturer {
   assignedCourses?: string | string[];
   officeLocation?: string;
   availability?: string[];
+  authUid?: string;
+  accountStatus?: 'unclaimed' | 'active' | 'suspended';
+  registeredAt?: string;
 }
 
 export interface ResidentialHall {
@@ -58,12 +62,70 @@ export interface TimeSlot {
   sessionType: 'Theory' | 'Lab / Practical';
 }
 
+export interface AcademicPeriod {
+  id: string; // e.g., '2026-2027-sem1'
+  academicYear: string; // e.g. '2026/2027'
+  semester: 'Semester 1' | 'Semester 2';
+  isCurrent: boolean;
+  isActive?: boolean;
+  isPublished: boolean;
+  publishedAt?: string;
+  publishedBy?: string;
+  createdAt: string;
+}
+
+export const INITIAL_ACADEMIC_PERIODS: AcademicPeriod[] = [
+  {
+    id: '2026-2027-sem1',
+    academicYear: '2026/2027',
+    semester: 'Semester 1',
+    isCurrent: true,
+    isPublished: true,
+    publishedAt: '2026-09-01T08:00:00.000Z',
+    publishedBy: 'Academic Directorate',
+    createdAt: '2026-08-15T08:00:00.000Z'
+  },
+  {
+    id: '2026-2027-sem2',
+    academicYear: '2026/2027',
+    semester: 'Semester 2',
+    isCurrent: false,
+    isPublished: false,
+    createdAt: '2026-08-15T08:00:00.000Z'
+  },
+  {
+    id: '2025-2026-sem2',
+    academicYear: '2025/2026',
+    semester: 'Semester 2',
+    isCurrent: false,
+    isPublished: true,
+    publishedAt: '2026-01-15T09:00:00.000Z',
+    publishedBy: 'Academic Directorate',
+    createdAt: '2025-12-01T08:00:00.000Z'
+  },
+  {
+    id: '2025-2026-sem1',
+    academicYear: '2025/2026',
+    semester: 'Semester 1',
+    isCurrent: false,
+    isPublished: true,
+    publishedAt: '2025-09-10T09:00:00.000Z',
+    publishedBy: 'Academic Directorate',
+    createdAt: '2025-08-01T08:00:00.000Z'
+  }
+];
+
 export interface TimetableEntry {
   id: string;
   courseCode: string;
   courseTitle: string;
   level: number;
   semester: 'Semester 1' | 'Semester 2';
+  academicYear?: string; // e.g. '2026/2027'
+  periodId?: string; // e.g. '2026-2027-sem1'
+  status?: 'generated' | 'published' | 'draft';
+  publishedAt?: string;
+  publishedBy?: string;
   hallId: string;
   hallName: string;
   slotId: string;
@@ -77,6 +139,7 @@ export interface TimetableEntry {
   sessionType: 'Theory' | 'Lab / Practical';
   lecturerId: string;
   lecturerName: string;
+  lecturerEmail?: string;
   expectedEnrollment: number;
   hallCapacity: number;
   hasConflict: boolean;
@@ -165,20 +228,20 @@ export const INITIAL_FACILITIES: LectureFacility[] = [
 
 // Master Lecturers
 export const INITIAL_LECTURERS: Lecturer[] = [
-  { lecturerId: 'L301', fullName: 'Prof. Ferdinand A. Katsriku', title: 'Professor', officeEmail: 'fkatsriku@ug.edu.gh', assignedCourses: 'DCIT303, DCIT426, DCIT306' },
-  { lecturerId: 'L302', fullName: 'Prof. Jamal-Deen Abdulai', title: 'Associate Professor', officeEmail: 'jabdulai@ug.edu.gh', assignedCourses: 'DCIT301, DCIT418' },
-  { lecturerId: 'L303', fullName: 'Prof. Isaac Wiafe', title: 'Associate Professor', officeEmail: 'iwiafe@ug.edu.gh', assignedCourses: 'DCIT208, DCIT415, DCIT321, DCIT419' },
-  { lecturerId: 'L304', fullName: 'Prof. Justice K. Appati', title: 'Associate Professor', officeEmail: 'jkappati@ug.edu.gh', assignedCourses: 'DCIT204, DCIT308' },
-  { lecturerId: 'L305', fullName: 'Prof. Ebenezer Owusu', title: 'Associate Professor', officeEmail: 'ebeowusu@ug.edu.gh', assignedCourses: 'DCIT313, DCIT412' },
-  { lecturerId: 'L306', fullName: 'Prof. Kofi Sarpong Adu-Manu', title: 'Associate Professor', officeEmail: 'ksadu-manu@ug.edu.gh', assignedCourses: 'DCIT428, DCIT207, DCIT203, DCIT312' },
-  { lecturerId: 'L307', fullName: 'Prof. Solomon Mensah', title: 'Senior Lecturer', officeEmail: 'smensah03@ug.edu.gh', assignedCourses: 'DCIT304, DCIT209, DCIT401' },
-  { lecturerId: 'L308', fullName: 'Dr. Michael Agbo Tettey Soli', title: 'Senior Lecturer', officeEmail: 'msoli@ug.edu.gh', assignedCourses: 'DCIT104, DCIT201, DCIT202' },
-  { lecturerId: 'L309', fullName: 'Dr. Edward Danso Ansong', title: 'Senior Lecturer', officeEmail: 'edansong@ug.edu.gh', assignedCourses: 'DCIT305, DCIT214' },
-  { lecturerId: 'L310', fullName: 'Dr. Matilda S. A. Wilson', title: 'Senior Lecturer', officeEmail: 'matwaa@ug.edu.gh', assignedCourses: 'DCIT205, DCIT302, DCIT421' },
-  { lecturerId: 'L311', fullName: 'Dr. Prince Alvin Kwabena Ansah', title: 'Lecturer', officeEmail: 'pakansah@ug.edu.gh', assignedCourses: 'DCIT101, DCIT318' },
-  { lecturerId: 'L312', fullName: 'Mr. Paul N. T. Ammah', title: 'Assistant Lecturer', officeEmail: 'pammah@ug.edu.gh', assignedCourses: 'DCIT102, DCIT103' },
-  { lecturerId: 'L313', fullName: 'Mr. Julius Y. Ludu', title: 'Assistant Lecturer', officeEmail: 'jyludu@ug.edu.gh', assignedCourses: 'DCIT409, DCIT206' },
-  { lecturerId: 'L314', fullName: 'Mr. Dwumfour Aziz Abdullai', title: 'Assistant Lecturer', officeEmail: 'adwumfour@ug.edu.gh', assignedCourses: 'DCIT105, DCIT317, DCIT402' }
+  { lecturerId: 'L301', fullName: 'Prof. Ferdinand A. Katsriku', title: 'Professor', officeEmail: 'fkatsriku@ug.edu.gh', assignedCourses: 'DCIT303, DCIT426, DCIT306', accountStatus: 'unclaimed' },
+  { lecturerId: 'L302', fullName: 'Prof. Jamal-Deen Abdulai', title: 'Associate Professor', officeEmail: 'jabdulai@ug.edu.gh', assignedCourses: 'DCIT301, DCIT418', accountStatus: 'unclaimed' },
+  { lecturerId: 'L303', fullName: 'Prof. Isaac Wiafe', title: 'Associate Professor', officeEmail: 'iwiafe@ug.edu.gh', assignedCourses: 'DCIT208, DCIT415, DCIT321, DCIT419', accountStatus: 'unclaimed' },
+  { lecturerId: 'L304', fullName: 'Prof. Justice K. Appati', title: 'Associate Professor', officeEmail: 'jkappati@ug.edu.gh', assignedCourses: 'DCIT204, DCIT308', accountStatus: 'unclaimed' },
+  { lecturerId: 'L305', fullName: 'Prof. Ebenezer Owusu', title: 'Associate Professor', officeEmail: 'ebeowusu@ug.edu.gh', assignedCourses: 'DCIT313, DCIT412', accountStatus: 'unclaimed' },
+  { lecturerId: 'L306', fullName: 'Prof. Kofi Sarpong Adu-Manu', title: 'Associate Professor', officeEmail: 'ksadu-manu@ug.edu.gh', assignedCourses: 'DCIT428, DCIT207, DCIT203, DCIT312', accountStatus: 'unclaimed' },
+  { lecturerId: 'L307', fullName: 'Prof. Solomon Mensah', title: 'Senior Lecturer', officeEmail: 'smensah03@ug.edu.gh', assignedCourses: 'DCIT304, DCIT209, DCIT401', accountStatus: 'unclaimed' },
+  { lecturerId: 'L308', fullName: 'Dr. Michael Agbo Tettey Soli', title: 'Senior Lecturer', officeEmail: 'msoli@ug.edu.gh', assignedCourses: 'DCIT104, DCIT201, DCIT202', accountStatus: 'unclaimed' },
+  { lecturerId: 'L309', fullName: 'Dr. Edward Danso Ansong', title: 'Senior Lecturer', officeEmail: 'edansong@ug.edu.gh', assignedCourses: 'DCIT305, DCIT214', accountStatus: 'unclaimed' },
+  { lecturerId: 'L310', fullName: 'Dr. Matilda S. A. Wilson', title: 'Senior Lecturer', officeEmail: 'matwaa@ug.edu.gh', assignedCourses: 'DCIT205, DCIT302, DCIT421', accountStatus: 'unclaimed' },
+  { lecturerId: 'L311', fullName: 'Dr. Prince Alvin Kwabena Ansah', title: 'Lecturer', officeEmail: 'pakansah@ug.edu.gh', assignedCourses: 'DCIT101, DCIT318', accountStatus: 'unclaimed' },
+  { lecturerId: 'L312', fullName: 'Mr. Paul N. T. Ammah', title: 'Assistant Lecturer', officeEmail: 'pammah@ug.edu.gh', assignedCourses: 'DCIT102, DCIT103', accountStatus: 'unclaimed' },
+  { lecturerId: 'L313', fullName: 'Mr. Julius Y. Ludu', title: 'Assistant Lecturer', officeEmail: 'jyludu@ug.edu.gh', assignedCourses: 'DCIT409, DCIT206', accountStatus: 'unclaimed' },
+  { lecturerId: 'L314', fullName: 'Mr. Dwumfour Aziz Abdullai', title: 'Assistant Lecturer', officeEmail: 'adwumfour@ug.edu.gh', assignedCourses: 'DCIT105, DCIT317, DCIT402', accountStatus: 'unclaimed' }
 ];
 
 // Master Residential Halls
