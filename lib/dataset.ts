@@ -379,3 +379,38 @@ export const INITIAL_NOTIFICATIONS = [
     isRead: false
   }
 ];
+
+export function isCourseAllocatedToLecturer(
+  course: Course | null | undefined,
+  lecturer: Lecturer | null | undefined
+): boolean {
+  if (!course || !lecturer) return false;
+
+  // 1. Direct ID match
+  if (course.assignedLecturerId && lecturer.lecturerId) {
+    if (course.assignedLecturerId.trim().toUpperCase() === lecturer.lecturerId.trim().toUpperCase()) {
+      return true;
+    }
+  }
+
+  // 2. Full name match
+  if (course.assignedLecturerName && lecturer.fullName) {
+    if (course.assignedLecturerName.trim().toLowerCase() === lecturer.fullName.trim().toLowerCase()) {
+      return true;
+    }
+  }
+
+  // 3. Lecturer assignedCourses field check
+  if (lecturer.assignedCourses && course.courseCode) {
+    const courseCodeClean = course.courseCode.replace(/\s+/g, '').toUpperCase();
+    const assignedList = Array.isArray(lecturer.assignedCourses)
+      ? lecturer.assignedCourses
+      : lecturer.assignedCourses.split(',').map(s => s.trim());
+
+    if (assignedList.some(item => item.replace(/\s+/g, '').toUpperCase() === courseCodeClean)) {
+      return true;
+    }
+  }
+
+  return false;
+}

@@ -11,7 +11,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isLoading && !user && !isSigningOut) {
-      router.replace('/login');
+      router.replace('/');
     } else if (!isLoading && user && !isSigningOut) {
       const userRole = (user.role || '').toLowerCase();
       // If user is strictly a lecturer without admin rights, redirect them to the lecturer portal

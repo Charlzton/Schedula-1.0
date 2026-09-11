@@ -89,44 +89,6 @@ export function SettingsView() {
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [datasetSuccess, setDatasetSuccess] = useState<string | null>(null);
 
-  // Helper function to compress image client-side to compact base64
-  const compressToCompactBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const attemptCompress = (size: number, quality: number) => {
-            const canvas = document.createElement('canvas');
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-              resolve('');
-              return;
-            }
-            const minDim = Math.min(img.width, img.height);
-            const sx = (img.width - minDim) / 2;
-            const sy = (img.height - minDim) / 2;
-            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
-            
-            const base64 = canvas.toDataURL('image/jpeg', quality);
-            if (base64.length <= 2000 || size <= 32) {
-              resolve(base64);
-            } else {
-              attemptCompress(Math.max(32, size - 8), Math.max(0.15, quality - 0.1));
-            }
-          };
-          attemptCompress(64, 0.5);
-        };
-        img.onerror = () => resolve('');
-        img.src = event.target?.result as string;
-      };
-      reader.onerror = () => resolve('');
-      reader.readAsDataURL(file);
-    });
-  };
-
   // Handle Profile Picture Upload
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -147,20 +109,15 @@ export function SettingsView() {
     setProfileError(null);
 
     try {
-      const compactBase64 = await compressToCompactBase64(file);
-      if (!compactBase64) {
-        throw new Error('Failed to process and compress profile image.');
-      }
-      
-      const res = await updateUserProfile(displayName || user?.name || 'Administrator', compactBase64);
+      const res = await updateUserProfile(displayName || user?.name || 'Administrator', file);
       if (res.success) {
-        setProfileSuccess('Profile picture updated successfully');
+        setProfileSuccess('Profile picture updated and stored securely in Cloud Storage.');
         setTimeout(() => setProfileSuccess(null), 3000);
       } else {
         setProfileError(res.error || 'Failed to upload photo.');
       }
     } catch (err: any) {
-      setProfileError(err?.message || 'An error occurred during photo processing.');
+      setProfileError(err?.message || 'An error occurred during photo upload.');
     } finally {
       setIsSavingProfile(false);
       if (fileInputRef.current) {

@@ -372,10 +372,22 @@ export async function publishPeriodTimetableInFirestore(
     }
 
     // Also update the academic period record
-    const periodId = `${academicYear.replace('/', '-')}-${semester.toLowerCase().replace(' ', '')}`;
-    const periodDocRef = doc(db, 'academic_periods', periodId);
-    await setDoc(periodDocRef, {
-      id: periodId,
+    const semAbbr = semester.toLowerCase().includes('1') ? 'sem1' : 'sem2';
+    const fallbackPeriodId = sanitizeDocId(`${academicYear.replace('/', '-')}-${semAbbr}`);
+    
+    // Find matching academic period document
+    const periodsSnap = await getDocs(collection(db, 'academic_periods'));
+    const matchingPeriodDoc = periodsSnap.docs.find(d => {
+      const p = d.data() as AcademicPeriod;
+      return p.academicYear === academicYear && p.semester === semester;
+    });
+
+    const targetPeriodRef = matchingPeriodDoc 
+      ? matchingPeriodDoc.ref 
+      : doc(db, 'academic_periods', fallbackPeriodId);
+
+    await setDoc(targetPeriodRef, {
+      id: matchingPeriodDoc ? matchingPeriodDoc.id : fallbackPeriodId,
       academicYear,
       semester,
       isPublished: true,
@@ -410,16 +422,27 @@ export async function unpublishPeriodTimetableInFirestore(
       const batch = writeBatch(db);
       for (const d of chunk) {
         batch.update(d.ref, {
-          status: 'generated'
+          status: 'draft'
         });
       }
       await batch.commit();
     }
 
-    const periodId = `${academicYear.replace('/', '-')}-${semester.toLowerCase().replace(' ', '')}`;
-    const periodDocRef = doc(db, 'academic_periods', periodId);
-    await setDoc(periodDocRef, {
-      id: periodId,
+    const semAbbr = semester.toLowerCase().includes('1') ? 'sem1' : 'sem2';
+    const fallbackPeriodId = sanitizeDocId(`${academicYear.replace('/', '-')}-${semAbbr}`);
+
+    const periodsSnap = await getDocs(collection(db, 'academic_periods'));
+    const matchingPeriodDoc = periodsSnap.docs.find(d => {
+      const p = d.data() as AcademicPeriod;
+      return p.academicYear === academicYear && p.semester === semester;
+    });
+
+    const targetPeriodRef = matchingPeriodDoc 
+      ? matchingPeriodDoc.ref 
+      : doc(db, 'academic_periods', fallbackPeriodId);
+
+    await setDoc(targetPeriodRef, {
+      id: matchingPeriodDoc ? matchingPeriodDoc.id : fallbackPeriodId,
       academicYear,
       semester,
       isPublished: false
@@ -427,6 +450,23 @@ export async function unpublishPeriodTimetableInFirestore(
 
   } catch (error) {
     console.warn(`[Firestore] Failed to unpublish period timetable (${academicYear} ${semester}):`, error);
+  }
+}
+
+export async function setActivePeriodInFirestore(periodId: string): Promise<void> {
+  try {
+    const snap = await getDocs(collection(db, 'academic_periods'));
+    const batch = writeBatch(db);
+    snap.docs.forEach((docSnap) => {
+      const isTarget = docSnap.id === periodId;
+      batch.update(docSnap.ref, {
+        isCurrent: isTarget,
+        isActive: isTarget
+      });
+    });
+    await batch.commit();
+  } catch (error) {
+    console.warn(`[Firestore] Failed to set active academic period:`, error);
   }
 }
 
@@ -581,13 +621,13 @@ export async function deleteNotificationFromFirestore(notificationId: string): P
   }
 }
 
-// ---------------- AUTO-SEEDING ROUTINE ---------------- //
+// ---------------- EXPLICIT MASTER DATASET SEEDING ROUTINE ---------------- //
 
 /**
- * Checks each Firestore collection. If empty, populates with initial University of Ghana dataset.
- * Does NOT overwrite existing records if collection is already populated.
+ * Explicitly populates Firestore collections with the master University of Ghana dataset.
+ * Executed ONLY on explicit administrator request (e.g. "Restore Master Dataset" button).
  */
-export async function ensureFirestoreInitialized(): Promise<{
+export async function seedMasterDatasetToFirestore(): Promise<{
   seededCourses: boolean;
   seededFacilities: boolean;
   seededLecturers: boolean;
@@ -601,72 +641,59 @@ export async function ensureFirestoreInitialized(): Promise<{
   };
 
   try {
-    // 1. Check Courses
-    const coursesSnap = await getDocs(collection(db, 'courses'));
-    if (coursesSnap.empty) {
-      console.log('[Firestore] Seeding initial courses dataset...');
-      await bulkSaveCoursesToFirestore(INITIAL_COURSES);
-      result.seededCourses = true;
-    }
+    console.log('[Firestore] Explicitly restoring master dataset...');
+    await bulkSaveCoursesToFirestore(INITIAL_COURSES);
+    result.seededCourses = true;
 
-    // 2. Check Facilities
-    const facilitiesSnap = await getDocs(collection(db, 'facilities'));
-    if (facilitiesSnap.empty) {
-      console.log('[Firestore] Seeding initial facilities dataset...');
-      await bulkSaveFacilitiesToFirestore(INITIAL_FACILITIES);
-      result.seededFacilities = true;
-    }
+    await bulkSaveFacilitiesToFirestore(INITIAL_FACILITIES);
+    result.seededFacilities = true;
 
-    // 3. Check Lecturers
-    const lecturersSnap = await getDocs(collection(db, 'lecturers'));
-    if (lecturersSnap.empty) {
-      console.log('[Firestore] Seeding initial lecturers dataset...');
-      await bulkSaveLecturersToFirestore(INITIAL_LECTURERS);
-      result.seededLecturers = true;
-    }
+    await bulkSaveLecturersToFirestore(INITIAL_LECTURERS);
+    result.seededLecturers = true;
 
-    // 4. Check TimeSlots
-    const timeSlotsSnap = await getDocs(collection(db, 'timeslots'));
-    if (timeSlotsSnap.empty) {
-      console.log('[Firestore] Seeding initial time slots dataset...');
-      await bulkSaveTimeSlotsToFirestore(INITIAL_TIME_SLOTS);
-      result.seededTimeSlots = true;
-    }
+    await bulkSaveTimeSlotsToFirestore(INITIAL_TIME_SLOTS);
+    result.seededTimeSlots = true;
 
-    // 5. Check Activities
-    const activitiesSnap = await getDocs(collection(db, 'activities'));
-    if (activitiesSnap.empty && INITIAL_SYSTEM_ACTIVITIES.length > 0) {
-      console.log('[Firestore] Seeding initial system activity...');
+    if (INITIAL_SYSTEM_ACTIVITIES.length > 0) {
       await saveActivityToFirestore(INITIAL_SYSTEM_ACTIVITIES[0]);
     }
 
-    // 6. Check Bookings
-    const bookingsSnap = await getDocs(collection(db, 'bookings'));
-    if (bookingsSnap.empty && INITIAL_BOOKING_REQUESTS.length > 0) {
-      console.log('[Firestore] Seeding initial room booking requests...');
+    if (INITIAL_BOOKING_REQUESTS.length > 0) {
       for (const req of INITIAL_BOOKING_REQUESTS) {
         await saveBookingRequestToFirestore(req as RoomBookingRequest);
       }
     }
 
-    // 7. Check Notifications
-    const notifsSnap = await getDocs(collection(db, 'notifications'));
-    if (notifsSnap.empty && INITIAL_NOTIFICATIONS.length > 0) {
-      console.log('[Firestore] Seeding initial notifications...');
+    if (INITIAL_NOTIFICATIONS.length > 0) {
       for (const notif of INITIAL_NOTIFICATIONS) {
         await createNotificationInFirestore(notif as NotificationItem);
       }
     }
 
-    // 8. Check Academic Periods
-    const periodsSnap = await getDocs(collection(db, 'academic_periods'));
-    if (periodsSnap.empty && INITIAL_ACADEMIC_PERIODS.length > 0) {
-      console.log('[Firestore] Seeding initial academic periods...');
+    if (INITIAL_ACADEMIC_PERIODS.length > 0) {
       await bulkSaveAcademicPeriodsToFirestore(INITIAL_ACADEMIC_PERIODS);
     }
   } catch (error) {
-    console.warn('[Firestore] Note during initial collections seed check:', error);
+    console.warn('[Firestore] Error during explicit master dataset seed:', error);
   }
 
   return result;
+}
+
+/**
+ * Legacy placeholder for backward compatibility. An empty collection is a valid state
+ * and must never trigger automatic silent reseeding.
+ */
+export async function ensureFirestoreInitialized(): Promise<{
+  seededCourses: boolean;
+  seededFacilities: boolean;
+  seededLecturers: boolean;
+  seededTimeSlots: boolean;
+}> {
+  return {
+    seededCourses: false,
+    seededFacilities: false,
+    seededLecturers: false,
+    seededTimeSlots: false,
+  };
 }

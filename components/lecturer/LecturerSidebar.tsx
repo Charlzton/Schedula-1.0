@@ -5,6 +5,7 @@ import {
   LayoutDashboard, 
   DoorOpen, 
   CalendarDays, 
+  BookOpen,
   ClipboardList, 
   Settings,
   LogOut,
@@ -72,6 +73,7 @@ export function LecturerSidebar({
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'rooms', label: 'Rooms', icon: DoorOpen },
     { id: 'schedule', label: 'Schedule', icon: CalendarDays },
+    { id: 'courses', label: 'My Courses', icon: BookOpen },
     { 
       id: 'requests', 
       label: 'Requests', 
@@ -90,7 +92,7 @@ export function LecturerSidebar({
     setIsSigningOut(true);
     try {
       await signOut();
-      router.replace('/login');
+      router.replace('/?loggedOut=true');
     } catch (error) {
       console.error('Logout failed:', error);
       setIsSigningOut(false);

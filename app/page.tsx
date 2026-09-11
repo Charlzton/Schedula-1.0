@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/Navbar';
 import { HeroSection } from '@/components/HeroSection';
@@ -21,6 +21,30 @@ export default function SchedulaApp() {
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signup');
   const [isNavigatingDashboard, setIsNavigatingDashboard] = useState(false);
 
+  const [logoutNotice, setLogoutNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const authParam = params.get('auth');
+      const loggedOut = params.get('loggedOut');
+      const reason = params.get('reason');
+
+      if (loggedOut === 'true') {
+        setLogoutNotice(reason ? decodeURIComponent(reason) : 'You have been successfully signed out.');
+        setTimeout(() => setLogoutNotice(null), 5000);
+      }
+
+      if (authParam === 'signin' || authParam === 'login') {
+        setAuthModalMode('signin');
+        setAuthModalOpen(true);
+      } else if (authParam === 'signup' || authParam === 'register') {
+        setAuthModalMode('signup');
+        setAuthModalOpen(true);
+      }
+    }
+  }, []);
+
   const handleOpenDashboard = () => {
     if (isNavigatingDashboard) return;
     if (user) {
@@ -31,7 +55,8 @@ export default function SchedulaApp() {
         router.push('/dashboard');
       }
     } else {
-      router.push('/login');
+      setAuthModalMode('signin');
+      setAuthModalOpen(true);
     }
   };
 
@@ -71,6 +96,16 @@ export default function SchedulaApp() {
         onOpenAuthModal={handleOpenAuthModal}
         isNavigatingDashboard={isNavigatingDashboard}
       />
+
+      {/* Floating Logout / Notification Toast */}
+      {logoutNotice && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-3 duration-300">
+          <div className="px-4 py-2.5 rounded-2xl glass-panel shadow-xl border border-zinc-200/80 dark:border-white/10 text-xs font-semibold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <span>{logoutNotice}</span>
+          </div>
+        </div>
+      )}
 
       {/* Main Content: Hero Section & FAQs */}
       <main className="flex-1 flex flex-col justify-center relative">

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Menu, 
   Search, 
@@ -29,6 +30,7 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: DashboardHeaderProps) {
+  const router = useRouter();
   const { 
     activeView, 
     setActiveView,
@@ -82,7 +84,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
 
   return (
     <div className="sticky top-0 z-30 w-full px-3 sm:px-4 pt-3 sm:pt-4 pb-2 no-print">
-      <div className="w-full glass-panel px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="w-full glass-panel px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4 rounded-2xl">
         
         {/* Left: Mobile Toggle & Welcome Greeting */}
         <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 sm:flex-initial">
@@ -340,6 +342,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
                     onClick={async () => {
                       setProfileOpen(false);
                       await signOut();
+                      router.replace('/?loggedOut=true');
                     }}
                     disabled={isSigningOut}
                     className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors text-left cursor-pointer disabled:opacity-50"

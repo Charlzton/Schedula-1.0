@@ -15,6 +15,7 @@ import {
   User as FirebaseUser
 } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import appletConfig from "@/firebase-applet-config.json";
 
 // Firebase configuration supporting process.env overrides with appletConfig fallbacks
@@ -35,6 +36,9 @@ export const googleProvider = new GoogleAuthProvider();
 // Initialize Firestore
 const firestoreDbId = (appletConfig as any)?.firestoreDatabaseId;
 export const db = firestoreDbId ? getFirestore(app, firestoreDbId) : getFirestore(app);
+
+// Initialize Firebase Storage
+export const storage = getStorage(app);
 
 export { 
   signInWithPopup, 

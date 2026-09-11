@@ -6,14 +6,11 @@ import {
   Sun, 
   Moon, 
   Search, 
-  User, 
+  User as UserIcon, 
   ChevronDown, 
   LogOut, 
-  CalendarDays,
-  DoorOpen,
-  ClipboardList,
-  GraduationCap,
-  Settings
+  Settings,
+  Loader2
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
@@ -39,7 +36,7 @@ export function LecturerHeader({
   onOpenProfileModal
 }: LecturerHeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const { user, lecturerProfile, signOut } = useAuth();
+  const { user, lecturerProfile, signOut, isSigningOut } = useAuth();
   const router = useRouter();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -59,7 +56,7 @@ export function LecturerHeader({
   const handleSignOut = async () => {
     setProfileDropdownOpen(false);
     await signOut();
-    router.replace('/login');
+    router.replace('/?loggedOut=true');
   };
 
   const displayName = lecturerProfile?.fullName || user?.name || (user?.email ? user.email.split('@')[0] : 'Faculty Member');
@@ -87,13 +84,13 @@ export function LecturerHeader({
             </h2>
             {displayTitle && (
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate -mt-0.5">
-                {displayTitle}
+                {displayTitle} {staffId ? `• ID: ${staffId}` : ''}
               </p>
             )}
           </div>
         </div>
 
-        {/* Right Area: Search, Theme Toggle, Profile Menu */}
+        {/* Right Area: Search, Theme Toggle, Settings, Notification, Profile */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
           {/* Quick Search */}
@@ -126,17 +123,25 @@ export function LecturerHeader({
           </button>
 
           {/* Settings Button */}
-          {onOpenProfileModal && (
-            <button
-              onClick={onOpenProfileModal}
-              aria-label="Settings"
-              title="Settings"
-              className="p-1.5 sm:p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
-              id="lecturer-header-settings-button"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            onClick={() => {
+              if (onOpenProfileModal) {
+                onOpenProfileModal();
+              } else {
+                setActiveView('settings');
+              }
+            }}
+            aria-label="Settings"
+            title="Settings"
+            className={`p-1.5 sm:p-2 rounded-xl transition-colors focus:outline-none cursor-pointer ${
+              activeView === 'settings'
+                ? 'text-blue-600 dark:text-blue-400 bg-black/5 dark:bg-white/10 font-semibold'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'
+            }`}
+            id="lecturer-header-settings-button"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
 
           {/* Notification Bell */}
           <NotificationBell 
@@ -166,32 +171,71 @@ export function LecturerHeader({
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
+              <ChevronDown className="w-3 h-3 text-zinc-400 hidden sm:block" />
             </button>
 
             {/* Dropdown Card */}
             {profileDropdownOpen && (
               <div 
-                className="absolute right-0 mt-2 w-52 glass-modal rounded-xl p-2 border border-zinc-200/80 dark:border-white/10 shadow-lg z-50 animate-in fade-in zoom-in-95 duration-150"
+                className="absolute right-0 mt-2 w-60 max-w-[calc(100vw-24px)] glass-modal rounded-2xl p-3 border border-zinc-200/80 dark:border-white/10 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150"
                 role="menu"
               >
                 {/* User Info Header */}
-                <div className="px-2 py-1.5 border-b border-zinc-200/60 dark:border-white/10 mb-1">
-                  <div className="font-semibold text-xs text-zinc-900 dark:text-white truncate">
-                    {displayName}
-                  </div>
-                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
-                    {user?.email || 'faculty@ug.edu.gh'}
+                <div className="p-2 border-b border-zinc-200/60 dark:border-white/10 mb-2 flex items-center gap-3">
+                  {user?.avatar ? (
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-blue-500/30 shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={user.avatar}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+                      {displayName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-zinc-900 dark:text-white truncate">
+                      {displayName}
+                    </p>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                      {user?.email || 'faculty@ug.edu.gh'}
+                    </p>
+                    <span className="inline-block mt-0.5 px-1.5 py-0.2 text-[9px] font-bold rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                      {displayTitle}
+                    </span>
                   </div>
                 </div>
 
-                {/* Logout Button */}
-                <div>
+                {/* Navigation Links */}
+                <div className="py-1 space-y-1">
+                  <button
+                    onClick={() => {
+                      setActiveView('settings');
+                      setProfileDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
+                  >
+                    <UserIcon className="w-4 h-4 text-blue-500" />
+                    <span>Manage Profile</span>
+                  </button>
+                </div>
+
+                {/* Sign Out Button */}
+                <div className="pt-2 border-t border-zinc-200/60 dark:border-white/10">
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    disabled={isSigningOut}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors text-left cursor-pointer disabled:opacity-50"
                   >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign out</span>
+                    {isSigningOut ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <LogOut className="w-4 h-4" />
+                    )}
+                    <span>{isSigningOut ? 'Signing out...' : 'Sign out'}</span>
                   </button>
                 </div>
               </div>

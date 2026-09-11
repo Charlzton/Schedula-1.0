@@ -115,6 +115,8 @@ export function GeneratedTimetablesView() {
   // Filtered schedules
   const filteredSchedules = useMemo(() => {
     return schedules.filter(s => {
+      const matchesYear = !s.academicYear || s.academicYear === currentAcademicYear;
+
       const matchesSearch = 
         s.courseCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -126,9 +128,9 @@ export function GeneratedTimetablesView() {
       const matchesHall = hallFilter === 'All' || s.hallId === hallFilter;
       const matchesLecturer = lecturerFilter === 'All' || s.lecturerId === lecturerFilter;
 
-      return matchesSearch && matchesSemester && matchesLevel && matchesHall && matchesLecturer;
+      return matchesYear && matchesSearch && matchesSemester && matchesLevel && matchesHall && matchesLecturer;
     });
-  }, [schedules, searchTerm, selectedSemester, levelFilter, hallFilter, lecturerFilter]);
+  }, [schedules, currentAcademicYear, searchTerm, selectedSemester, levelFilter, hallFilter, lecturerFilter]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
@@ -290,7 +292,7 @@ export function GeneratedTimetablesView() {
               <div className="absolute right-0 mt-2 w-52 p-2 rounded-2xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-2xl z-50 animate-in fade-in-50 zoom-in-95 space-y-1">
                 <button
                   onClick={() => {
-                    exportGeneratedTimetablePDF(schedules, { semester: selectedSemester, academicYear: '2026/2027' });
+                    exportGeneratedTimetablePDF(filteredSchedules, { semester: selectedSemester, academicYear: currentAcademicYear });
                     setExportDropdownOpen(false);
                   }}
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
@@ -301,7 +303,7 @@ export function GeneratedTimetablesView() {
 
                 <button
                   onClick={() => {
-                    exportGeneratedTimetableExcel(schedules, { semester: selectedSemester, academicYear: '2026/2027' });
+                    exportGeneratedTimetableExcel(filteredSchedules, { semester: selectedSemester, academicYear: currentAcademicYear });
                     setExportDropdownOpen(false);
                   }}
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
@@ -312,7 +314,7 @@ export function GeneratedTimetablesView() {
 
                 <button
                   onClick={() => {
-                    exportGeneratedTimetableCSV(schedules, { semester: selectedSemester, academicYear: '2026/2027' });
+                    exportGeneratedTimetableCSV(filteredSchedules, { semester: selectedSemester, academicYear: currentAcademicYear });
                     setExportDropdownOpen(false);
                   }}
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
@@ -326,7 +328,7 @@ export function GeneratedTimetablesView() {
 
           {/* Print Button */}
           <button
-            onClick={() => printTimetable(filteredSchedules, { semester: selectedSemester, academicYear: '2026/2027' })}
+            onClick={() => printTimetable(filteredSchedules, { semester: selectedSemester, academicYear: currentAcademicYear })}
             className="p-2 rounded-xl bg-white/60 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-200 border border-zinc-200/80 dark:border-white/10 shadow-xs transition-all cursor-pointer"
             title="Print Schedule"
             aria-label="Print Schedule"

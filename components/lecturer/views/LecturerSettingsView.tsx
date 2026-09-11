@@ -85,43 +85,6 @@ export function LecturerSettingsView() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  // Helper function to compress image client-side to an ultra-compact Base64 string under 2,048 characters
-  const compressToCompactBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const attemptCompress = (size: number, quality: number) => {
-            const canvas = document.createElement('canvas');
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-              resolve('');
-              return;
-            }
-            const minDim = Math.min(img.width, img.height);
-            const sx = (img.width - minDim) / 2;
-            const sy = (img.height - minDim) / 2;
-            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
-            const result = canvas.toDataURL('image/jpeg', quality);
-            if (result.length < 2040 || size <= 32) {
-              resolve(result);
-            } else {
-              attemptCompress(Math.floor(size * 0.75), Math.max(0.3, quality - 0.15));
-            }
-          };
-          attemptCompress(64, 0.7);
-        };
-        img.onerror = () => resolve('');
-        img.src = event.target?.result as string;
-      };
-      reader.onerror = () => resolve('');
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleCustomImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -131,8 +94,8 @@ export function LecturerSettingsView() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setProfileError('Image must be smaller than 5MB.');
+    if (file.size > 10 * 1024 * 1024) {
+      setProfileError('Image must be smaller than 10MB.');
       return;
     }
 
@@ -141,13 +104,12 @@ export function LecturerSettingsView() {
       setProfileError(null);
       setProfileSuccess(null);
 
-      const compactPhotoUrl = await compressToCompactBase64(file);
-      if (!compactPhotoUrl) {
-        throw new Error('Failed to process image file');
+      const res = await updateUserProfile({ avatar: file });
+      if (res.success) {
+        setProfileSuccess('Profile photo uploaded and stored in Cloud Storage.');
+      } else {
+        setProfileError(res.error || 'Failed to upload photo.');
       }
-
-      await updateUserProfile({ avatar: compactPhotoUrl });
-      setProfileSuccess('Profile photo updated successfully.');
     } catch (err: unknown) {
       console.error('Failed to update avatar image:', err);
       setProfileError(err instanceof Error ? err.message : 'Failed to update photo.');

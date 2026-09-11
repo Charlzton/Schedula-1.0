@@ -26,7 +26,8 @@ import {
   INITIAL_SYSTEM_ACTIVITIES,
   INITIAL_BOOKING_REQUESTS,
   INITIAL_NOTIFICATIONS,
-  INITIAL_ACADEMIC_PERIODS
+  INITIAL_ACADEMIC_PERIODS,
+  isCourseAllocatedToLecturer
 } from '@/lib/dataset';
 import { RoomBookingRequest, NotificationItem } from '@/lib/lecturerTypes';
 import { 
@@ -61,6 +62,7 @@ import {
   savePeriodSchedulesToFirestore,
   publishPeriodTimetableInFirestore,
   unpublishPeriodTimetableInFirestore,
+  setActivePeriodInFirestore,
   clearAllSchedulesFromFirestore,
   saveActivityToFirestore,
   saveBookingRequestToFirestore,
@@ -115,6 +117,7 @@ interface TimetableContextType {
   firestoreStatus?: 'connected' | 'syncing' | 'offline' | 'error';
   
   // Timetable Period & Publishing actions
+  setActiveAcademicPeriod: (periodId: string) => Promise<void>;
   publishCurrentTimetable: (academicYear?: string, semester?: 'Semester 1' | 'Semester 2') => Promise<void>;
   unpublishCurrentTimetable: (academicYear?: string, semester?: 'Semester 1' | 'Semester 2') => Promise<void>;
   
@@ -193,7 +196,7 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY_PERIODS);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
     return INITIAL_ACADEMIC_PERIODS;
@@ -205,16 +208,16 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     return academicPeriods.find(p => p.isCurrent || p.isActive) || academicPeriods[0] || null;
   }, [academicPeriods]);
 
-  // Instant optimistic initialization from localStorage or dataset defaults
+  // Instant optimistic initialization from localStorage or empty collection default
   const [courses, setCourses] = useState<Course[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_COURSES);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return INITIAL_COURSES;
+    return [];
   });
 
   const [facilities, setFacilities] = useState<LectureFacility[]>(() => {
@@ -222,10 +225,10 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY_FACILITIES);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return INITIAL_FACILITIES;
+    return [];
   });
 
   const [lecturers, setLecturers] = useState<Lecturer[]>(() => {
@@ -233,10 +236,10 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY_LECTURERS);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return INITIAL_LECTURERS;
+    return [];
   });
 
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(() => {
@@ -244,10 +247,10 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY_TIMESLOTS);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return INITIAL_TIME_SLOTS;
+    return [];
   });
 
   const [residentialHalls] = useState<ResidentialHall[]>(INITIAL_RESIDENTIAL_HALLS);
@@ -257,16 +260,10 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY_SCHEDULES);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    // Generate an initial schedule for Semester 1 by default
-    const initGen = generateIntelligentTimetable(INITIAL_COURSES, INITIAL_FACILITIES, INITIAL_LECTURERS, INITIAL_TIME_SLOTS, {
-      semester: 'Semester 1',
-      separateTheoryAndPracticalDays: true,
-      strictCapacityCheck: true
-    });
-    return initGen.schedules;
+    return [];
   });
 
   const [systemActivities, setSystemActivities] = useState<SystemActivity[]>(() => {
@@ -274,9 +271,8 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY_ACTIVITIES);
       if (saved) {
         const parsed: SystemActivity[] = JSON.parse(saved);
-        // Clean out legacy demo placeholders
-        const nonLegacy = parsed.filter(a => !['ACT-001', 'ACT-002', 'ACT-003', 'ACT-004', 'ACT-005'].includes(a.id));
-        if (Array.isArray(nonLegacy) && nonLegacy.length > 0) {
+        if (Array.isArray(parsed)) {
+          const nonLegacy = parsed.filter(a => !['ACT-001', 'ACT-002', 'ACT-003', 'ACT-004', 'ACT-005'].includes(a.id));
           const seen = new Set<string>();
           return nonLegacy.map((act, index) => {
             let id = act.id || `ACT-${Date.now()}-${index}`;
@@ -289,7 +285,7 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch {}
-    return INITIAL_SYSTEM_ACTIVITIES;
+    return [];
   });
 
   const [bookingRequests, setBookingRequests] = useState<RoomBookingRequest[]>(() => {
@@ -297,10 +293,10 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY_BOOKINGS);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return INITIAL_BOOKING_REQUESTS as RoomBookingRequest[];
+    return [];
   });
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
@@ -308,10 +304,10 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY_NOTIFICATIONS);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch {}
-    return INITIAL_NOTIFICATIONS as NotificationItem[];
+    return [];
   });
 
   const [activeView, setActiveView] = useState<DashboardViewType>('dashboard');
@@ -348,28 +344,44 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     async function initAndSubscribe() {
       try {
         setIsFirestoreSyncing(true);
-        // Step 1: Ensure initial dataset exists in Firestore if collections are empty
-        await ensureFirestoreInitialized();
 
         if (!isMounted) return;
 
-        // Step 2: Subscribe to Courses
-        const unsubCourses = onSnapshot(collection(db, 'courses'), (snapshot) => {
-          if (!snapshot.empty) {
+        // Step 2: Subscribe to Courses (Strict server-side isolation for faculty)
+        const currentLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
+        let coursesQuery = null;
+        let skipCoursesSubscription = false;
+
+        if (user?.role === 'lecturer') {
+          if (currentLecturerId) {
+            coursesQuery = query(
+              collection(db, 'courses'),
+              where('assignedLecturerId', '==', currentLecturerId)
+            );
+          } else {
+            setCourses([]);
+            skipCoursesSubscription = true;
+          }
+        } else {
+          coursesQuery = query(collection(db, 'courses'));
+        }
+
+        if (!skipCoursesSubscription && coursesQuery) {
+          const unsubCourses = onSnapshot(coursesQuery, (snapshot) => {
             const remoteCourses = snapshot.docs.map((docSnap) => docSnap.data() as Course);
             setCourses(remoteCourses);
-          }
-          setFirestoreStatus('connected');
-        }, (err) => {
-          console.warn('[Firestore] Courses sync notice:', err.message);
-          setFirestoreStatus('offline');
-        });
-        unsubscribes.push(unsubCourses);
+            setFirestoreStatus('connected');
+          }, (err) => {
+            console.warn('[Firestore] Courses sync notice:', err.message);
+            setFirestoreStatus('offline');
+          });
+          unsubscribes.push(unsubCourses);
+        }
 
         // Step 3: Subscribe to Facilities
         const unsubFacilities = onSnapshot(collection(db, 'facilities'), (snapshot) => {
-          if (!snapshot.empty) {
-            const remoteFacilities = snapshot.docs.map((docSnap) => docSnap.data() as LectureFacility);
+          const remoteFacilities = snapshot.docs.map((docSnap) => docSnap.data() as LectureFacility);
+          if (remoteFacilities.length > 0 || snapshot.empty) {
             setFacilities(remoteFacilities);
           }
         }, (err) => {
@@ -379,8 +391,8 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
 
         // Step 4: Subscribe to Lecturers
         const unsubLecturers = onSnapshot(collection(db, 'lecturers'), (snapshot) => {
-          if (!snapshot.empty) {
-            const remoteLecturers = snapshot.docs.map((docSnap) => docSnap.data() as Lecturer);
+          const remoteLecturers = snapshot.docs.map((docSnap) => docSnap.data() as Lecturer);
+          if (remoteLecturers.length > 0 || snapshot.empty) {
             setLecturers(remoteLecturers);
           }
         }, (err) => {
@@ -390,8 +402,8 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
 
         // Step 5: Subscribe to TimeSlots
         const unsubTimeSlots = onSnapshot(collection(db, 'timeslots'), (snapshot) => {
-          if (!snapshot.empty) {
-            const remoteSlots = snapshot.docs.map((docSnap) => docSnap.data() as TimeSlot);
+          const remoteSlots = snapshot.docs.map((docSnap) => docSnap.data() as TimeSlot);
+          if (remoteSlots.length > 0 || snapshot.empty) {
             setTimeSlots(remoteSlots);
           }
         }, (err) => {
@@ -400,16 +412,16 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         unsubscribes.push(unsubTimeSlots);
 
         // Step 6: Subscribe to Timetables (filtered for lecturers, full for admin)
-        const currentLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
+        const timetableLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
         let timetablesQuery = null;
         let skipSubscription = false;
 
         if (user?.role === 'lecturer') {
-          if (currentLecturerId) {
+          if (timetableLecturerId) {
             timetablesQuery = query(
               collection(db, 'timetables'),
               where('status', '==', 'published'),
-              where('lecturerId', '==', currentLecturerId)
+              where('lecturerId', '==', timetableLecturerId)
             );
           } else {
             setSchedules([]);
@@ -978,13 +990,50 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     addActivity('Excel Dataset Imported', `Loaded ${newCourses?.length || 0} courses, ${newFacilities?.length || 0} facilities, ${newLecturers?.length || 0} lecturers`, 'import');
   };
 
-  const exportTimetableData = (format: 'csv' | 'json'): string => {
-    addActivity('Timetable Exported', `Exported full schedule in ${format.toUpperCase()} format`, 'export');
+  const setActiveAcademicPeriod = async (periodId: string): Promise<void> => {
+    setAcademicPeriods(prev => prev.map(p => ({
+      ...p,
+      isCurrent: p.id === periodId,
+      isActive: p.id === periodId
+    })));
+    const target = academicPeriods.find(p => p.id === periodId);
+    if (target) {
+      setCurrentAcademicYear(target.academicYear);
+      if (target.semester === 'Semester 1' || target.semester === 'Semester 2') {
+        setSelectedSemester(target.semester);
+      }
+    }
+    await setActivePeriodInFirestore(periodId);
+    addActivity('Active Period Changed', `Switched active academic period to ${target?.academicYear || ''} ${target?.semester || ''}`, 'update');
+  };
+
+  const exportTimetableData = (
+    format: 'csv' | 'json',
+    exportOptions?: { academicYear?: string; semester?: string; lecturerId?: string; publishedOnly?: boolean }
+  ): string => {
+    let sourceSchedules = [...schedules];
+
+    if (exportOptions?.academicYear) {
+      sourceSchedules = sourceSchedules.filter(s => (s.academicYear || '2026/2027') === exportOptions.academicYear);
+    }
+    if (exportOptions?.semester && exportOptions.semester !== 'All') {
+      sourceSchedules = sourceSchedules.filter(s => s.semester === exportOptions.semester);
+    }
+    if (exportOptions?.lecturerId) {
+      sourceSchedules = sourceSchedules.filter(s => s.lecturerId === exportOptions.lecturerId);
+    }
+    if (exportOptions?.publishedOnly) {
+      sourceSchedules = sourceSchedules.filter(s => s.status === 'published');
+    }
+
+    addActivity('Timetable Exported', `Exported ${sourceSchedules.length} schedules in ${format.toUpperCase()} format`, 'export');
     if (format === 'json') {
       return JSON.stringify({
         exportedAt: new Date().toISOString(),
         institution: 'University of Ghana - Department of Computer Science',
-        schedules,
+        academicYear: exportOptions?.academicYear || currentAcademicYear,
+        semester: exportOptions?.semester || selectedSemester,
+        schedules: sourceSchedules,
         courses,
         facilities,
         lecturers,
@@ -999,6 +1048,7 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       'Course Title',
       'Level',
       'Semester',
+      'Academic Year',
       'Day',
       'Start Time',
       'End Time',
@@ -1011,12 +1061,13 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       'Status'
     ];
 
-    const rows = schedules.map(s => [
+    const rows = sourceSchedules.map(s => [
       `"${s.id}"`,
       `"${s.courseCode}"`,
       `"${s.courseTitle}"`,
       s.level,
       `"${s.semester}"`,
+      `"${s.academicYear || '2026/2027'}"`,
       `"${s.day}"`,
       `"${s.startTime}"`,
       `"${s.endTime}"`,
@@ -1026,7 +1077,7 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       `"${s.lecturerName}"`,
       s.expectedEnrollment,
       s.hallCapacity,
-      s.hasConflict ? `"Conflict: ${s.conflictReason || 'Warning'}"` : '"Scheduled OK"'
+      s.hasConflict ? `"Conflict: ${s.conflictReason || 'Warning'}"` : `"${s.status || 'draft'}"`
     ]);
 
     return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -1263,17 +1314,41 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     await deleteNotificationFromFirestore(notificationId);
   };
 
+  // Secure courses exposure for lecturers at the Context boundary
+  const securedCourses = useMemo(() => {
+    if (user?.role === 'lecturer') {
+      const activeFaculty = lecturerProfile || (user?.lecturerId ? lecturers.find(l => l.lecturerId === user.lecturerId) : null);
+      if (!activeFaculty) return [];
+      return courses.filter(c => isCourseAllocatedToLecturer(c, activeFaculty));
+    }
+    return courses;
+  }, [courses, user, lecturerProfile, lecturers]);
+
   // Secure schedules exposure for lecturers at the Context boundary
   const securedSchedules = useMemo(() => {
     if (user?.role === 'lecturer') {
+      // If the active academic period is unpublished, lecturer sees no schedules
+      if (activeAcademicPeriod && !activeAcademicPeriod.isPublished) {
+        return [];
+      }
+
       const currentLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
       if (!currentLecturerId) return [];
       
       const email = user.email?.toLowerCase();
-      const name = user.name?.toLowerCase();
+      const name = (lecturerProfile?.fullName || user.name || '').toLowerCase();
+      const activeYear = activeAcademicPeriod?.academicYear || currentAcademicYear;
+      const activeSem = activeAcademicPeriod?.semester;
 
       return schedules.filter(s => {
         if (s.status !== 'published') return false;
+
+        // Match academic year and semester of current active period
+        const sYear = s.academicYear || '2026/2027';
+        if (sYear !== activeYear) return false;
+        if (activeSem && s.semester !== activeSem) return false;
+
+        // Match lecturer identity
         if (s.lecturerId && s.lecturerId === currentLecturerId) return true;
         if (s.lecturerEmail && email && s.lecturerEmail.toLowerCase() === email) return true;
         if (s.lecturerName && name && s.lecturerName.toLowerCase() === name) return true;
@@ -1281,17 +1356,17 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
       });
     }
     return schedules;
-  }, [schedules, user, lecturerProfile]);
+  }, [schedules, user, lecturerProfile, activeAcademicPeriod, currentAcademicYear]);
 
   // Dynamically compute all dashboard metrics and analytics whenever state updates
   const analytics = useMemo(() => {
-    return calculateDashboardAnalytics(courses, facilities, lecturers, timeSlots, securedSchedules);
-  }, [courses, facilities, lecturers, timeSlots, securedSchedules]);
+    return calculateDashboardAnalytics(securedCourses, facilities, lecturers, timeSlots, securedSchedules);
+  }, [securedCourses, facilities, lecturers, timeSlots, securedSchedules]);
 
   return (
     <TimetableContext.Provider
       value={{
-        courses,
+        courses: securedCourses,
         facilities,
         lecturers,
         timeSlots,
@@ -1301,6 +1376,7 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         activeAcademicPeriod,
         currentAcademicYear,
         setCurrentAcademicYear,
+        setActiveAcademicPeriod,
         publishCurrentTimetable,
         unpublishCurrentTimetable,
         systemActivities,

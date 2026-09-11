@@ -90,7 +90,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
     setIsSigningOut(true);
     try {
       await signOut();
-      router.replace('/login');
+      router.replace('/?loggedOut=true');
     } catch (error) {
       console.error('Logout failed:', error);
       setIsSigningOut(false);

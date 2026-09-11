@@ -55,7 +55,13 @@ service cloud.firestore {
     
     // Academic courses catalog
     match /courses/{courseId} {
-      allow read: if isAuthenticated();
+      // Admins read all courses in the catalog
+      // Lecturers can ONLY read courses allocated to them (via assignedLecturerId matching their linked lecturerId)
+      allow read: if isAuthenticated() && (
+        isAdmin() || (
+          getUserLecturerId() != '' && resource.data.assignedLecturerId == getUserLecturerId()
+        )
+      );
       allow write: if isAdmin();
     }
     
@@ -69,9 +75,15 @@ service cloud.firestore {
     match /lecturers/{lecturerId} {
       allow read: if isAuthenticated();
       // Admins have full management access.
-      // An authenticated user claiming their directory record may ONLY link their authUid and set status to active if email matches.
+      // Linked lecturers can update their own contact and avatar details.
+      // An authenticated user claiming their directory record may link their authUid and set status to active if email matches.
       allow update: if isAuthenticated() && (
-        isAdmin() || (
+        isAdmin() || 
+        (
+          resource.data.authUid == request.auth.uid &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['lecturerId', 'authUid', 'accountStatus', 'assignedCourses'])
+        ) ||
+        (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['authUid', 'accountStatus', 'registeredAt']) &&
           request.resource.data.authUid == request.auth.uid &&
           request.resource.data.accountStatus == 'active' &&

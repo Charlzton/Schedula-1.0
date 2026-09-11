@@ -26,6 +26,7 @@ import {
   deleteUserAccount,
   AdminUserRecord 
 } from '@/lib/adminAuthService';
+import { uploadProfileImageToStorage } from '@/lib/storage';
 
 export type UserRole = 'super_admin' | 'admin' | 'lecturer';
 
@@ -85,12 +86,11 @@ async function findLecturerById(lecturerId: string): Promise<Lecturer | null> {
     console.warn('Firestore lecturer search by ID note:', err);
   }
 
-  const match = INITIAL_LECTURERS.find(l => l.lecturerId === cleanId);
-  return match ? { ...match, accountStatus: match.accountStatus || 'unclaimed' } : null;
+  return null;
 }
 
 /**
- * Helper to match an email against the lecturer catalog (Firestore first, then INITIAL_LECTURERS fallback)
+ * Helper to match an email against the lecturer catalog in Firestore
  */
 async function findLecturerByEmail(email: string): Promise<Lecturer | null> {
   const cleanEmail = email.trim().toLowerCase();
@@ -116,13 +116,7 @@ async function findLecturerByEmail(email: string): Promise<Lecturer | null> {
     console.warn('Firestore lecturer search note:', err);
   }
 
-  // Fallback to static catalog if Firestore is offline or empty
-  const match = INITIAL_LECTURERS.find(l => 
-    (l.officeEmail && l.officeEmail.trim().toLowerCase() === cleanEmail) ||
-    (l.email && l.email.trim().toLowerCase() === cleanEmail)
-  );
-
-  return match ? { ...match, accountStatus: match.accountStatus || 'unclaimed' } : null;
+  return null;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -189,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         lecturerDocRef,
         (lecSnap) => {
           if (!lecSnap.exists()) {
+            terminateSession('Your lecturer profile was removed by an administrator');
             return;
           }
           const lecData = lecSnap.data() as Lecturer;
@@ -965,23 +960,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (auth.currentUser) {
         if (avatar && typeof avatar !== 'string') {
           try {
-            const { getStorage, ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
-            const storage = getStorage();
-            const storageRef = ref(storage, `users/${auth.currentUser.uid}/profile_${Date.now()}.jpg`);
-            const uploadResult = await uploadBytes(storageRef, avatar);
-            avatarUrl = await getDownloadURL(uploadResult.ref);
+            avatarUrl = await uploadProfileImageToStorage(avatar, auth.currentUser.uid);
           } catch (storageErr: any) {
-            console.warn('Firebase Storage upload failed, trying base64 fallback:', storageErr);
-            try {
-              avatarUrl = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(avatar);
-              });
-            } catch (fallbackErr) {
-              console.error('Base64 fallback encoding failed:', fallbackErr);
-            }
+            console.error('Firebase Storage upload failed:', storageErr);
+            return {
+              success: false,
+              error: storageErr?.message || 'Failed to upload profile image to cloud storage.'
+            };
+          }
+        } else if (avatar && typeof avatar === 'string' && avatar.startsWith('data:image')) {
+          // If a base64 data URI was provided, convert it to a Blob and upload to Firebase Storage
+          try {
+            const response = await fetch(avatar);
+            const blob = await response.blob();
+            avatarUrl = await uploadProfileImageToStorage(blob, auth.currentUser.uid);
+          } catch (blobErr: any) {
+            console.error('Failed to convert and upload image to Firebase Storage:', blobErr);
+            return {
+              success: false,
+              error: 'Failed to process and upload profile image to storage.'
+            };
           }
         }
 
@@ -1000,6 +998,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: cleanName,
             ...(avatarUrl !== undefined ? { avatar: avatarUrl } : {})
           }, { merge: true });
+
+          // Also update lecturer directory document if user is linked to a faculty profile
+          if (lecturerProfile?.lecturerId) {
+            const cleanId = lecturerProfile.lecturerId.replace(/[\/\s#$[\]]/g, '_');
+            const lecDocRef = doc(db, 'lecturers', cleanId);
+            await setDoc(lecDocRef, {
+              fullName: cleanName,
+              ...(avatarUrl !== undefined ? { avatar: avatarUrl } : {})
+            }, { merge: true });
+          }
         } catch (dbErr) {
           console.warn('Firestore profile save note:', dbErr);
         }
@@ -1017,6 +1025,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {}
         return updated;
       });
+
+      if (lecturerProfile) {
+        setLecturerProfile(prev => prev ? {
+          ...prev,
+          fullName: cleanName,
+          ...(avatarUrl !== undefined ? { avatar: avatarUrl } : {})
+        } : prev);
+      }
 
       return { success: true };
     } catch (err: any) {

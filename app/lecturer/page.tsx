@@ -11,6 +11,7 @@ import { LecturerHeader } from '@/components/lecturer/LecturerHeader';
 import { LecturerOverviewView } from '@/components/lecturer/views/LecturerOverviewView';
 import { LecturerRoomAvailabilityView } from '@/components/lecturer/views/LecturerRoomAvailabilityView';
 import { LecturerTeachingScheduleView } from '@/components/lecturer/views/LecturerTeachingScheduleView';
+import { LecturerCoursesView } from '@/components/lecturer/views/LecturerCoursesView';
 import { LecturerBookingRequestsView } from '@/components/lecturer/views/LecturerBookingRequestsView';
 import { LecturerSettingsView } from '@/components/lecturer/views/LecturerSettingsView';
 import { LecturerProfileModal } from '@/components/lecturer/modals/LecturerProfileModal';
@@ -35,7 +36,7 @@ export default function LecturerPage() {
   // Authentication check
   useEffect(() => {
     if (!isLoading && !user && !isSigningOut) {
-      router.replace('/login');
+      router.replace('/');
     }
   }, [user, isLoading, isSigningOut, router]);
 
@@ -145,6 +146,10 @@ export default function LecturerPage() {
 
             {activeView === 'schedule' && (
               <LecturerTeachingScheduleView />
+            )}
+
+            {activeView === 'courses' && (
+              <LecturerCoursesView />
             )}
 
             {activeView === 'requests' && (

@@ -35,4 +35,4 @@ export interface NotificationItem {
   isRead: boolean;
 }
 
-export type LecturerViewType = 'overview' | 'rooms' | 'schedule' | 'requests' | 'settings';
+export type LecturerViewType = 'overview' | 'rooms' | 'schedule' | 'courses' | 'requests' | 'settings';

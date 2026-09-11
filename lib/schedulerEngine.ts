@@ -3,11 +3,7 @@ import {
   LectureFacility, 
   Lecturer, 
   TimeSlot, 
-  TimetableEntry,
-  INITIAL_COURSES,
-  INITIAL_FACILITIES,
-  INITIAL_LECTURERS,
-  INITIAL_TIME_SLOTS
+  TimetableEntry
 } from './dataset';
 
 export interface GenerationOptions {
@@ -15,6 +11,8 @@ export interface GenerationOptions {
   targetLevel?: number | 'All';
   separateTheoryAndPracticalDays?: boolean;
   strictCapacityCheck?: boolean;
+  academicYear?: string;
+  status?: 'generated' | 'published' | 'draft';
 }
 
 export interface GenerationResult {
@@ -38,10 +36,10 @@ export interface GenerationResult {
  * 3. Soft Constraints: Separate Theory & Practical on different days, optimal room capacity utilization
  */
 export function generateIntelligentTimetable(
-  courses: Course[] = INITIAL_COURSES,
-  facilities: LectureFacility[] = INITIAL_FACILITIES,
-  lecturers: Lecturer[] = INITIAL_LECTURERS,
-  timeSlots: TimeSlot[] = INITIAL_TIME_SLOTS,
+  courses: Course[] = [],
+  facilities: LectureFacility[] = [],
+  lecturers: Lecturer[] = [],
+  timeSlots: TimeSlot[] = [],
   options: GenerationOptions = { semester: 'Semester 1', separateTheoryAndPracticalDays: true, strictCapacityCheck: true }
 ): GenerationResult {
   const selectedSemester = options.semester || 'Semester 1';
@@ -116,12 +114,19 @@ export function generateIntelligentTimetable(
           lecturerOccupancy.add(lecturerKey);
           cohortOccupancy.add(cohortKey);
 
+          const yearTag = (options.academicYear || '2026/2027').replace('/', '-');
+          const semAbbr = course.semester.toLowerCase().includes('1') ? 'sem1' : 'sem2';
+          const periodId = `${yearTag}-${semAbbr}`;
+
           allocatedSchedules.push({
-            id: `SCH-${course.courseCode}-TH-${slot.slotId}`,
+            id: `SCH-${yearTag}-${semAbbr.toUpperCase()}-${course.courseCode}-TH-${slot.slotId}`,
             courseCode: course.courseCode,
             courseTitle: course.courseTitle,
             level: course.level,
             semester: course.semester,
+            academicYear: options.academicYear || '2026/2027',
+            periodId,
+            status: options.status || 'draft',
             hallId: hall.hallId,
             hallName: hall.hallName,
             slotId: slot.slotId,
@@ -132,6 +137,7 @@ export function generateIntelligentTimetable(
             sessionType: 'Theory',
             lecturerId: lecturer.lecturerId,
             lecturerName: lecturer.fullName,
+            lecturerEmail: lecturer.officeEmail || lecturer.email,
             expectedEnrollment: course.expectedEnrollment,
             hallCapacity: hall.capacity,
             hasConflict: hasCapacityIssue,
@@ -177,12 +183,19 @@ export function generateIntelligentTimetable(
             lecturerOccupancy.add(lecturerKey);
             cohortOccupancy.add(cohortKey);
 
+            const yearTag = (options.academicYear || '2026/2027').replace('/', '-');
+            const semAbbr = course.semester.toLowerCase().includes('1') ? 'sem1' : 'sem2';
+            const periodId = `${yearTag}-${semAbbr}`;
+
             allocatedSchedules.push({
-              id: `SCH-${course.courseCode}-LAB-${slot.slotId}`,
+              id: `SCH-${yearTag}-${semAbbr.toUpperCase()}-${course.courseCode}-LAB-${slot.slotId}`,
               courseCode: course.courseCode,
               courseTitle: course.courseTitle,
               level: course.level,
               semester: course.semester,
+              academicYear: options.academicYear || '2026/2027',
+              periodId,
+              status: options.status || 'draft',
               hallId: lab.hallId,
               hallName: lab.hallName,
               slotId: slot.slotId,
@@ -193,6 +206,7 @@ export function generateIntelligentTimetable(
               sessionType: 'Lab / Practical',
               lecturerId: lecturer.lecturerId,
               lecturerName: lecturer.fullName,
+              lecturerEmail: lecturer.officeEmail || lecturer.email,
               expectedEnrollment: course.expectedEnrollment,
               hallCapacity: lab.capacity,
               hasConflict: false,
