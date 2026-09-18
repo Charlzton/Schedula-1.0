@@ -5,17 +5,25 @@ import { useAuth } from '@/context/AuthContext';
 import { useTimetable } from '@/context/TimetableContext';
 import { ScheduleAssignment } from '@/lib/dataset';
 import { exportGeneratedTimetablePDF, exportGeneratedTimetableExcel, exportGeneratedTimetableCSV } from '@/lib/exportUtils';
-import { Clock, MapPin, Users, Calendar, AlertCircle, Download, FileSpreadsheet, FileText, ChevronDown } from 'lucide-react';
+import { Clock, MapPin, Users, Calendar, AlertCircle, FileSpreadsheet, FileText } from 'lucide-react';
 
 export function LecturerTeachingScheduleView() {
   const { user, lecturerProfile } = useAuth();
-  const { schedules, lecturers, activeAcademicPeriod, currentAcademicYear } = useTimetable();
+  const { schedules, lecturers, academicPeriods, currentAcademicYear } = useTimetable();
 
-  const [selectedSemester, setSelectedSemester] = useState<'All' | 'Semester 1' | 'Semester 2'>('All');
+  const [selectedYear, setSelectedYear] = useState<string>(currentAcademicYear || '2026/2027');
+  const [selectedSemester, setSelectedSemester] = useState<'All' | 'Semester 1' | 'Semester 2'>('Semester 1');
   const [viewMode, setViewMode] = useState<'agenda' | 'grid'>('agenda');
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  // Authenticated lecturer resolution (Strict isolation: no fallback to arbitrary IDs)
+  // Available academic years from academicPeriods
+  const availableYears = useMemo(() => {
+    const years = Array.from(new Set(academicPeriods.map(p => p.academicYear)));
+    if (years.length === 0) return [currentAcademicYear || '2026/2027'];
+    return years;
+  }, [academicPeriods, currentAcademicYear]);
+
+  // Authenticated lecturer resolution
   const currentLecturer = useMemo(() => {
     if (lecturerProfile) return lecturerProfile;
     if (user?.lecturerId) {
@@ -33,7 +41,7 @@ export function LecturerTeachingScheduleView() {
     return null;
   }, [lecturerProfile, user, lecturers]);
 
-  // Lecturer schedules strictly filtered by current lecturer
+  // Lecturer schedules strictly filtered by lecturer ID, academic year, semester, and publishing status
   const lecturerSchedules = useMemo(() => {
     if (!currentLecturer) return [];
     const id = currentLecturer.lecturerId;
@@ -42,10 +50,32 @@ export function LecturerTeachingScheduleView() {
     return schedules.filter(s => {
       const match = s.lecturerId === id || (s.lecturerName && s.lecturerName.toLowerCase() === nameLower);
       if (!match) return false;
+
+      // Match Year
+      if (s.academicYear && s.academicYear !== selectedYear) return false;
+
+      // Match Semester
       if (selectedSemester !== 'All' && s.semester !== selectedSemester) return false;
+
+      // Check if period is published in system
+      const period = academicPeriods.find(p => 
+        p.academicYear === (s.academicYear || selectedYear) && 
+        p.semester === s.semester
+      );
+      if (period && !period.isPublished) {
+        return false;
+      }
+
       return true;
     });
-  }, [schedules, currentLecturer, selectedSemester]);
+  }, [schedules, currentLecturer, selectedYear, selectedSemester, academicPeriods]);
+
+  const activeAcademicPeriod = useMemo(() => {
+    return academicPeriods.find(p => 
+      p.academicYear === selectedYear && 
+      (selectedSemester === 'All' || p.semester === selectedSemester)
+    ) || academicPeriods[0];
+  }, [academicPeriods, selectedYear, selectedSemester]);
 
   const days: ('Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday')[] = [
     'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'
@@ -133,8 +163,8 @@ export function LecturerTeachingScheduleView() {
             <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
               Teaching Schedule
             </h1>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-              {lecturerSchedules.length} Sessions
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+              ({lecturerSchedules.length} Sessions)
             </span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
@@ -175,11 +205,9 @@ export function LecturerTeachingScheduleView() {
               type="button"
               onClick={() => setShowExportMenu(prev => !prev)}
               disabled={lecturerSchedules.length === 0}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white/70 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/80 dark:border-white/10 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              className="px-3 py-2 rounded-2xl bg-white/70 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/80 dark:border-white/10 shadow-xs transition-all cursor-pointer disabled:opacity-50"
             >
-              <Download className="w-3.5 h-3.5 text-blue-500" />
-              <span>Export</span>
-              <ChevronDown className="w-3 h-3 text-zinc-400" />
+              Export
             </button>
 
             {showExportMenu && (
@@ -189,7 +217,7 @@ export function LecturerTeachingScheduleView() {
                   onClick={() => {
                     exportGeneratedTimetablePDF(lecturerSchedules as any, {
                       semester: selectedSemester,
-                      academicYear: activeAcademicPeriod?.academicYear || currentAcademicYear,
+                      academicYear: selectedYear,
                       department: currentLecturer?.department || 'Department of Computer Science'
                     });
                     setShowExportMenu(false);
@@ -204,7 +232,7 @@ export function LecturerTeachingScheduleView() {
                   onClick={() => {
                     exportGeneratedTimetableExcel(lecturerSchedules as any, {
                       semester: selectedSemester,
-                      academicYear: activeAcademicPeriod?.academicYear || currentAcademicYear,
+                      academicYear: selectedYear,
                       department: currentLecturer?.department || 'Department of Computer Science'
                     });
                     setShowExportMenu(false);
@@ -219,14 +247,13 @@ export function LecturerTeachingScheduleView() {
                   onClick={() => {
                     exportGeneratedTimetableCSV(lecturerSchedules as any, {
                       semester: selectedSemester,
-                      academicYear: activeAcademicPeriod?.academicYear || currentAcademicYear,
+                      academicYear: selectedYear,
                       department: currentLecturer?.department || 'Department of Computer Science'
                     });
                     setShowExportMenu(false);
                   }}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5 text-blue-500" />
                   <span>Download CSV</span>
                 </button>
               </div>
@@ -254,6 +281,22 @@ export function LecturerTeachingScheduleView() {
           </div>
 
           <div className="h-6 w-px bg-zinc-200 dark:bg-white/10 hidden sm:block" />
+
+          {/* Academic Year Filter */}
+          <div>
+            <label className="block text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
+              Academic Year
+            </label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="glass-input px-3 py-1.5 text-xs text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 font-medium cursor-pointer"
+            >
+              {availableYears.map(yr => (
+                <option key={yr} value={yr}>{yr}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Academic Semester Filter */}
           <div>

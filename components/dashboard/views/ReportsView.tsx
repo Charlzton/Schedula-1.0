@@ -107,7 +107,7 @@ export function ReportsView() {
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
                 >
                   <FileText className="w-4 h-4 text-rose-500" />
-                  <span>PDF Audit Report (.pdf)</span>
+                  <span>PDF Document</span>
                 </button>
 
                 <button
@@ -118,7 +118,7 @@ export function ReportsView() {
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
                 >
                   <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-                  <span>Excel Workbook (.xlsx)</span>
+                  <span>Excel Workbook</span>
                 </button>
 
                 <button
@@ -129,7 +129,7 @@ export function ReportsView() {
                   className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
                 >
                   <Download className="w-4 h-4 text-amber-500" />
-                  <span>CSV Dataset (.csv)</span>
+                  <span>CSV Dataset</span>
                 </button>
               </div>
             )}

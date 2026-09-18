@@ -238,10 +238,9 @@ export function TimeSlotModal({ isOpen, onClose, initialSlot }: TimeSlotModalPro
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md shadow-amber-600/20 transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md shadow-amber-600/20 transition-all cursor-pointer"
             >
-              <Check className="w-4 h-4" />
-              <span>{initialSlot ? 'Save Changes' : 'Create Time Slot'}</span>
+              {initialSlot ? 'Save' : 'Create'}
             </button>
           </div>
         </form>

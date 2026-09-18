@@ -1,22 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  CheckCircle2, 
-  AlertTriangle, 
-  SlidersHorizontal, 
-  RefreshCw, 
-  CalendarDays, 
-  ArrowRight, 
-  ShieldCheck, 
-  Clock, 
-  Building2, 
-  Users, 
-  BookOpen,
-  Info
-} from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
+import { useToast } from '@/context/ToastContext';
 import { GenerationResult } from '@/lib/schedulerEngine';
 
 export function GenerateTimetableView() {
@@ -33,6 +19,8 @@ export function GenerateTimetableView() {
     setSelectedSemester 
   } = useTimetable();
 
+  const { showToast } = useToast();
+
   const [targetLevel, setTargetLevel] = useState<number | 'All'>('All');
   const [separateDays, setSeparateDays] = useState(true);
   const [strictCapacity, setStrictCapacity] = useState(true);
@@ -47,6 +35,7 @@ export function GenerateTimetableView() {
       strictCapacityCheck: strictCapacity
     });
     setResult(res);
+    showToast('Timetable generated.');
   };
 
   return (
@@ -184,19 +173,9 @@ export function GenerateTimetableView() {
                 id="run-generation-algorithm-btn"
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-2xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                className="w-full py-3 px-6 rounded-2xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
               >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
-                    <span>Generating Timetable...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-blue-500" />
-                    <span>Generate Timetable</span>
-                  </>
-                )}
+                {isGenerating ? 'Generating...' : 'Generate'}
               </button>
             </div>
           </div>
@@ -237,7 +216,7 @@ export function GenerateTimetableView() {
                 <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
                   Results
                 </h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                   Ready
                 </span>
               </div>
@@ -269,10 +248,9 @@ export function GenerateTimetableView() {
               <button
                 id="view-generated-matrix-btn"
                 onClick={() => setActiveView('generated_timetables')}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-colors cursor-pointer"
               >
-                <CalendarDays className="w-4 h-4 text-blue-500" />
-                <span>View Timetable</span>
+                View
               </button>
             </div>
           )}

@@ -15,7 +15,7 @@ import {
   updatePassword,
   User as FirebaseUser
 } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, Firestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import appletConfig from "@/firebase-applet-config.json";
 
@@ -34,9 +34,18 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Initialize Firestore
+// Initialize Firestore with robust Long Polling settings for sandboxed iframe/proxy environments
 const firestoreDbId = (appletConfig as any)?.firestoreDatabaseId;
-export const db = firestoreDbId ? getFirestore(app, firestoreDbId) : getFirestore(app);
+let firestoreInstance: Firestore;
+try {
+  firestoreInstance = initializeFirestore(app, {
+    experimentalForceLongPolling: true,
+    ignoreUndefinedProperties: true
+  }, firestoreDbId || undefined);
+} catch {
+  firestoreInstance = firestoreDbId ? getFirestore(app, firestoreDbId) : getFirestore(app);
+}
+export const db = firestoreInstance;
 
 // Initialize Firebase Storage
 export const storage = getStorage(app);

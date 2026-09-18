@@ -116,10 +116,11 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
         <button
           id="add-new-facility-btn"
           onClick={onOpenAddFacility}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-semibold text-xs transition-colors cursor-pointer self-start sm:self-auto"
+          className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer self-start sm:self-auto"
+          title="Add Facility"
+          aria-label="Add Facility"
         >
           <Plus className="w-4 h-4" />
-          <span>Add facility</span>
         </button>
       </div>
 

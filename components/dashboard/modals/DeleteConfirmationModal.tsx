@@ -99,10 +99,9 @@ export function DeleteConfirmationModal({
               onClose();
             }}
             disabled={isDeleting}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-[0.98] shadow-md shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-[0.98] shadow-md shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

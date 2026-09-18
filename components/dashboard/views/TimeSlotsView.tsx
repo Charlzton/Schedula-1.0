@@ -87,8 +87,8 @@ export function TimeSlotsView({ onOpenAddTimeSlot, onEditTimeSlot }: TimeSlotsVi
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
               Academic Time Slots & Period Matrix
             </h2>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
-              {timeSlots.length} Period Blocks
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+              ({timeSlots.length} Period Blocks)
             </span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
@@ -99,10 +99,9 @@ export function TimeSlotsView({ onOpenAddTimeSlot, onEditTimeSlot }: TimeSlotsVi
         <button
           id="add-new-timeslot-btn"
           onClick={onOpenAddTimeSlot}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer self-start sm:self-auto"
+          className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" />
-          <span>Add Custom Slot</span>
+          Add
         </button>
       </div>
 

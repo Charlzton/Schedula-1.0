@@ -52,14 +52,14 @@ export function FinalCtaSection({ onSignInClick }: FinalCtaSectionProps) {
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl text-base font-bold bg-[#2563EB] text-white hover:bg-[#1D4ED8] active:scale-[0.98] transition-all shadow-md shadow-blue-500/20 cursor-pointer"
               id="cta-primary-btn"
             >
-              <span>Access Administrator Portal</span>
+              <span>Access Portal</span>
             </button>
             <a
               href="#how-it-works"
               className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-4 rounded-xl text-base font-bold text-[#1A1A1A] bg-[#F9F9F7] hover:bg-[#E5E5E1] border border-[#E5E5E1] transition-all"
               id="cta-secondary-btn"
             >
-              Review System Workflow
+              Review Workflow
             </a>
           </div>
 

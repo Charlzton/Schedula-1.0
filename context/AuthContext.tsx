@@ -60,7 +60,7 @@ interface AuthContextType {
   removeProfilePicture: () => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   createAdmin: (params: { fullName: string; email: string; password: string; role: 'admin' | 'super_admin'; institution?: string }) => Promise<{ success: boolean; error?: string }>;
-  updateAdminRole: (userId: string, newRole: 'admin' | 'super_admin') => Promise<{ success: boolean; error?: string }>;
+  updateAdminRole: (userId: string, newRole: 'admin' | 'super_admin' | 'lecturer', metadata?: { lecturerId?: string; email?: string }) => Promise<{ success: boolean; error?: string }>;
   deleteAdminAccount: (userId: string) => Promise<{ success: boolean; error?: string }>;
   deleteCurrentUserAccount: () => Promise<{ success: boolean; error?: string }>;
   getAdministrators: () => Promise<AdminUserRecord[]>;
@@ -1167,14 +1167,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return await createAdministratorAccount(user.role, user.id, params);
   };
 
-  const updateAdminRole = async (userId: string, newRole: 'admin' | 'super_admin'): Promise<{ success: boolean; error?: string }> => {
+  const updateAdminRole = async (
+    userId: string,
+    newRole: 'admin' | 'super_admin' | 'lecturer',
+    metadata?: { lecturerId?: string; email?: string }
+  ): Promise<{ success: boolean; error?: string }> => {
     if (user?.role !== 'super_admin') {
       return {
         success: false,
-        error: 'Unauthorized: Only a Super Administrator can modify administrator privilege levels.'
+        error: 'Unauthorized: Only a Super Administrator can modify user roles.'
       };
     }
-    return await updateAdministratorRole(user.role, userId, newRole);
+    return await updateAdministratorRole(user.role, userId, newRole, metadata);
   };
 
   const deleteAdminAccount = async (userId: string): Promise<{ success: boolean; error?: string }> => {

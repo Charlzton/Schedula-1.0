@@ -199,11 +199,11 @@ export function AdminManagementView() {
             id="refresh-admins-btn"
             onClick={fetchAdminList}
             disabled={isLoadingList}
-            className="px-3 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer disabled:opacity-50"
             title="Refresh list"
+            aria-label="Refresh list"
           >
-            <RefreshCw className={`w-3.5 h-3.5 inline mr-1.5 ${isLoadingList ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`w-4 h-4 ${isLoadingList ? 'animate-spin' : ''}`} />
           </button>
 
           <button
@@ -213,10 +213,11 @@ export function AdminManagementView() {
               setFormError(null);
               setFormSuccess(null);
             }}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 rounded-xl transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            title="Add Administrator"
+            aria-label="Add Administrator"
           >
             <UserPlus className="w-4 h-4" />
-            <span>Add administrator</span>
           </button>
         </div>
       </div>

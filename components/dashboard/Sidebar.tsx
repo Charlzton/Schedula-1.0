@@ -104,15 +104,8 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
       {/* Top Section: Brand Logo */}
       <div className="p-3 sm:p-3.5 border-b border-zinc-200/60 dark:border-white/10 shrink-0">
         <div className={`flex items-center min-h-[36px] ${isExpanded ? 'justify-between' : 'justify-center'}`}>
-          <div className={`flex items-center min-w-0 ${isExpanded ? 'gap-2.5' : 'justify-center w-full'}`}>
-            <div className="w-10.5 h-10.5 rounded-xl flex items-center justify-center shrink-0">
-              <SchedulaLogo size="md" isDark={isDark} showText={false} />
-            </div>
-            <div className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
-              <span className="font-bold text-[17px] tracking-[-0.025em] text-zinc-900 dark:text-zinc-50">
-                Schedula
-              </span>
-            </div>
+          <div className={`flex items-center min-w-0 overflow-hidden ${isExpanded ? 'gap-2.5' : 'justify-center w-full'}`}>
+            <SchedulaLogo size="md" isDark={isDark} showText={isExpanded} textColor={isDark ? 'text-zinc-50' : 'text-zinc-900'} />
           </div>
           
           {/* Close button on mobile only */}

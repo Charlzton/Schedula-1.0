@@ -368,47 +368,44 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
 
         if (!skipCoursesSubscription && coursesQuery) {
           const unsubCourses = onSnapshot(coursesQuery, (snapshot) => {
+            if (!isMounted) return;
             const remoteCourses = snapshot.docs.map((docSnap) => docSnap.data() as Course);
             setCourses(remoteCourses);
             setFirestoreStatus('connected');
-          }, (err) => {
-            console.warn('[Firestore] Courses sync notice:', err.message);
-            setFirestoreStatus('offline');
+          }, () => {
+            if (isMounted) setFirestoreStatus('offline');
           });
           unsubscribes.push(unsubCourses);
         }
 
         // Step 3: Subscribe to Facilities
         const unsubFacilities = onSnapshot(collection(db, 'facilities'), (snapshot) => {
+          if (!isMounted) return;
           const remoteFacilities = snapshot.docs.map((docSnap) => docSnap.data() as LectureFacility);
           if (remoteFacilities.length > 0 || snapshot.empty) {
             setFacilities(remoteFacilities);
           }
-        }, (err) => {
-          console.warn('[Firestore] Facilities sync notice:', err.message);
-        });
+        }, () => {});
         unsubscribes.push(unsubFacilities);
 
         // Step 4: Subscribe to Lecturers
         const unsubLecturers = onSnapshot(collection(db, 'lecturers'), (snapshot) => {
+          if (!isMounted) return;
           const remoteLecturers = snapshot.docs.map((docSnap) => docSnap.data() as Lecturer);
           if (remoteLecturers.length > 0 || snapshot.empty) {
             setLecturers(remoteLecturers);
           }
-        }, (err) => {
-          console.warn('[Firestore] Lecturers sync notice:', err.message);
-        });
+        }, () => {});
         unsubscribes.push(unsubLecturers);
 
         // Step 5: Subscribe to TimeSlots
         const unsubTimeSlots = onSnapshot(collection(db, 'timeslots'), (snapshot) => {
+          if (!isMounted) return;
           const remoteSlots = snapshot.docs.map((docSnap) => docSnap.data() as TimeSlot);
           if (remoteSlots.length > 0 || snapshot.empty) {
             setTimeSlots(remoteSlots);
           }
-        }, (err) => {
-          console.warn('[Firestore] TimeSlots sync notice:', err.message);
-        });
+        }, () => {});
         unsubscribes.push(unsubTimeSlots);
 
         // Step 6: Subscribe to Timetables (filtered for lecturers, full for admin)
@@ -433,20 +430,20 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
 
         if (!skipSubscription && timetablesQuery) {
           const unsubTimetables = onSnapshot(timetablesQuery, (snapshot) => {
+            if (!isMounted) return;
             if (!snapshot.empty) {
               const remoteSchedules = snapshot.docs.map((docSnap) => docSnap.data() as TimetableEntry);
               setSchedules(remoteSchedules);
             } else {
               setSchedules([]);
             }
-          }, (err) => {
-            console.warn('[Firestore] Timetables sync notice:', err.message);
-          });
+          }, () => {});
           unsubscribes.push(unsubTimetables);
         }
 
         // Step 6b: Subscribe to Academic Periods
         const unsubAcademicPeriods = onSnapshot(collection(db, 'academic_periods'), (snapshot) => {
+          if (!isMounted) return;
           if (!snapshot.empty) {
             const remotePeriods = snapshot.docs.map((docSnap) => docSnap.data() as AcademicPeriod);
             setAcademicPeriods(remotePeriods);
@@ -454,13 +451,12 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
               localStorage.setItem(STORAGE_KEY_PERIODS, JSON.stringify(remotePeriods));
             } catch {}
           }
-        }, (err) => {
-          console.warn('[Firestore] AcademicPeriods sync notice:', err.message);
-        });
+        }, () => {});
         unsubscribes.push(unsubAcademicPeriods);
 
         // Step 7: Subscribe to Activities
         const unsubActivities = onSnapshot(collection(db, 'activities'), (snapshot) => {
+          if (!isMounted) return;
           if (!snapshot.empty) {
             const remoteActs = snapshot.docs.map((docSnap) => docSnap.data() as SystemActivity);
             remoteActs.sort((a, b) => {
@@ -470,35 +466,30 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
             });
             setSystemActivities(remoteActs.slice(0, 50));
           }
-        }, (err) => {
-          console.warn('[Firestore] Activities sync notice:', err.message);
-        });
+        }, () => {});
         unsubscribes.push(unsubActivities);
 
         // Step 8: Subscribe to Bookings
         const unsubBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
+          if (!isMounted) return;
           const remoteBookings = snapshot.docs.map((docSnap) => docSnap.data() as RoomBookingRequest);
           remoteBookings.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
           setBookingRequests(remoteBookings);
-        }, (err) => {
-          console.warn('[Firestore] Bookings sync notice:', err.message);
-        });
+        }, () => {});
         unsubscribes.push(unsubBookings);
 
         // Step 9: Subscribe to Notifications
         const unsubNotifications = onSnapshot(collection(db, 'notifications'), (snapshot) => {
+          if (!isMounted) return;
           const remoteNotifs = snapshot.docs.map((docSnap) => docSnap.data() as NotificationItem);
           // Sort by creation time newest first
           remoteNotifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setNotifications(remoteNotifs);
-        }, (err) => {
-          console.warn('[Firestore] Notifications sync notice:', err.message);
-        });
+        }, () => {});
         unsubscribes.push(unsubNotifications);
 
-      } catch (error) {
-        console.warn('[Firestore] Initialization sync notice:', error);
-        setFirestoreStatus('offline');
+      } catch {
+        if (isMounted) setFirestoreStatus('offline');
       } finally {
         if (isMounted) {
           setIsFirestoreSyncing(false);

@@ -300,10 +300,9 @@ export function CourseModal({ isOpen, onClose, initialCourse }: CourseModalProps
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
             >
-              <Check className="w-4 h-4" />
-              <span>{initialCourse ? 'Save Changes' : 'Create Course'}</span>
+              {initialCourse ? 'Save' : 'Create'}
             </button>
           </div>
         </form>

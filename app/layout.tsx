@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { TimetableProvider } from '@/context/TimetableContext';
+import { ToastProvider } from '@/context/ToastContext';
 
 export const metadata: Metadata = {
   title: 'Schedula | Intelligent University Timetable Scheduling System',
@@ -53,7 +54,9 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <TimetableProvider>
-              {children}
+              <ToastProvider>
+                {children}
+              </ToastProvider>
             </TimetableProvider>
           </AuthProvider>
         </ThemeProvider>

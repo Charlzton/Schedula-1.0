@@ -777,7 +777,7 @@ export function TechLogoRow({ isDark = false }: TechLogoRowProps) {
     <section className="w-full pt-6 pb-2 flex flex-col justify-center items-center overflow-hidden font-system select-none">
       {/* Subtle Section Heading */}
       <h3 className="text-xs uppercase tracking-widest font-semibold text-zinc-500 dark:text-zinc-400 mb-6 text-center select-none">
-        Technologies & Inspiration
+        Tools and Technologies
       </h3>
 
       {/* Marquee Viewport with Edge Fades */}

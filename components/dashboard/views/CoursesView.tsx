@@ -135,22 +135,24 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
           </p>
         </div>
 
-        <div className="flex items-center flex-wrap gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent('open-advanced-import'))}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-medium text-xs transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            title="Import Courses"
+            aria-label="Import"
           >
             <UploadCloud className="w-4 h-4" />
-            <span>Import</span>
           </button>
           <button
             id="add-new-course-btn"
             onClick={onOpenAddCourse}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-semibold text-xs transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            title="Add Course"
+            aria-label="Add Course"
           >
             <Plus className="w-4 h-4" />
-            <span>Add course</span>
           </button>
         </div>
       </div>

@@ -42,6 +42,7 @@ export interface Lecturer {
   availability?: string[];
   authUid?: string;
   accountStatus?: 'unclaimed' | 'active' | 'suspended';
+  role?: 'lecturer' | 'admin' | 'super_admin';
   registeredAt?: string;
 }
 
@@ -165,7 +166,7 @@ export interface SystemActivity {
 export const INITIAL_COURSES: Course[] = [
   { courseCode: 'DCIT101', courseTitle: 'INTRODUCTION TO COMPUTER SCIENCE', totalCredits: 3, level: 100, semester: 'Semester 1', expectedEnrollment: 350, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L311', assignedLecturerName: 'Dr. Prince Alvin Kwabena Ansah' },
   { courseCode: 'DCIT103', courseTitle: 'OFFICE PRODUCTIVITY TOOLS', totalCredits: 3, level: 100, semester: 'Semester 1', expectedEnrollment: 280, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L312', assignedLecturerName: 'Mr. Paul N. T. Ammah' },
-  { courseCode: 'DCIT105', courseTitle: 'MATHEMATICS FOR IT PROFESSIONALS', totalCredits: 3, level: 100, semester: 'Semester 1', expectedEnrollment: 320, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L314', assignedLecturerName: 'Mr. Dwumfour Aziz Abdullai' },
+  { courseCode: 'DCIT105', courseTitle: 'MATHEMATICS FOR IT PROFESSIONALS', totalCredits: 3, level: 100, semester: 'Semester 1', expectedEnrollment: 320, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L314', assignedLecturerName: 'Mr. Dwumfour Aziz Abdullai' },
   { courseCode: 'DCIT102', courseTitle: 'COMPUTER HARDWARE FUNDAMENTALS AND CIRCUITS', totalCredits: 3, level: 100, semester: 'Semester 2', expectedEnrollment: 340, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L312', assignedLecturerName: 'Mr. Paul N. T. Ammah' },
   { courseCode: 'DCIT104', courseTitle: 'PROGRAMMING FUNDAMENTALS', totalCredits: 3, level: 100, semester: 'Semester 2', expectedEnrollment: 330, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L308', assignedLecturerName: 'Dr. Michael Agbo Tettey Soli' },
   
@@ -185,26 +186,26 @@ export const INITIAL_COURSES: Course[] = [
   { courseCode: 'DCIT303', courseTitle: 'COMPUTER NETWORKS', totalCredits: 3, level: 300, semester: 'Semester 1', expectedEnrollment: 200, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L301', assignedLecturerName: 'Prof. Ferdinand A. Katsriku' },
   { courseCode: 'DCIT305', courseTitle: 'DATABASE FUNDAMENTALS', totalCredits: 3, level: 300, semester: 'Semester 1', expectedEnrollment: 210, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L309', assignedLecturerName: 'Dr. Edward Danso Ansong' },
   { courseCode: 'DCIT313', courseTitle: 'INTRODUCTION TO ARTIFICIAL INTELLIGENCE', totalCredits: 3, level: 300, semester: 'Semester 1', expectedEnrollment: 185, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L305', assignedLecturerName: 'Prof. Ebenezer Owusu' },
-  { courseCode: 'DCIT317', courseTitle: 'IT PROJECT MANAGEMENT', totalCredits: 3, level: 300, semester: 'Semester 1', expectedEnrollment: 175, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L314', assignedLecturerName: 'Mr. Dwumfour Aziz Abdullai' },
-  { courseCode: 'DCIT321', courseTitle: 'SOFTWARE EVOLUTION', totalCredits: 3, level: 300, semester: 'Semester 1', expectedEnrollment: 160, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L303', assignedLecturerName: 'Prof. Isaac Wiafe' },
+  { courseCode: 'DCIT317', courseTitle: 'IT PROJECT MANAGEMENT', totalCredits: 3, level: 300, semester: 'Semester 1', expectedEnrollment: 175, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L314', assignedLecturerName: 'Mr. Dwumfour Aziz Abdullai' },
+  { courseCode: 'DCIT321', courseTitle: 'SOFTWARE EVOLUTION', totalCredits: 3, level: 300, semester: 'Semester 1', expectedEnrollment: 160, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L303', assignedLecturerName: 'Prof. Isaac Wiafe' },
   
   { courseCode: 'DCIT302', courseTitle: 'HUMAN COMPUTER INTERACTION', totalCredits: 3, level: 300, semester: 'Semester 2', expectedEnrollment: 180, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L310', assignedLecturerName: 'Dr. Matilda S. A. Wilson' },
-  { courseCode: 'DCIT304', courseTitle: 'RESEARCH METHODS', totalCredits: 3, level: 300, semester: 'Semester 2', expectedEnrollment: 195, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L307', assignedLecturerName: 'Prof. Solomon Mensah' },
+  { courseCode: 'DCIT304', courseTitle: 'RESEARCH METHODS', totalCredits: 3, level: 300, semester: 'Semester 2', expectedEnrollment: 195, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L307', assignedLecturerName: 'Prof. Solomon Mensah' },
   { courseCode: 'DCIT306', courseTitle: 'CLOUD COMPUTING', totalCredits: 3, level: 300, semester: 'Semester 2', expectedEnrollment: 185, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L301', assignedLecturerName: 'Prof. Ferdinand A. Katsriku' },
   { courseCode: 'DCIT308', courseTitle: 'DATA STRUCTURE AND ALGORITHMS II', totalCredits: 3, level: 300, semester: 'Semester 2', expectedEnrollment: 205, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L304', assignedLecturerName: 'Prof. Justice K. Appati' },
   { courseCode: 'DCIT312', courseTitle: 'INFORMATION SECURITY MANAGEMENT', totalCredits: 3, level: 300, semester: 'Semester 2', expectedEnrollment: 170, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L306', assignedLecturerName: 'Prof. Kofi Sarpong Adu-Manu' },
   { courseCode: 'DCIT318', courseTitle: 'PROGRAMMING II', totalCredits: 3, level: 300, semester: 'Semester 2', expectedEnrollment: 165, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L311', assignedLecturerName: 'Dr. Prince Alvin Kwabena Ansah' },
   
-  { courseCode: 'DCIT401', courseTitle: 'SOCIAL, LEGAL, ETHICAL & PROFESSIONAL ISSUES', totalCredits: 3, level: 400, semester: 'Semester 1', expectedEnrollment: 140, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L307', assignedLecturerName: 'Prof. Solomon Mensah' },
+  { courseCode: 'DCIT401', courseTitle: 'SOCIAL, LEGAL, ETHICAL & PROFESSIONAL ISSUES', totalCredits: 3, level: 400, semester: 'Semester 1', expectedEnrollment: 140, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L307', assignedLecturerName: 'Prof. Solomon Mensah' },
   { courseCode: 'DCIT409', courseTitle: 'DIGITAL FORENSICS', totalCredits: 3, level: 400, semester: 'Semester 1', expectedEnrollment: 125, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L313', assignedLecturerName: 'Mr. Julius Y. Ludu' },
-  { courseCode: 'DCIT415', courseTitle: 'ADVANCED SOFTWARE ENGINEERING', totalCredits: 3, level: 400, semester: 'Semester 1', expectedEnrollment: 135, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L303', assignedLecturerName: 'Prof. Isaac Wiafe' },
-  { courseCode: 'DCIT419', courseTitle: 'AGILE METHODS', totalCredits: 3, level: 400, semester: 'Semester 1', expectedEnrollment: 115, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L303', assignedLecturerName: 'Prof. Isaac Wiafe' },
-  { courseCode: 'DCIT421', courseTitle: 'PERSUASIVE SOFTWARE DEVELOPMENT', totalCredits: 3, level: 400, semester: 'Semester 1', expectedEnrollment: 110, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L310', assignedLecturerName: 'Dr. Matilda S. A. Wilson' },
+  { courseCode: 'DCIT415', courseTitle: 'ADVANCED SOFTWARE ENGINEERING', totalCredits: 3, level: 400, semester: 'Semester 1', expectedEnrollment: 135, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L303', assignedLecturerName: 'Prof. Isaac Wiafe' },
+  { courseCode: 'DCIT419', courseTitle: 'AGILE METHODS', totalCredits: 3, level: 400, semester: 'Semester 1', expectedEnrollment: 115, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L303', assignedLecturerName: 'Prof. Isaac Wiafe' },
+  { courseCode: 'DCIT421', courseTitle: 'PERSUASIVE SOFTWARE DEVELOPMENT', totalCredits: 3, level: 400, semester: 'Semester 1', expectedEnrollment: 110, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L310', assignedLecturerName: 'Dr. Matilda S. A. Wilson' },
   
-  { courseCode: 'DCIT402', courseTitle: 'MANAGEMENT PRINCIPLES IN COMPUTING', totalCredits: 3, level: 400, semester: 'Semester 2', expectedEnrollment: 130, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L314', assignedLecturerName: 'Mr. Dwumfour Aziz Abdullai' },
+  { courseCode: 'DCIT402', courseTitle: 'MANAGEMENT PRINCIPLES IN COMPUTING', totalCredits: 3, level: 400, semester: 'Semester 2', expectedEnrollment: 130, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L314', assignedLecturerName: 'Mr. Dwumfour Aziz Abdullai' },
   { courseCode: 'DCIT412', courseTitle: 'COMPUTER VISION', totalCredits: 3, level: 400, semester: 'Semester 2', expectedEnrollment: 105, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L305', assignedLecturerName: 'Prof. Ebenezer Owusu' },
   { courseCode: 'DCIT418', courseTitle: 'SYSTEMS AND NETWORK SECURITY', totalCredits: 3, level: 400, semester: 'Semester 2', expectedEnrollment: 120, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L302', assignedLecturerName: 'Prof. Jamal-Deen Abdulai' },
-  { courseCode: 'DCIT426', courseTitle: 'TELECOMMUNICATION SYSTEMS', totalCredits: 3, level: 400, semester: 'Semester 2', expectedEnrollment: 95, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L301', assignedLecturerName: 'Prof. Ferdinand A. Katsriku' },
+  { courseCode: 'DCIT426', courseTitle: 'TELECOMMUNICATION SYSTEMS', totalCredits: 3, level: 400, semester: 'Semester 2', expectedEnrollment: 95, theoryHours: 3, practicalHours: 0, department: 'Computer Science', assignedLecturerId: 'L301', assignedLecturerName: 'Prof. Ferdinand A. Katsriku' },
   { courseCode: 'DCIT428', courseTitle: 'WIRELESS SYSTEMS AND NETWORK', totalCredits: 3, level: 400, semester: 'Semester 2', expectedEnrollment: 100, theoryHours: 2, practicalHours: 1, department: 'Computer Science', assignedLecturerId: 'L306', assignedLecturerName: 'Prof. Kofi Sarpong Adu-Manu' }
 ];
 
@@ -220,9 +221,10 @@ export const INITIAL_FACILITIES: LectureFacility[] = [
   { hallId: 'H108', hallName: 'Mathematical Sciences Auditorium', venueType: 'Auditorium', capacity: 250, buildingLocation: 'Dept of Mathematics', hasProjector: true, hasComputers: false, status: 'Active' },
   { hallId: 'H109', hallName: 'Statistics Lecture Theatre', venueType: 'Lecture Theatre', capacity: 200, buildingLocation: 'Dept of Statistics', hasProjector: true, hasComputers: false, status: 'Active' },
   { hallId: 'H110', hallName: 'NN1 (New Natural Science Block)', venueType: 'Lecture Hall', capacity: 200, buildingLocation: 'NN-Block Complex', hasProjector: true, hasComputers: false, status: 'Active' },
-  { hallId: 'H111', hallName: 'Computer Science Lab 1 (UGCS)', venueType: 'Computer Lab', capacity: 80, buildingLocation: 'Dept of Computer Science', hasProjector: true, hasComputers: true, status: 'Active' },
-  { hallId: 'H112', hallName: 'Computer Science Lab 2', venueType: 'Computer Lab', capacity: 60, buildingLocation: 'Dept of Computer Science', hasProjector: true, hasComputers: true, status: 'Active' },
+  { hallId: 'H111', hallName: 'Computer Science Lab 1 (UGCS)', venueType: 'Computer Lab', capacity: 120, buildingLocation: 'Dept of Computer Science', hasProjector: true, hasComputers: true, status: 'Active' },
+  { hallId: 'H112', hallName: 'Computer Science Lab 2', venueType: 'Computer Lab', capacity: 100, buildingLocation: 'Dept of Computer Science', hasProjector: true, hasComputers: true, status: 'Active' },
   { hallId: 'H113', hallName: 'Engineering Lab 1', venueType: 'Computer Lab', capacity: 100, buildingLocation: 'School of Engineering', hasProjector: true, hasComputers: true, status: 'Active' },
+  { hallId: 'H115', hallName: 'Department AI & Network Lab', venueType: 'Computer Lab', capacity: 80, buildingLocation: 'Dept of Computer Science', hasProjector: true, hasComputers: true, status: 'Active' },
   { hallId: 'H114', hallName: 'Balme Library Lecture Hall', venueType: 'Lecture Hall', capacity: 250, buildingLocation: 'Balme Library Complex', hasProjector: true, hasComputers: false, status: 'Active' }
 ];
 
@@ -311,34 +313,34 @@ export const INITIAL_SYSTEM_ACTIVITIES: SystemActivity[] = [
 export const INITIAL_BOOKING_REQUESTS = [
   {
     id: 'REQ-DEMO-001',
-    lecturerId: 'LEC01',
-    lecturerName: 'Dr. Kwame Mensah',
-    lecturerEmail: 'kmensah@ug.edu.gh',
-    hallId: 'JQB01',
-    hallName: 'Jones Quartey Building - Room 01',
-    buildingLocation: 'JQB Main Complex',
+    lecturerId: 'L311',
+    lecturerName: 'Dr. Prince Alvin Kwabena Ansah',
+    lecturerEmail: 'pansah@ug.edu.gh',
+    hallId: 'H105',
+    hallName: 'JQB23 (Jones Quartey Building)',
+    buildingLocation: 'JQB Complex',
     day: 'Wednesday' as const,
-    timeSlot: '09:30 - 11:30',
-    courseCode: 'DCIT 101',
-    courseTitle: 'Introduction to Computer Science',
+    timeSlot: '07:30 - 09:30',
+    courseCode: 'DCIT101',
+    courseTitle: 'INTRODUCTION TO COMPUTER SCIENCE',
     expectedAttendance: 180,
-    purpose: 'Mid-semester review & practical session',
+    purpose: 'Mid-semester review & tutorial session',
     status: 'Pending' as const,
     submittedAt: new Date(Date.now() - 3600000).toISOString()
   },
   {
     id: 'REQ-DEMO-002',
-    lecturerId: 'LEC02',
-    lecturerName: 'Prof. Abena Osei',
-    lecturerEmail: 'aosei@ug.edu.gh',
-    hallId: 'N1',
-    hallName: 'N Block Room 1',
-    buildingLocation: 'N Block Complex',
+    lecturerId: 'L308',
+    lecturerName: 'Dr. Michael Agbo Tettey Soli',
+    lecturerEmail: 'msoli@ug.edu.gh',
+    hallId: 'H102',
+    hallName: 'N-Block Lecture Hall 1',
+    buildingLocation: 'N-Block Complex',
     day: 'Thursday' as const,
     timeSlot: '13:30 - 15:30',
-    courseCode: 'DCIT 201',
-    courseTitle: 'Programming I',
-    expectedAttendance: 140,
+    courseCode: 'DCIT201',
+    courseTitle: 'PROGRAMMING I',
+    expectedAttendance: 240,
     purpose: 'Extra tutorial class for Level 200 cohort',
     status: 'Pending' as const,
     submittedAt: new Date(Date.now() - 7200000).toISOString()

@@ -25,9 +25,12 @@ import {
   Check,
   Loader2,
   Globe,
-  Calendar
+  Calendar,
+  X
 } from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import { TimetableEntry } from '@/lib/dataset';
 import { 
   exportGeneratedTimetablePDF, 
@@ -45,6 +48,7 @@ export function GeneratedTimetablesView() {
     lecturers, 
     timeSlots,
     deleteScheduleEntry, 
+    bulkDeleteSchedules,
     selectedSemester, 
     setSelectedSemester,
     academicPeriods,
@@ -54,6 +58,10 @@ export function GeneratedTimetablesView() {
     unpublishCurrentTimetable,
     generateOptimizedTimetable
   } = useTimetable();
+
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const canManageSchedules = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [levelFilter, setLevelFilter] = useState<'All' | '100' | '200' | '300' | '400'>('All');
   const [hallFilter, setHallFilter] = useState<string>('All');
@@ -75,6 +83,12 @@ export function GeneratedTimetablesView() {
   // Delete modal state
   const [deleteEntryId, setDeleteEntryId] = useState<string | null>(null);
   const [deleteEntryName, setDeleteEntryName] = useState<string>('');
+
+  // Bulk selection & deletion state
+  const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [bulkDeleteSuccessMsg, setBulkDeleteSuccessMsg] = useState<string | null>(null);
 
   const targetSemester = selectedSemester === 'All' ? 'Semester 1' : selectedSemester;
   const currentPeriod = useMemo(() => {
@@ -137,10 +151,9 @@ export function GeneratedTimetablesView() {
     setGenerateMessage(null);
     try {
       const count = generateOptimizedTimetable();
-      setGenerateMessage(`Successfully generated ${count} collision-free timetable allocations for ${currentAcademicYear} (${targetSemester}).`);
-      setTimeout(() => setGenerateMessage(null), 4000);
+      showToast(`Generated ${count} timetable allocations for ${currentAcademicYear}.`);
     } catch (err: any) {
-      setGenerateMessage('Failed to generate timetable.');
+      showToast('Failed to generate timetable.', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -152,14 +165,13 @@ export function GeneratedTimetablesView() {
     try {
       if (isCurrentPeriodPublished) {
         await unpublishCurrentTimetable(currentAcademicYear, targetSemester);
-        setPublishMessage(`Timetable for ${currentAcademicYear} ${targetSemester} reverted to Draft status.`);
+        showToast(`Timetable for ${currentAcademicYear} ${targetSemester} reverted to Draft.`);
       } else {
         await publishCurrentTimetable(currentAcademicYear, targetSemester);
-        setPublishMessage(`Timetable for ${currentAcademicYear} ${targetSemester} published to all lecturers and students.`);
+        showToast(`Timetable for ${currentAcademicYear} ${targetSemester} published.`);
       }
-      setTimeout(() => setPublishMessage(null), 4000);
     } catch (err: any) {
-      setPublishMessage(err?.message || 'Failed to update publishing status.');
+      showToast(err?.message || 'Failed to update publishing status.', 'error');
     } finally {
       setIsPublishing(false);
     }
@@ -170,6 +182,40 @@ export function GeneratedTimetablesView() {
       deleteScheduleEntry(deleteEntryId);
       setDeleteEntryId(null);
       setDeleteEntryName('');
+      showToast('Session removed from timetable.');
+    }
+  };
+
+  const handleSelectAll = () => {
+    const allFilteredIds = filteredSchedules.map(s => s.id);
+    const isAllSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedScheduleIds.includes(id));
+    if (isAllSelected) {
+      setSelectedScheduleIds(prev => prev.filter(id => !allFilteredIds.includes(id)));
+    } else {
+      setSelectedScheduleIds(prev => Array.from(new Set([...prev, ...allFilteredIds])));
+    }
+  };
+
+  const handleSelectOne = (id: string) => {
+    setSelectedScheduleIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleConfirmBulkDelete = () => {
+    if (!selectedScheduleIds.length) return;
+    setIsBulkDeleting(true);
+    try {
+      const count = selectedScheduleIds.length;
+      bulkDeleteSchedules(selectedScheduleIds);
+      setSelectedScheduleIds([]);
+      setIsBulkDeleteModalOpen(false);
+      showToast(`Deleted ${count} session${count > 1 ? 's' : ''}.`);
+    } catch (err: any) {
+      console.error('Failed bulk deleting schedules:', err);
+      showToast('Failed to delete sessions.', 'error');
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -198,30 +244,13 @@ export function GeneratedTimetablesView() {
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
               Timetables
             </h2>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-              {filteredSchedules.length} Sessions
+            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+              ({filteredSchedules.length} Sessions)
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              Department of Computer Science • {currentAcademicYear} {selectedSemester}
-            </span>
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-              isCurrentPeriodPublished
-                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
-                : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20'
-            }`}>
-              {isCurrentPeriodPublished ? (
-                <>
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  Official Published
-                </>
-              ) : (
-                <>
-                  <Clock className="w-3 h-3 text-amber-600" />
-                  Draft Working Mode
-                </>
-              )}
+              Department of Computer Science • {currentAcademicYear} {selectedSemester} • {isCurrentPeriodPublished ? 'Published' : 'Draft'}
             </span>
           </div>
         </div>
@@ -232,60 +261,36 @@ export function GeneratedTimetablesView() {
             id="publish-timetable-btn"
             onClick={handleTogglePublish}
             disabled={isPublishing}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50 ${
               isCurrentPeriodPublished
                 ? 'bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
                 : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20'
             }`}
             title={isCurrentPeriodPublished ? 'Click to unpublish timetable back to draft' : 'Publish official timetable to lecturers and students'}
           >
-            {isPublishing ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Updating...</span>
-              </>
-            ) : isCurrentPeriodPublished ? (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Published (Revert)</span>
-              </>
-            ) : (
-              <>
-                <Globe className="w-3.5 h-3.5" />
-                <span>Publish Timetable</span>
-              </>
-            )}
+            {isPublishing ? 'Updating...' : isCurrentPeriodPublished ? 'Unpublish' : 'Publish'}
           </button>
 
           {/* Auto-Generate AI Button */}
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all cursor-pointer disabled:opacity-50"
-            title="Generate timetable"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer disabled:opacity-50"
+            title="Generate Timetable"
+            aria-label="Generate Timetable"
           >
-            {isGenerating ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Generate</span>
-              </>
-            )}
+            <Sparkles className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
           </button>
 
           {/* Export Dropdown Menu */}
           <div ref={exportDropdownRef} className="relative">
             <button
               onClick={() => setExportDropdownOpen(prev => !prev)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/60 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/80 dark:border-white/10 shadow-xs transition-all cursor-pointer"
+              className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+              title="Export Timetable"
+              aria-label="Export Timetable"
             >
-              <Download className="w-3.5 h-3.5 text-blue-500" />
-              <span>Export</span>
-              <ChevronDown className="w-3 h-3 text-zinc-400" />
+              <Download className="w-4 h-4" />
             </button>
 
             {exportDropdownOpen && (
@@ -337,6 +342,23 @@ export function GeneratedTimetablesView() {
           </button>
         </div>
       </div>
+
+      {/* Role / Bulk Delete Feedback */}
+      {bulkDeleteSuccessMsg && (
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center justify-between gap-3 animate-in fade-in-50 no-print">
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>{bulkDeleteSuccessMsg}</span>
+          </div>
+          <button
+            onClick={() => setBulkDeleteSuccessMsg(null)}
+            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+            aria-label="Dismiss message"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Generation & Publishing Alert Feedback */}
       {generateMessage && (
@@ -457,6 +479,33 @@ export function GeneratedTimetablesView() {
         </div>
       </div>
 
+      {/* Bulk Selection Bar */}
+      {selectedScheduleIds.length > 0 && (
+        <div className="p-3.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-between gap-3 shadow-lg animate-in fade-in slide-in-from-top-2 no-print">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold px-2.5 py-1 rounded-xl bg-white/20 dark:bg-black/10">
+              {selectedScheduleIds.length} {selectedScheduleIds.length === 1 ? 'session' : 'sessions'} selected
+            </span>
+            <button
+              onClick={() => setSelectedScheduleIds([])}
+              className="text-xs underline text-zinc-300 dark:text-zinc-600 hover:text-white dark:hover:text-black cursor-pointer"
+            >
+              Deselect all
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsBulkDeleteModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white hover:bg-rose-700 text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Selected</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {schedules.length === 0 ? (
         <div className="p-16 text-center rounded-3xl glass-panel space-y-4 border border-white/60 dark:border-white/10">
           <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-inner">
@@ -491,9 +540,20 @@ export function GeneratedTimetablesView() {
             </span>
           </div>
           <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full border-collapse text-xs min-w-[700px]">
+            <table className="w-full border-collapse text-xs min-w-[750px]">
               <thead>
                 <tr className="border-b border-zinc-200/80 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-zinc-600 dark:text-zinc-400 uppercase font-bold text-[11px]">
+                  {canManageSchedules && (
+                    <th className="p-3.5 w-10 text-center no-print">
+                      <input
+                        type="checkbox"
+                        checked={filteredSchedules.length > 0 && filteredSchedules.every(s => selectedScheduleIds.includes(s.id))}
+                        onChange={handleSelectAll}
+                        className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        title="Select All"
+                      />
+                    </th>
+                  )}
                   <th className="p-3.5 text-left">Course Code & Title</th>
                   <th className="p-3.5 text-left">Level</th>
                   <th className="p-3.5 text-left">Semester</th>
@@ -506,46 +566,66 @@ export function GeneratedTimetablesView() {
               <tbody className="divide-y divide-zinc-200/60 dark:divide-white/10">
                 {filteredSchedules.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-zinc-500 dark:text-zinc-400 text-xs">
+                    <td colSpan={canManageSchedules ? 8 : 7} className="p-8 text-center text-zinc-500 dark:text-zinc-400 text-xs">
                       No schedule entries match the selected filters.
                     </td>
                   </tr>
                 ) : (
-                  filteredSchedules.map((session) => (
-                    <tr key={session.id} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
-                      <td className="p-3.5">
-                        <div className="font-bold text-zinc-900 dark:text-white">{session.courseCode}</div>
-                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate max-w-xs">{session.courseTitle}</div>
-                      </td>
-                      <td className="p-3.5">
-                        <span className="font-semibold px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                          Level {session.level}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium">{session.semester}</td>
-                      <td className="p-3.5">
-                        <div className="font-semibold text-zinc-900 dark:text-white">{session.day}</div>
-                        <div className="text-[11px] text-zinc-500">{session.timeSlotLabel} (P{session.periodNumber})</div>
-                      </td>
-                      <td className="p-3.5">
-                        <div className="font-medium text-zinc-900 dark:text-white">{session.hallName}</div>
-                        <div className="text-[11px] text-zinc-500">ID: {session.hallId}</div>
-                      </td>
-                      <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium">{session.lecturerName}</td>
-                      <td className="p-3.5 text-right no-print">
-                        <button
-                          onClick={() => {
-                            setDeleteEntryId(session.id);
-                            setDeleteEntryName(`${session.courseCode} (${session.day} ${session.timeSlotLabel})`);
-                          }}
-                          className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Remove session"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  filteredSchedules.map((session) => {
+                    const isSelected = selectedScheduleIds.includes(session.id);
+                    return (
+                      <tr 
+                        key={session.id} 
+                        className={`transition-colors ${
+                          isSelected 
+                            ? 'bg-blue-50/50 dark:bg-blue-900/10' 
+                            : 'hover:bg-black/[0.02] dark:hover:bg-white/[0.02]'
+                        }`}
+                      >
+                        {canManageSchedules && (
+                          <td className="p-3.5 text-center no-print">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleSelectOne(session.id)}
+                              className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                          </td>
+                        )}
+                        <td className="p-3.5">
+                          <div className="font-bold text-zinc-900 dark:text-white">{session.courseCode}</div>
+                          <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate max-w-xs">{session.courseTitle}</div>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-semibold px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                            Level {session.level}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium">{session.semester}</td>
+                        <td className="p-3.5">
+                          <div className="font-semibold text-zinc-900 dark:text-white">{session.day}</div>
+                          <div className="text-[11px] text-zinc-500">{session.timeSlotLabel} (P{session.periodNumber})</div>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="font-medium text-zinc-900 dark:text-white">{session.hallName}</div>
+                          <div className="text-[11px] text-zinc-500">ID: {session.hallId}</div>
+                        </td>
+                        <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium">{session.lecturerName}</td>
+                        <td className="p-3.5 text-right no-print">
+                          <button
+                            onClick={() => {
+                              setDeleteEntryId(session.id);
+                              setDeleteEntryName(`${session.courseCode} (${session.day} ${session.timeSlotLabel})`);
+                            }}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="Remove session"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -553,7 +633,7 @@ export function GeneratedTimetablesView() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Single Delete Confirmation Modal */}
       <DeleteConfirmationModal
         isOpen={!!deleteEntryId}
         onClose={() => setDeleteEntryId(null)}
@@ -562,6 +642,18 @@ export function GeneratedTimetablesView() {
         itemName={deleteEntryName}
         itemType="scheduled class"
         description="Are you sure you want to unallocate this course session from the academic schedule grid?"
+      />
+
+      {/* Bulk Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onConfirm={handleConfirmBulkDelete}
+        title="Delete Selected Scheduled Sessions?"
+        itemName={`${selectedScheduleIds.length} scheduled session${selectedScheduleIds.length > 1 ? 's' : ''}`}
+        itemType="scheduled sessions"
+        description={`This will permanently remove ${selectedScheduleIds.length} selected schedule allocations from the academic timetable across all venues.`}
+        isDeleting={isBulkDeleting}
       />
     </div>
   );

@@ -128,17 +128,18 @@ export async function getAdministratorAccounts(callerRole?: string): Promise<Adm
 }
 
 /**
- * Updates an administrator's role via secure server-side API route /api/admin/role
+ * Updates a user's role (Lecturer, Admin, Super Admin) via secure server-side API route /api/admin/role
  */
 export async function updateAdministratorRole(
   callerRole: string | undefined,
   targetUserId: string,
-  newRole: 'admin' | 'super_admin'
+  newRole: 'admin' | 'super_admin' | 'lecturer',
+  metadata?: { lecturerId?: string; email?: string }
 ): Promise<{ success: boolean; error?: string }> {
   if (callerRole !== 'super_admin') {
     return {
       success: false,
-      error: 'Unauthorized: Only a Super Administrator has permission to modify administrator roles.'
+      error: 'Unauthorized: Only a Super Administrator has permission to modify roles.'
     };
   }
 
@@ -157,22 +158,24 @@ export async function updateAdministratorRole(
         'Authorization': `Bearer ${idToken}`
       },
       body: JSON.stringify({
-        userId: targetUserId,
+        userId: targetUserId || undefined,
+        lecturerId: metadata?.lecturerId,
+        email: metadata?.email,
         newRole
       })
     });
 
     const result = await response.json();
     if (!response.ok || !result.success) {
-      return { success: false, error: result.error || 'Failed to update administrator role.' };
+      return { success: false, error: result.error || 'Failed to update role.' };
     }
 
     return { success: true };
   } catch (error: any) {
-    console.error('[AdminAuthService] Error updating admin role:', error);
+    console.error('[AdminAuthService] Error updating role:', error);
     return {
       success: false,
-      error: error?.message || 'Failed to update administrator role.'
+      error: error?.message || 'Failed to update role.'
     };
   }
 }

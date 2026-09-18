@@ -43,134 +43,63 @@ export function generateIntelligentTimetable(
   options: GenerationOptions = { semester: 'Semester 1', separateTheoryAndPracticalDays: true, strictCapacityCheck: true }
 ): GenerationResult {
   const selectedSemester = options.semester || 'Semester 1';
-  
-  // Filter courses based on semester and level selection
+  const semestersToProcess: ('Semester 1' | 'Semester 2')[] = 
+    selectedSemester === 'All' 
+      ? ['Semester 1', 'Semester 2'] 
+      : [selectedSemester as 'Semester 1' | 'Semester 2'];
+
   const targetCourses = courses.filter(c => {
     if (selectedSemester !== 'All' && c.semester !== selectedSemester) return false;
     if (options.targetLevel && options.targetLevel !== 'All' && c.level !== options.targetLevel) return false;
     return true;
   });
 
-  // Sort courses by difficulty to schedule: highest enrollment and highest total hours first
-  const sortedCourses = [...targetCourses].sort((a, b) => {
-    return b.expectedEnrollment - a.expectedEnrollment;
-  });
-
   const activeHalls = facilities.filter(f => f.status === 'Active');
   const theorySlots = timeSlots.filter(s => s.sessionType === 'Theory');
   const labSlots = timeSlots.filter(s => s.sessionType === 'Lab / Practical');
+  const allSlots = timeSlots;
 
   const allocatedSchedules: TimetableEntry[] = [];
   const conflictsList: { courseCode: string; reason: string; type: string }[] = [];
 
-  // Track occupancies: key = `${slotId}_${hallId}`
-  const roomOccupancy = new Set<string>();
-  // Track lecturer occupancies: key = `${slotId}_${lecturerId}`
-  const lecturerOccupancy = new Set<string>();
-  // Track cohort occupancies: key = `${slotId}_Level${level}_${semester}`
-  const cohortOccupancy = new Set<string>();
+  for (const currentSem of semestersToProcess) {
+    const semCourses = targetCourses.filter(c => c.semester === currentSem);
+    
+    // Sort courses: largest expected enrollment first to place in optimal large halls
+    const sortedCourses = [...semCourses].sort((a, b) => b.expectedEnrollment - a.expectedEnrollment);
 
-  for (const course of sortedCourses) {
-    const lecturer = lecturers.find(l => 
-      l.lecturerId === course.assignedLecturerId || 
-      (Array.isArray(l.assignedCourses) && l.assignedCourses.includes(course.courseCode)) ||
-      (typeof l.assignedCourses === 'string' && l.assignedCourses.includes(course.courseCode))
-    ) || lecturers[0];
+    // Occupancy sets for this semester period
+    const roomOccupancy = new Set<string>();
+    const lecturerOccupancy = new Set<string>();
+    const cohortOccupancy = new Set<string>();
 
-    let theoryScheduled = false;
-    let practicalScheduled = course.practicalHours === 0;
-    let theoryDay: string | null = null;
+    for (const course of sortedCourses) {
+      const lecturer = lecturers.find(l => 
+        l.lecturerId === course.assignedLecturerId || 
+        (Array.isArray(l.assignedCourses) && l.assignedCourses.includes(course.courseCode)) ||
+        (typeof l.assignedCourses === 'string' && l.assignedCourses.includes(course.courseCode))
+      ) || lecturers[0];
 
-    // --- STEP 1: SCHEDULE THEORY SESSION (2 Hours) ---
-    // Find candidate theory halls with capacity >= enrollment
-    const candidateTheoryHalls = activeHalls
-      .filter(h => h.venueType !== 'Computer Lab' && h.capacity >= (options.strictCapacityCheck ? course.expectedEnrollment : 100))
-      .sort((a, b) => a.capacity - b.capacity); // Tightest fit first to conserve large halls
+      let theoryScheduled = false;
+      let practicalScheduled = course.practicalHours === 0;
+      let theoryDay: string | null = null;
 
-    // Fallback halls if no strict match
-    const fallbackTheoryHalls = activeHalls
-      .filter(h => h.venueType !== 'Computer Lab')
-      .sort((a, b) => b.capacity - a.capacity);
+      // --- STEP 1: SCHEDULE THEORY SESSION (2 Hours) ---
+      const candidateTheoryHalls = activeHalls
+        .filter(h => h.venueType !== 'Computer Lab' && h.capacity >= course.expectedEnrollment)
+        .sort((a, b) => a.capacity - b.capacity);
 
-    const hallsToTry = candidateTheoryHalls.length > 0 ? candidateTheoryHalls : fallbackTheoryHalls;
-
-    for (const hall of hallsToTry) {
-      if (theoryScheduled) break;
-
-      for (const slot of theorySlots) {
-        const roomKey = `${slot.slotId}_${hall.hallId}`;
-        const lecturerKey = `${slot.slotId}_${lecturer.lecturerId}`;
-        const cohortKey = `${slot.slotId}_Level${course.level}_${course.semester}`;
-
-        const isRoomBusy = roomOccupancy.has(roomKey);
-        const isLecturerBusy = lecturerOccupancy.has(lecturerKey);
-        const isCohortBusy = cohortOccupancy.has(cohortKey);
-
-        if (!isRoomBusy && !isLecturerBusy && !isCohortBusy) {
-          // Valid placement
-          const hasCapacityIssue = hall.capacity < course.expectedEnrollment;
-          
-          roomOccupancy.add(roomKey);
-          lecturerOccupancy.add(lecturerKey);
-          cohortOccupancy.add(cohortKey);
-
-          const yearTag = (options.academicYear || '2026/2027').replace('/', '-');
-          const semAbbr = course.semester.toLowerCase().includes('1') ? 'sem1' : 'sem2';
-          const periodId = `${yearTag}-${semAbbr}`;
-
-          allocatedSchedules.push({
-            id: `SCH-${yearTag}-${semAbbr.toUpperCase()}-${course.courseCode}-TH-${slot.slotId}`,
-            courseCode: course.courseCode,
-            courseTitle: course.courseTitle,
-            level: course.level,
-            semester: course.semester,
-            academicYear: options.academicYear || '2026/2027',
-            periodId,
-            status: options.status || 'draft',
-            hallId: hall.hallId,
-            hallName: hall.hallName,
-            slotId: slot.slotId,
-            day: slot.day,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            durationHours: 2,
-            sessionType: 'Theory',
-            lecturerId: lecturer.lecturerId,
-            lecturerName: lecturer.fullName,
-            lecturerEmail: lecturer.officeEmail || lecturer.email,
-            expectedEnrollment: course.expectedEnrollment,
-            hallCapacity: hall.capacity,
-            hasConflict: hasCapacityIssue,
-            conflictType: hasCapacityIssue ? 'CAPACITY_OVERFLOW' : 'NONE',
-            conflictReason: hasCapacityIssue ? `Enrollment (${course.expectedEnrollment}) exceeds ${hall.hallName} capacity (${hall.capacity})` : undefined
-          });
-
-          theoryScheduled = true;
-          theoryDay = slot.day;
-          break;
-        }
-      }
-    }
-
-    // --- STEP 2: SCHEDULE PRACTICAL / LAB SESSION (1 Hour) ---
-    if (course.practicalHours > 0) {
-      // Find candidate computer labs
-      const candidateLabs = activeHalls
-        .filter(h => h.venueType === 'Computer Lab' || h.hasComputers)
+      const fallbackTheoryHalls = activeHalls
+        .filter(h => h.venueType !== 'Computer Lab')
         .sort((a, b) => b.capacity - a.capacity);
 
-      const labsToTry = candidateLabs.length > 0 ? candidateLabs : activeHalls.slice(0, 4);
+      const hallsToTry = candidateTheoryHalls.length > 0 ? candidateTheoryHalls : fallbackTheoryHalls;
 
-      for (const lab of labsToTry) {
-        if (practicalScheduled) break;
+      for (const hall of hallsToTry) {
+        if (theoryScheduled) break;
 
-        for (const slot of labSlots) {
-          // Constraint: Place practical on different day if option enabled
-          if (options.separateTheoryAndPracticalDays && theoryDay && slot.day === theoryDay) {
-            continue;
-          }
-
-          const roomKey = `${slot.slotId}_${lab.hallId}`;
+        for (const slot of theorySlots) {
+          const roomKey = `${slot.slotId}_${hall.hallId}`;
           const lecturerKey = `${slot.slotId}_${lecturer.lecturerId}`;
           const cohortKey = `${slot.slotId}_Level${course.level}_${course.semester}`;
 
@@ -179,6 +108,8 @@ export function generateIntelligentTimetable(
           const isCohortBusy = cohortOccupancy.has(cohortKey);
 
           if (!isRoomBusy && !isLecturerBusy && !isCohortBusy) {
+            const hasCapacityIssue = hall.capacity < course.expectedEnrollment;
+            
             roomOccupancy.add(roomKey);
             lecturerOccupancy.add(lecturerKey);
             cohortOccupancy.add(cohortKey);
@@ -188,7 +119,7 @@ export function generateIntelligentTimetable(
             const periodId = `${yearTag}-${semAbbr}`;
 
             allocatedSchedules.push({
-              id: `SCH-${yearTag}-${semAbbr.toUpperCase()}-${course.courseCode}-LAB-${slot.slotId}`,
+              id: `SCH-${yearTag}-${semAbbr.toUpperCase()}-${course.courseCode}-TH-${slot.slotId}`,
               courseCode: course.courseCode,
               courseTitle: course.courseTitle,
               level: course.level,
@@ -196,36 +127,153 @@ export function generateIntelligentTimetable(
               academicYear: options.academicYear || '2026/2027',
               periodId,
               status: options.status || 'draft',
-              hallId: lab.hallId,
-              hallName: lab.hallName,
+              hallId: hall.hallId,
+              hallName: hall.hallName,
               slotId: slot.slotId,
               day: slot.day,
               startTime: slot.startTime,
               endTime: slot.endTime,
-              durationHours: 1,
-              sessionType: 'Lab / Practical',
+              durationHours: 2,
+              sessionType: 'Theory',
               lecturerId: lecturer.lecturerId,
               lecturerName: lecturer.fullName,
               lecturerEmail: lecturer.officeEmail || lecturer.email,
               expectedEnrollment: course.expectedEnrollment,
-              hallCapacity: lab.capacity,
-              hasConflict: false,
-              conflictType: 'NONE'
+              hallCapacity: hall.capacity,
+              hasConflict: hasCapacityIssue,
+              conflictType: hasCapacityIssue ? 'CAPACITY_OVERFLOW' : 'NONE',
+              conflictReason: hasCapacityIssue ? `Enrollment (${course.expectedEnrollment}) exceeds ${hall.hallName} capacity (${hall.capacity})` : undefined
             });
 
-            practicalScheduled = true;
+            theoryScheduled = true;
+            theoryDay = slot.day;
             break;
           }
         }
       }
-    }
 
-    if (!theoryScheduled || !practicalScheduled) {
-      conflictsList.push({
-        courseCode: course.courseCode,
-        reason: !theoryScheduled ? 'No available theory hall slot without clash' : 'No available computer lab slot without clash',
-        type: 'UNSATISFIED_SLOT'
-      });
+      // --- STEP 2: SCHEDULE PRACTICAL / LAB SESSION (1 Hour) ---
+      if (course.practicalHours > 0) {
+        const candidateLabs = activeHalls
+          .filter(h => h.venueType === 'Computer Lab' || h.hasComputers)
+          .sort((a, b) => b.capacity - a.capacity);
+
+        const labsToTry = candidateLabs.length > 0 ? candidateLabs : activeHalls;
+
+        // Pass 1: Try dedicated labSlots on different days (if requested)
+        for (const lab of labsToTry) {
+          if (practicalScheduled) break;
+
+          for (const slot of labSlots) {
+            if (options.separateTheoryAndPracticalDays && theoryDay && slot.day === theoryDay) {
+              continue;
+            }
+
+            const roomKey = `${slot.slotId}_${lab.hallId}`;
+            const lecturerKey = `${slot.slotId}_${lecturer.lecturerId}`;
+            const cohortKey = `${slot.slotId}_Level${course.level}_${course.semester}`;
+
+            if (!roomOccupancy.has(roomKey) && !lecturerOccupancy.has(lecturerKey) && !cohortOccupancy.has(cohortKey)) {
+              roomOccupancy.add(roomKey);
+              lecturerOccupancy.add(lecturerKey);
+              cohortOccupancy.add(cohortKey);
+
+              const yearTag = (options.academicYear || '2026/2027').replace('/', '-');
+              const semAbbr = course.semester.toLowerCase().includes('1') ? 'sem1' : 'sem2';
+              const periodId = `${yearTag}-${semAbbr}`;
+
+              allocatedSchedules.push({
+                id: `SCH-${yearTag}-${semAbbr.toUpperCase()}-${course.courseCode}-LAB-${slot.slotId}`,
+                courseCode: course.courseCode,
+                courseTitle: course.courseTitle,
+                level: course.level,
+                semester: course.semester,
+                academicYear: options.academicYear || '2026/2027',
+                periodId,
+                status: options.status || 'draft',
+                hallId: lab.hallId,
+                hallName: lab.hallName,
+                slotId: slot.slotId,
+                day: slot.day,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                durationHours: 1,
+                sessionType: 'Lab / Practical',
+                lecturerId: lecturer.lecturerId,
+                lecturerName: lecturer.fullName,
+                lecturerEmail: lecturer.officeEmail || lecturer.email,
+                expectedEnrollment: course.expectedEnrollment,
+                hallCapacity: lab.capacity,
+                hasConflict: false,
+                conflictType: 'NONE'
+              });
+
+              practicalScheduled = true;
+              break;
+            }
+          }
+        }
+
+        // Pass 2: If still not placed, check all available time slots across labs (no day restriction)
+        if (!practicalScheduled) {
+          for (const lab of labsToTry) {
+            if (practicalScheduled) break;
+
+            for (const slot of allSlots) {
+              const roomKey = `${slot.slotId}_${lab.hallId}`;
+              const lecturerKey = `${slot.slotId}_${lecturer.lecturerId}`;
+              const cohortKey = `${slot.slotId}_Level${course.level}_${course.semester}`;
+
+              if (!roomOccupancy.has(roomKey) && !lecturerOccupancy.has(lecturerKey) && !cohortOccupancy.has(cohortKey)) {
+                roomOccupancy.add(roomKey);
+                lecturerOccupancy.add(lecturerKey);
+                cohortOccupancy.add(cohortKey);
+
+                const yearTag = (options.academicYear || '2026/2027').replace('/', '-');
+                const semAbbr = course.semester.toLowerCase().includes('1') ? 'sem1' : 'sem2';
+                const periodId = `${yearTag}-${semAbbr}`;
+
+                allocatedSchedules.push({
+                  id: `SCH-${yearTag}-${semAbbr.toUpperCase()}-${course.courseCode}-LAB-${slot.slotId}`,
+                  courseCode: course.courseCode,
+                  courseTitle: course.courseTitle,
+                  level: course.level,
+                  semester: course.semester,
+                  academicYear: options.academicYear || '2026/2027',
+                  periodId,
+                  status: options.status || 'draft',
+                  hallId: lab.hallId,
+                  hallName: lab.hallName,
+                  slotId: slot.slotId,
+                  day: slot.day,
+                  startTime: slot.startTime,
+                  endTime: slot.endTime,
+                  durationHours: 1,
+                  sessionType: 'Lab / Practical',
+                  lecturerId: lecturer.lecturerId,
+                  lecturerName: lecturer.fullName,
+                  lecturerEmail: lecturer.officeEmail || lecturer.email,
+                  expectedEnrollment: course.expectedEnrollment,
+                  hallCapacity: lab.capacity,
+                  hasConflict: false,
+                  conflictType: 'NONE'
+                });
+
+                practicalScheduled = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      if (!theoryScheduled || !practicalScheduled) {
+        conflictsList.push({
+          courseCode: course.courseCode,
+          reason: !theoryScheduled ? 'No available theory hall slot without clash' : 'No available computer lab slot without clash',
+          type: 'UNSATISFIED_SLOT'
+        });
+      }
     }
   }
 

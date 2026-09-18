@@ -882,9 +882,9 @@ export function DashboardOverviewView({
               </h3>
               <button
                 onClick={() => setActiveView('facilities')}
-                className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
               >
-                All (14)
+                View all
               </button>
             </div>
 
@@ -1173,7 +1173,7 @@ export function DashboardOverviewView({
               >
                 <div className="flex items-center gap-2.5">
                   <BookOpen className="w-4 h-4 text-blue-500 shrink-0" />
-                  <span>Add New DCIT Course</span>
+                  <span>Add Course</span>
                 </div>
               </button>
 
@@ -1183,7 +1183,7 @@ export function DashboardOverviewView({
               >
                 <div className="flex items-center gap-2.5">
                   <Building2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Register Lecture Hall / Lab</span>
+                  <span>Add Facility</span>
                 </div>
               </button>
 
@@ -1193,7 +1193,7 @@ export function DashboardOverviewView({
               >
                 <div className="flex items-center gap-2.5">
                   <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>AI Timetable Generator</span>
+                  <span>Generate Timetable</span>
                 </div>
               </button>
 
@@ -1203,7 +1203,7 @@ export function DashboardOverviewView({
               >
                 <div className="flex items-center gap-2.5">
                   <Download className="w-4 h-4 text-purple-500 shrink-0" />
-                  <span>Export Master Schedule (CSV)</span>
+                  <span>Export CSV</span>
                 </div>
               </button>
 
@@ -1213,7 +1213,7 @@ export function DashboardOverviewView({
               >
                 <div className="flex items-center gap-2.5">
                   <UploadCloud className="w-4 h-4 text-teal-500 shrink-0" />
-                  <span>Import Excel Workbook</span>
+                  <span>Import Data</span>
                 </div>
               </button>
             </div>

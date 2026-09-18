@@ -175,7 +175,7 @@ export function Navbar({
                     <span>Loading...</span>
                   </>
                 ) : (
-                  <span>{user ? 'Dashboard' : 'Sign up Free'}</span>
+                  <span>{user ? 'Dashboard' : 'Sign up'}</span>
                 )}
               </button>
             </div>

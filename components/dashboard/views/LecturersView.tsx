@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Users, 
   Search, 
@@ -17,9 +17,16 @@ import {
   UserCheck,
   UserX,
   ShieldAlert,
-  ShieldCheck
+  ShieldCheck,
+  Check,
+  ChevronDown,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
+import { useAuth } from '@/context/AuthContext';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { Lecturer } from '@/lib/dataset';
 import { DeleteConfirmationModal } from '@/components/dashboard/modals/DeleteConfirmationModal';
 
@@ -39,6 +46,9 @@ export function LecturersView({ onOpenAddLecturer, onEditLecturer }: LecturersVi
     courses 
   } = useTimetable();
 
+  const { user, updateAdminRole } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin';
+
   const [searchTerm, setSearchTerm] = useState('');
 
   // Bulk selection state
@@ -50,11 +60,115 @@ export function LecturersView({ onOpenAddLecturer, onEditLecturer }: LecturersVi
   const [deletingLecturerId, setDeletingLecturerId] = useState<string | null>(null);
   const [deletingLecturerName, setDeletingLecturerName] = useState<string>('');
 
-  const getEmail = (l: Lecturer) => l.email || `${l.fullName.toLowerCase().replace(/\s+/g, '.')}@ug.edu.gh`;
+  // Super Admin Role Management state
+  const [openRolesDropdownId, setOpenRolesDropdownId] = useState<string | null>(null);
+  const [isUpdatingRole, setIsUpdatingRole] = useState<string | null>(null);
+  const [roleFeedback, setRoleFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [userRolesMap, setUserRolesMap] = useState<Record<string, 'lecturer' | 'admin' | 'super_admin'>>({});
+  const rolesDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Listen to authoritative users collection for real-time role state when user is admin
+  useEffect(() => {
+    if (!db || !user || (user.role !== 'super_admin' && user.role !== 'admin')) return;
+    
+    let isMounted = true;
+    let unsub: (() => void) | null = null;
+    try {
+      unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
+        if (!isMounted) return;
+        const map: Record<string, 'lecturer' | 'admin' | 'super_admin'> = {};
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const r = data.role as 'lecturer' | 'admin' | 'super_admin';
+          if (r) {
+            map[docSnap.id] = r;
+            if (data.email) map[data.email.toLowerCase()] = r;
+            if (data.lecturerId) map[data.lecturerId] = r;
+          }
+        });
+        setUserRolesMap(map);
+      }, () => {});
+    } catch {
+      // Graceful fallback to cached state
+    }
+
+    return () => {
+      isMounted = false;
+      if (unsub) unsub();
+    };
+  }, [user]);
+
+  // Close roles dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (rolesDropdownRef.current && !rolesDropdownRef.current.contains(e.target as Node)) {
+        setOpenRolesDropdownId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getEmail = (l: Lecturer) => l.email || l.officeEmail || `${l.fullName.toLowerCase().replace(/\s+/g, '.')}@ug.edu.gh`;
+  
   const getCourses = (l: Lecturer): string[] => {
     if (Array.isArray(l.specializations)) return l.specializations;
     if (Array.isArray(l.assignedCourses)) return l.assignedCourses;
     return [];
+  };
+
+  const getLecturerRole = (l: Lecturer): 'lecturer' | 'admin' | 'super_admin' => {
+    const email = getEmail(l).toLowerCase();
+    return (
+      (l.lecturerId && userRolesMap[l.lecturerId]) ||
+      (email && userRolesMap[email]) ||
+      (l.authUid && userRolesMap[l.authUid]) ||
+      l.role ||
+      'lecturer'
+    );
+  };
+
+  const handleRoleChange = async (lec: Lecturer, newRole: 'lecturer' | 'admin' | 'super_admin') => {
+    setOpenRolesDropdownId(null);
+    setIsUpdatingRole(lec.lecturerId);
+    try {
+      const email = getEmail(lec);
+      const targetUserId = lec.authUid || '';
+      const res = await updateAdminRole(targetUserId, newRole, {
+        lecturerId: lec.lecturerId,
+        email: email
+      });
+
+      if (res.success) {
+        // Optimistically update role map for instant UI responsiveness
+        setUserRolesMap(prev => ({
+          ...prev,
+          [lec.lecturerId]: newRole,
+          [email.toLowerCase()]: newRole,
+          ...(lec.authUid ? { [lec.authUid]: newRole } : {})
+        }));
+        const roleLabel = newRole === 'super_admin' ? 'Super Admin' : newRole === 'admin' ? 'Admin' : 'Lecturer';
+        setRoleFeedback({
+          type: 'success',
+          message: `Role for ${lec.title} ${lec.fullName} updated to ${roleLabel}.`
+        });
+        setTimeout(() => setRoleFeedback(null), 4000);
+      } else {
+        setRoleFeedback({
+          type: 'error',
+          message: res.error || 'Failed to update system role.'
+        });
+        setTimeout(() => setRoleFeedback(null), 5000);
+      }
+    } catch (err: any) {
+      setRoleFeedback({
+        type: 'error',
+        message: err?.message || 'Failed to update system role.'
+      });
+      setTimeout(() => setRoleFeedback(null), 5000);
+    } finally {
+      setIsUpdatingRole(null);
+    }
   };
 
   const filteredLecturers = useMemo(() => {
@@ -130,12 +244,38 @@ export function LecturersView({ onOpenAddLecturer, onEditLecturer }: LecturersVi
         <button
           id="add-new-lecturer-btn"
           onClick={onOpenAddLecturer}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-semibold text-xs transition-colors cursor-pointer self-start sm:self-auto"
+          className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer self-start sm:self-auto"
+          title="Add Lecturer"
+          aria-label="Add Lecturer"
         >
           <Plus className="w-4 h-4" />
-          <span>Add lecturer</span>
         </button>
       </div>
+
+      {/* Role Change Feedback */}
+      {roleFeedback && (
+        <div className={`p-3.5 rounded-2xl flex items-center justify-between gap-3 text-xs font-medium animate-in fade-in-50 ${
+          roleFeedback.type === 'success' 
+            ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20' 
+            : 'bg-rose-500/10 text-rose-800 dark:text-rose-300 border border-rose-500/20'
+        }`}>
+          <div className="flex items-center gap-2">
+            {roleFeedback.type === 'success' ? (
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+            )}
+            <span>{roleFeedback.message}</span>
+          </div>
+          <button 
+            onClick={() => setRoleFeedback(null)} 
+            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 cursor-pointer"
+            aria-label="Dismiss notification"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Success Notification */}
       {bulkSuccessMsg && (
@@ -207,6 +347,7 @@ export function LecturersView({ onOpenAddLecturer, onEditLecturer }: LecturersVi
           const assignedCourses = getCourses(lec);
           const totalTeachingHours = lecturerSchedules.length * 2;
           const isSelected = selectedIds.includes(lec.lecturerId);
+          const currentRole = getLecturerRole(lec);
 
           return (
             <div
@@ -236,9 +377,16 @@ export function LecturersView({ onOpenAddLecturer, onEditLecturer }: LecturersVi
                   </div>
                 </div>
 
-                {/* Account Status */}
-                <div className="shrink-0 text-xs font-medium text-zinc-500 dark:text-zinc-400 capitalize">
-                  {lec.accountStatus}
+                {/* Role & Account Status */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {currentRole !== 'lecturer' && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20">
+                      {currentRole === 'super_admin' ? 'Super Admin' : 'Admin'}
+                    </span>
+                  )}
+                  <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 capitalize">
+                    {lec.accountStatus}
+                  </span>
                 </div>
               </div>
 
@@ -296,7 +444,58 @@ export function LecturersView({ onOpenAddLecturer, onEditLecturer }: LecturersVi
               )}
 
               {/* Actions */}
-              <div className="pt-2.5 border-t border-zinc-200/60 dark:border-white/10 flex items-center justify-end gap-2 no-print">
+              <div className="pt-2.5 border-t border-zinc-200/60 dark:border-white/10 flex items-center justify-end gap-2 no-print relative">
+                {/* Roles Dropdown (Super Admin Only) */}
+                {isSuperAdmin && (
+                  <div 
+                    className="relative" 
+                    ref={openRolesDropdownId === lec.lecturerId ? rolesDropdownRef : null}
+                  >
+                    <button
+                      onClick={() => setOpenRolesDropdownId(openRolesDropdownId === lec.lecturerId ? null : lec.lecturerId)}
+                      disabled={isUpdatingRole === lec.lecturerId}
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer flex items-center gap-1"
+                      title="Manage system role"
+                    >
+                      {isUpdatingRole === lec.lecturerId ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
+                      ) : null}
+                      <span>Roles</span>
+                      <ChevronDown className={`w-3 h-3 text-zinc-400 transition-transform ${openRolesDropdownId === lec.lecturerId ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {openRolesDropdownId === lec.lecturerId && (
+                      <div className="absolute right-0 bottom-full mb-1.5 w-38 p-1.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl z-50 animate-in fade-in-50 zoom-in-95">
+                        <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800 mb-1">
+                          System Role
+                        </div>
+                        {[
+                          { id: 'lecturer', label: 'Lecturer' },
+                          { id: 'admin', label: 'Admin' },
+                          { id: 'super_admin', label: 'Super Admin' }
+                        ].map((r) => {
+                          const isCurrent = currentRole === r.id;
+                          return (
+                            <button
+                              key={r.id}
+                              onClick={() => handleRoleChange(lec, r.id as 'lecturer' | 'admin' | 'super_admin')}
+                              disabled={isCurrent || isUpdatingRole === lec.lecturerId}
+                              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer ${
+                                isCurrent
+                                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold'
+                                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/10'
+                              }`}
+                            >
+                              <span>{r.label}</span>
+                              {isCurrent && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <button
                   onClick={() => onEditLecturer(lec)}
                   className="px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"

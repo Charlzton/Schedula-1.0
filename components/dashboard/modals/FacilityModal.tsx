@@ -326,10 +326,9 @@ export function FacilityModal({ isOpen, onClose, initialFacility }: FacilityModa
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
             >
-              <Check className="w-4 h-4" />
-              <span>{initialFacility ? 'Save Changes' : 'Register Facility'}</span>
+              {initialFacility ? 'Save' : 'Register'}
             </button>
           </div>
         </form>
