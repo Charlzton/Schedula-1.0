@@ -4,6 +4,7 @@ import {
   GoogleAuthProvider, 
   signInWithPopup, 
   signInWithEmailAndPassword, 
+  signInWithCustomToken,
   createUserWithEmailAndPassword, 
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -43,6 +44,7 @@ export const storage = getStorage(app);
 export { 
   signInWithPopup, 
   signInWithEmailAndPassword, 
+  signInWithCustomToken,
   createUserWithEmailAndPassword, 
   sendEmailVerification,
   sendPasswordResetEmail,

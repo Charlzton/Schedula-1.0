@@ -7,6 +7,7 @@ import {
   db,
   signInWithPopup, 
   signInWithEmailAndPassword, 
+  signInWithCustomToken,
   createUserWithEmailAndPassword, 
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -48,6 +49,8 @@ interface AuthContextType {
   isSigningOut: boolean;
   signInWithEmail: (email: string, password: string, portalRole?: UserRole) => Promise<{ success: boolean; error?: string; unverified?: boolean; email?: string; code?: string; targetRoute?: string }>;
   signUpWithEmail: (name: string, email: string, password: string, institution?: string, portalRole?: UserRole) => Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }>;
+  verifyLecturerEmail: (email: string) => Promise<{ success: boolean; verified?: boolean; lecturerId?: string; fullName?: string; department?: string; error?: string; code?: string }>;
+  activateLecturerAccount: (email: string, password: string, lecturerId?: string) => Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }>;
   sendPasswordReset: (email: string) => Promise<{ success: boolean; error?: string; code?: string }>;
   signInWithGoogle: (portalRole?: UserRole) => Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }>;
   updateUserProfile: (nameOrData: string | { name?: string; avatar?: any }, avatar?: any) => Promise<{ success: boolean; error?: string }>;
@@ -89,31 +92,69 @@ async function findLecturerById(lecturerId: string): Promise<Lecturer | null> {
   return null;
 }
 
-/**
- * Helper to match an email against the lecturer catalog in Firestore
- */
+async function verifyLecturerEmail(
+  email: string
+): Promise<{
+  success: boolean;
+  verified?: boolean;
+  lecturerId?: string;
+  fullName?: string;
+  department?: string;
+  error?: string;
+  code?: string;
+}> {
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      return {
+        success: false,
+        error: 'Please enter a valid email address.',
+        code: 'auth/invalid-email'
+      };
+    }
+
+    const res = await fetch('/api/auth/verify-lecturer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanEmail })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.error || 'Email not found in the faculty directory.',
+        code: data.code || 'auth/verification-failed'
+      };
+    }
+
+    return {
+      success: true,
+      verified: true,
+      lecturerId: data.lecturerId,
+      fullName: data.fullName,
+      department: data.department
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: 'Unable to connect to verification service. Please check your connection.',
+      code: 'auth/network-error'
+    };
+  }
+}
+
 async function findLecturerByEmail(email: string): Promise<Lecturer | null> {
   const cleanEmail = email.trim().toLowerCase();
   if (!cleanEmail) return null;
 
   try {
-    const lecturersSnap = await getDocs(collection(db, 'lecturers'));
-    if (!lecturersSnap.empty) {
-      for (const docSnap of lecturersSnap.docs) {
-        const data = docSnap.data() as Lecturer;
-        const offEmail = (data.officeEmail || '').trim().toLowerCase();
-        const persEmail = (data.email || '').trim().toLowerCase();
-        if (offEmail === cleanEmail || persEmail === cleanEmail) {
-          return {
-            ...data,
-            lecturerId: data.lecturerId || docSnap.id,
-            accountStatus: data.accountStatus || (data.authUid ? 'active' : 'unclaimed')
-          };
-        }
-      }
+    const verification = await verifyLecturerEmail(cleanEmail);
+    if (verification.success && verification.lecturerId) {
+      return await findLecturerById(verification.lecturerId);
     }
   } catch (err) {
-    console.warn('Firestore lecturer search note:', err);
+    console.warn('findLecturerByEmail resolution note:', err);
   }
 
   return null;
@@ -357,8 +398,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             let currentLecturerId = userData?.lecturerId;
             if (!currentLecturerId && cleanEmail) {
               try {
-                const matched = await findLecturerByEmail(cleanEmail);
-                if (matched) {
+                const matched = await verifyLecturerEmail(cleanEmail);
+                if (matched.success && matched.lecturerId) {
                   currentLecturerId = matched.lecturerId;
                   setDoc(userDocRef, { lecturerId: matched.lecturerId }, { merge: true }).catch(() => {});
                 }
@@ -594,6 +635,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const activateLecturerAccount = async (
+    email: string,
+    password: string,
+    lecturerId?: string
+  ): Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }> => {
+    setIsLoading(true);
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail || !password) {
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'Please provide both email address and password.',
+          code: 'auth/missing-fields'
+        };
+      }
+
+      const res = await fetch('/api/auth/activate-lecturer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password,
+          lecturerId
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setIsLoading(false);
+        return {
+          success: false,
+          error: data.error || 'Account activation could not be completed.',
+          code: data.code || 'auth/activation-failed'
+        };
+      }
+
+      if (data.customToken) {
+        await signInWithCustomToken(auth, data.customToken);
+      }
+
+      setIsLoading(false);
+      return {
+        success: true,
+        targetRoute: '/lecturer'
+      };
+    } catch (err: any) {
+      setIsLoading(false);
+      return {
+        success: false,
+        error: 'An unexpected error occurred during account activation. Please try again.',
+        code: 'auth/activation-error'
+      };
+    }
+  };
+
   const signUpWithEmail = async (
     name: string,
     email: string,
@@ -601,145 +698,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     institution?: string,
     portalRole: UserRole = 'lecturer'
   ): Promise<{ success: boolean; error?: string; code?: string; targetRoute?: string }> => {
-    setIsLoading(true);
-    try {
-      // 1. Explicitly disallow public Admin self-registration
-      if (portalRole === 'admin') {
-        setIsLoading(false);
-        return {
-          success: false,
-          error: 'Administrator accounts cannot be created here. Please sign in with an authorized administrator account.',
-          code: 'auth/admin-registration-disabled'
-        };
-      }
-
-      const cleanEmail = email.trim().toLowerCase();
-      if (!cleanEmail || !password) {
-        setIsLoading(false);
-        return { success: false, error: 'Please enter all required fields.', code: 'auth/missing-fields' };
-      }
-
-      // 2. Lecturer verification check against /lecturers directory
-      const matchedLecturer = await findLecturerByEmail(cleanEmail);
-      if (!matchedLecturer) {
-        setIsLoading(false);
-        return {
-          success: false,
-          error: 'Registration rejected: Your email is not registered in the university faculty directory. Please contact your department administrator.',
-          code: 'auth/not-a-lecturer'
-        };
-      }
-
-      // 3. Check existing account status on lecturer profile
-      if (matchedLecturer.accountStatus === 'active' || matchedLecturer.authUid) {
-        setIsLoading(false);
-        return {
-          success: false,
-          error: 'This lecturer already has an account. Please sign in instead.',
-          code: 'auth/already-registered'
-        };
-      }
-
-      if (matchedLecturer.accountStatus === 'suspended') {
-        setIsLoading(false);
-        return {
-          success: false,
-          error: 'This faculty account is currently suspended. Please contact your department administrator.',
-          code: 'auth/account-suspended'
-        };
-      }
-
-      // 4. Create Firebase Authentication user
-      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
-      const fbUser = userCredential.user;
-
-      try {
-        await sendEmailVerification(fbUser);
-      } catch {}
-
-      const assignedRole: UserRole = 'lecturer';
-      const nowIso = new Date().toISOString();
-
-      // 5. Atomic profile creation & bidirectional linking with rollback
-      try {
-        // A. Create /users/{uid} document
-        const userDocRef = doc(db, 'users', fbUser.uid);
-        await setDoc(userDocRef, {
-          id: fbUser.uid,
-          name: name || matchedLecturer.fullName || cleanEmail.split('@')[0] || 'User',
-          email: cleanEmail,
-          avatar: '',
-          role: assignedRole,
-          lecturerId: matchedLecturer.lecturerId,
-          institution: institution || 'University of Ghana',
-          createdAt: nowIso
-        }, { merge: true });
-
-        // B. Bidirectionally update /lecturers/{lecturerId} document
-        const lecturerDocRef = doc(db, 'lecturers', matchedLecturer.lecturerId);
-        await setDoc(lecturerDocRef, {
-          authUid: fbUser.uid,
-          accountStatus: 'active',
-          registeredAt: nowIso
-        }, { merge: true });
-      } catch (dbErr: any) {
-        console.error('Firestore rollback triggered due to linking failure:', dbErr);
-        try {
-          await deleteUser(fbUser);
-        } catch (delErr) {
-          console.warn('Rollback user delete failed:', delErr);
-        }
-        setIsLoading(false);
-        return {
-          success: false,
-          error: 'Account creation could not be completed due to a database sync error. Please try again.',
-          code: 'auth/linking-failed'
-        };
-      }
-
-      const activeLecturer: Lecturer = {
-        ...matchedLecturer,
-        authUid: fbUser.uid,
-        accountStatus: 'active',
-        registeredAt: nowIso
+    // Disallow public Admin self-registration
+    if (portalRole === 'admin') {
+      return {
+        success: false,
+        error: 'Administrator accounts cannot be created here. Please sign in with an authorized administrator account.',
+        code: 'auth/admin-registration-disabled'
       };
-
-      setLecturerProfile(activeLecturer);
-      try {
-        localStorage.setItem(LECTURER_STORAGE_KEY, JSON.stringify(activeLecturer));
-      } catch {}
-
-      const appUser: User = {
-        id: fbUser.uid,
-        name: name || activeLecturer.fullName || cleanEmail.split('@')[0] || 'User',
-        email: cleanEmail,
-        institution: institution || undefined,
-        role: assignedRole,
-        provider: 'email',
-        lecturerId: activeLecturer.lecturerId
-      };
-      setUser(appUser);
-      try {
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(appUser));
-      } catch {}
-
-      setIsLoading(false);
-      const targetRoute = '/lecturer';
-      return { success: true, targetRoute };
-    } catch (err: any) {
-      setIsLoading(false);
-      const code = err?.code || '';
-      if (code === 'auth/email-already-in-use') {
-        return { success: false, error: 'An account with this email already exists. Please sign in.', code };
-      } else if (code === 'auth/operation-not-allowed') {
-        return { success: false, error: 'Email/Password sign-up is disabled in your Firebase console. Please sign in with Google or enable Email/Password provider in the Firebase Console.', code };
-      } else if (code === 'auth/weak-password') {
-        return { success: false, error: 'Password should be at least 6 characters.', code };
-      } else if (code === 'auth/invalid-email') {
-        return { success: false, error: 'Please enter a valid email address.', code };
-      }
-      return { success: false, error: err?.message || 'Failed to create account. Please try again.', code };
     }
+
+    return await activateLecturerAccount(email, password);
   };
 
   const sendPasswordReset = async (email: string): Promise<{ success: boolean; error?: string; code?: string }> => {
@@ -1244,6 +1212,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isSigningOut,
         signInWithEmail,
         signUpWithEmail,
+        verifyLecturerEmail,
+        activateLecturerAccount,
         sendPasswordReset,
         signInWithGoogle,
         updateUserProfile,
