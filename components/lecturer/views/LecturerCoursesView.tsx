@@ -93,11 +93,11 @@ export function LecturerCoursesView() {
             type="button"
             onClick={handleExportCSV}
             disabled={filteredCourses.length === 0}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/60 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/80 dark:border-white/10 shadow-xs transition-all cursor-pointer disabled:opacity-50"
-            title="Export assigned courses list"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer disabled:opacity-50"
+            title="Export"
+            aria-label="Export"
           >
-            <Download className="w-3.5 h-3.5 text-blue-500" />
-            <span>Export CSV</span>
+            <Download className="w-4 h-4" />
           </button>
         </div>
       </div>

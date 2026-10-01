@@ -37,6 +37,11 @@ export default function LecturerPage() {
   useEffect(() => {
     if (!isLoading && !user && !isSigningOut) {
       router.replace('/');
+    } else if (!isLoading && user && !isSigningOut) {
+      const userRole = (user.role || '').toLowerCase();
+      if (userRole.includes('admin') || userRole.includes('super_admin')) {
+        router.replace('/dashboard');
+      }
     }
   }, [user, isLoading, isSigningOut, router]);
 
@@ -78,6 +83,11 @@ export default function LecturerPage() {
   }
 
   if (!user && !isSigningOut) {
+    return null;
+  }
+
+  const userRole = (user?.role || '').toLowerCase();
+  if ((userRole.includes('admin') || userRole.includes('super_admin')) && !isSigningOut) {
     return null;
   }
 

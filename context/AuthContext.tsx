@@ -521,31 +521,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
-      // 4. ROLE-BASED ACCESS CONTROL VALIDATION
-      if (portalRole === 'admin') {
-        // ADMIN PORTAL VALIDATION:
-        // Must be an admin or super_admin account. If it is a lecturer-only account without admin privileges, deny access.
-        if (isExplicitLecturerUser && !isAdminUser) {
-          await fbSignOut(auth);
-          setIsLoading(false);
-          return {
-            success: false,
-            error: 'Access denied: This account is registered as a Lecturer and cannot access the Administrator Dashboard. Please select "Lecturer" on the login screen.',
-            code: 'auth/unauthorized-role'
-          };
-        }
-      } else if (portalRole === 'lecturer') {
-        // LECTURER PORTAL VALIDATION:
-        // Must match a verified lecturer record in /lecturers OR have role: 'lecturer'
-        if (!matchedLecturer && !isExplicitLecturerUser) {
-          await fbSignOut(auth);
-          setIsLoading(false);
-          return {
-            success: false,
-            error: 'Access denied: No faculty profile was found matching this email address in the university lecturer directory. Please select "Admin" if you are an administrator, or contact academic scheduling support.',
-            code: 'auth/not-a-lecturer'
-          };
-        }
+      // 4. RESOLVE AUTHORITATIVE ROLE FROM FIRESTORE RECORD (/users/{uid})
+      let authoritativeRole: UserRole = 'lecturer';
+      if (isPrimarySuperAdmin) {
+        authoritativeRole = 'super_admin';
+      } else if (finalUserData?.role) {
+        const r = String(finalUserData.role).toLowerCase();
+        if (r === 'super_admin') authoritativeRole = 'super_admin';
+        else if (r === 'admin') authoritativeRole = 'admin';
+        else if (r === 'lecturer') authoritativeRole = 'lecturer';
+      } else {
+        authoritativeRole = matchedLecturer ? 'lecturer' : 'admin';
+        try {
+          await setDoc(userDocRef, {
+            id: fbUser.uid,
+            name: fbUser.displayName || matchedLecturer?.fullName || cleanEmail.split('@')[0],
+            email: cleanEmail,
+            role: authoritativeRole,
+            lecturerId: matchedLecturer?.lecturerId || '',
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        } catch {}
+      }
+
+      const isAuthoritativeAdminOrSuperAdmin = authoritativeRole === 'admin' || authoritativeRole === 'super_admin';
+      const isAuthoritativeLecturer = authoritativeRole === 'lecturer';
+
+      // 5. STRICT AUTHORIZATION VALIDATION: Selected role (portalRole) MUST match authoritativeRole
+      if (portalRole === 'admin' && isAuthoritativeLecturer) {
+        await fbSignOut(auth);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'Your account is currently registered as Lecturer. Please select Lecturer to continue.',
+          code: 'auth/unauthorized-role'
+        };
+      }
+
+      if (portalRole === 'lecturer' && isAuthoritativeAdminOrSuperAdmin) {
+        await fbSignOut(auth);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'Your account is currently registered as Admin. Please select Admin to continue.',
+          code: 'auth/unauthorized-role'
+        };
       }
 
       let fetchedAvatar = fbUser.photoURL || finalUserData?.avatar || undefined;
@@ -585,16 +605,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {}
       }
 
-      const activeRole: UserRole = portalRole === 'lecturer' 
-        ? 'lecturer' 
-        : (isSuperAdminUser ? 'super_admin' : (isAdminUser ? 'admin' : 'admin'));
-
       const appUser: User = {
         id: fbUser.uid,
         name: matchedLecturer?.fullName || fetchedName,
         email: fbUser.email || cleanEmail,
         avatar: fetchedAvatar,
-        role: activeRole,
+        role: authoritativeRole, // AUTHORITATIVE ROLE FROM FIRESTORE
         provider: 'email',
         lecturerId: matchedLecturer?.lecturerId
       };
@@ -605,7 +621,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {}
 
       setIsLoading(false);
-      const targetRoute = portalRole === 'lecturer' ? '/lecturer' : '/dashboard';
+      const targetRoute = authoritativeRole === 'lecturer' ? '/lecturer' : '/dashboard';
       return { success: true, targetRoute };
     } catch (err: any) {
       setIsLoading(false);
@@ -780,39 +796,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       }
 
-      // ROLE-BASED ACCESS CONTROL VALIDATION FOR GOOGLE SIGN-IN
-      if (portalRole === 'admin') {
-        // Only existing admin users in Firestore or users without explicit lecturer-only role can sign in
-        if (!finalUserData && !isAdminUser) {
-          // If a new user signs in with Google while Admin is selected, deny if not an authorized administrator
-          await fbSignOut(auth);
-          setIsLoading(false);
-          return {
-            success: false,
-            error: 'Administrator accounts cannot be created here. Please sign in with an authorized administrator account.',
-            code: 'auth/unauthorized-admin'
-          };
-        }
+      // RESOLVE AUTHORITATIVE ROLE FROM FIRESTORE RECORD (/users/{uid})
+      let authoritativeRole: UserRole = 'lecturer';
+      if (isPrimarySuperAdmin) {
+        authoritativeRole = 'super_admin';
+      } else if (finalUserData?.role) {
+        const r = String(finalUserData.role).toLowerCase();
+        if (r === 'super_admin') authoritativeRole = 'super_admin';
+        else if (r === 'admin') authoritativeRole = 'admin';
+        else if (r === 'lecturer') authoritativeRole = 'lecturer';
+      } else {
+        authoritativeRole = matchedLecturer ? 'lecturer' : 'admin';
+        try {
+          await setDoc(userDocRef, {
+            id: fbUser.uid,
+            name: fbUser.displayName || matchedLecturer?.fullName || cleanEmail.split('@')[0],
+            email: cleanEmail,
+            role: authoritativeRole,
+            lecturerId: matchedLecturer?.lecturerId || '',
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        } catch {}
+      }
 
-        if (isExplicitLecturerUser && !isAdminUser) {
-          await fbSignOut(auth);
-          setIsLoading(false);
-          return {
-            success: false,
-            error: 'Access denied: This Google account is registered as a Lecturer and cannot access the Administrator Dashboard. Please select "Lecturer" on the login screen.',
-            code: 'auth/unauthorized-role'
-          };
-        }
-      } else if (portalRole === 'lecturer') {
-        if (!matchedLecturer && !isExplicitLecturerUser) {
-          await fbSignOut(auth);
-          setIsLoading(false);
-          return {
-            success: false,
-            error: 'Access denied: No faculty profile was found matching this Google account email in the university lecturer directory. Please select "Admin" if you are an administrator, or contact academic scheduling support.',
-            code: 'auth/not-a-lecturer'
-          };
-        }
+      const isAuthoritativeAdminOrSuperAdmin = authoritativeRole === 'admin' || authoritativeRole === 'super_admin';
+      const isAuthoritativeLecturer = authoritativeRole === 'lecturer';
+
+      // STRICT AUTHORIZATION VALIDATION: Selected role (portalRole) MUST match authoritativeRole
+      if (portalRole === 'admin' && isAuthoritativeLecturer) {
+        await fbSignOut(auth);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'Your account is currently registered as Lecturer. Please select Lecturer to continue.',
+          code: 'auth/unauthorized-role'
+        };
+      }
+
+      if (portalRole === 'lecturer' && isAuthoritativeAdminOrSuperAdmin) {
+        await fbSignOut(auth);
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'Your account is currently registered as Admin. Please select Admin to continue.',
+          code: 'auth/unauthorized-role'
+        };
       }
 
       let fetchedAvatar = fbUser.photoURL || finalUserData?.avatar || undefined;
@@ -844,16 +872,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {}
       }
 
-      const activeRole: UserRole = portalRole === 'lecturer' 
-        ? 'lecturer' 
-        : (isSuperAdminUser ? 'super_admin' : (isAdminUser ? 'admin' : 'admin'));
-
       const googleUser: User = {
         id: fbUser.uid,
         name: matchedLecturer?.fullName || fetchedName,
         email: cleanEmail || 'user@example.com',
         avatar: fetchedAvatar,
-        role: activeRole,
+        role: authoritativeRole, // AUTHORITATIVE ROLE FROM FIRESTORE
         provider: 'google',
         lecturerId: matchedLecturer?.lecturerId
       };
@@ -863,25 +887,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(googleUser));
       } catch {}
 
-      // Save user doc if not exists (only as lecturer for new authorized faculty)
-      if (!userDocSnap.exists() && portalRole === 'lecturer') {
-        try {
-          await setDoc(userDocRef, {
-            id: fbUser.uid,
-            name: googleUser.name,
-            email: googleUser.email,
-            avatar: googleUser.avatar || '',
-            role: 'lecturer',
-            lecturerId: matchedLecturer?.lecturerId,
-            createdAt: new Date().toISOString()
-          }, { merge: true });
-        } catch (dbErr) {
-          console.warn('Firestore Google sign-in doc save note:', dbErr);
-        }
-      }
-
       setIsLoading(false);
-      const targetRoute = portalRole === 'lecturer' ? '/lecturer' : '/dashboard';
+      const targetRoute = authoritativeRole === 'lecturer' ? '/lecturer' : '/dashboard';
       return { success: true, targetRoute };
     } catch (err: any) {
       setIsLoading(false);

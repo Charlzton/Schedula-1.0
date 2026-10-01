@@ -18,17 +18,35 @@ function getAdminApp(): App {
   }
 
   const serviceAccountVar = process.env.FIREBASE_SERVICE_ACCOUNT;
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "schedula-bc58e";
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "schedula-bc58e";
 
   if (serviceAccountVar) {
     try {
-      const serviceAccount = JSON.parse(serviceAccountVar);
+      const serviceAccount = typeof serviceAccountVar === "string" ? JSON.parse(serviceAccountVar) : serviceAccountVar;
       adminApp = initializeApp({
         credential: cert(serviceAccount),
         projectId: projectId
       });
     } catch (e) {
-      console.warn("Failed to parse FIREBASE_SERVICE_ACCOUNT, falling back to projectId:", e);
+      console.warn("Failed to parse FIREBASE_SERVICE_ACCOUNT, falling back to credentials/projectId:", e);
+      adminApp = initializeApp({
+        projectId: projectId
+      });
+    }
+  } else if (clientEmail && privateKey) {
+    try {
+      adminApp = initializeApp({
+        credential: cert({
+          projectId: projectId,
+          clientEmail: clientEmail,
+          privateKey: privateKey.replace(/\\n/g, "\n")
+        }),
+        projectId: projectId
+      });
+    } catch (e) {
+      console.warn("Failed to initialize Firebase Admin with clientEmail/privateKey:", e);
       adminApp = initializeApp({
         projectId: projectId
       });

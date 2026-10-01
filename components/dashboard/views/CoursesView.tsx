@@ -15,7 +15,7 @@ import {
   ArrowUpDown,
   CheckCircle,
   Building2,
-  UploadCloud,
+  DownloadCloud,
   X
 } from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
@@ -140,10 +140,10 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent('open-advanced-import'))}
             className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
-            title="Import Courses"
+            title="Import"
             aria-label="Import"
           >
-            <UploadCloud className="w-4 h-4" />
+            <DownloadCloud className="w-4 h-4" />
           </button>
           <button
             id="add-new-course-btn"

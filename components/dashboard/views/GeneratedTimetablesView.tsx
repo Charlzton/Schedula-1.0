@@ -276,8 +276,8 @@ export function GeneratedTimetablesView() {
             onClick={handleGenerate}
             disabled={isGenerating}
             className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer disabled:opacity-50"
-            title="Generate Timetable"
-            aria-label="Generate Timetable"
+            title="Generate"
+            aria-label="Generate"
           >
             <Sparkles className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
           </button>
@@ -287,8 +287,8 @@ export function GeneratedTimetablesView() {
             <button
               onClick={() => setExportDropdownOpen(prev => !prev)}
               className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
-              title="Export Timetable"
-              aria-label="Export Timetable"
+              title="Export"
+              aria-label="Export"
             >
               <Download className="w-4 h-4" />
             </button>
@@ -334,9 +334,9 @@ export function GeneratedTimetablesView() {
           {/* Print Button */}
           <button
             onClick={() => printTimetable(filteredSchedules, { semester: selectedSemester, academicYear: currentAcademicYear })}
-            className="p-2 rounded-xl bg-white/60 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-200 border border-zinc-200/80 dark:border-white/10 shadow-xs transition-all cursor-pointer"
-            title="Print Schedule"
-            aria-label="Print Schedule"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            title="Print"
+            aria-label="Print"
           >
             <Printer className="w-4 h-4" />
           </button>

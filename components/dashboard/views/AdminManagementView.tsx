@@ -200,8 +200,8 @@ export function AdminManagementView() {
             onClick={fetchAdminList}
             disabled={isLoadingList}
             className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer disabled:opacity-50"
-            title="Refresh list"
-            aria-label="Refresh list"
+            title="Refresh"
+            aria-label="Refresh"
           >
             <RefreshCw className={`w-4 h-4 ${isLoadingList ? 'animate-spin' : ''}`} />
           </button>

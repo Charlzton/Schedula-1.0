@@ -85,16 +85,16 @@ export function ReportsView() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto no-print">
+        <div className="flex items-center gap-2 self-start sm:self-auto no-print">
           {/* Export Dropdown */}
           <div ref={exportDropdownRef} className="relative">
             <button
               onClick={() => setExportDropdownOpen(prev => !prev)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/60 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 font-bold text-xs border border-zinc-200/80 dark:border-white/10 shadow-xs transition-colors cursor-pointer"
+              className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+              title="Export"
+              aria-label="Export"
             >
-              <Download className="w-3.5 h-3.5 text-blue-500" />
-              <span>Export</span>
-              <ChevronDown className="w-3 h-3 text-zinc-400" />
+              <Download className="w-4 h-4" />
             </button>
 
             {exportDropdownOpen && (
@@ -139,9 +139,9 @@ export function ReportsView() {
           <button
             type="button"
             onClick={() => printReport(analytics, { semester: selectedSemester, academicYear: '2026/2027' })}
-            className="p-2 rounded-xl bg-white/60 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 text-zinc-700 dark:text-zinc-200 border border-zinc-200/80 dark:border-white/10 shadow-xs transition-all cursor-pointer"
-            title="Print Report"
-            aria-label="Print Report"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            title="Print"
+            aria-label="Print"
           >
             <Printer className="w-4 h-4" />
           </button>

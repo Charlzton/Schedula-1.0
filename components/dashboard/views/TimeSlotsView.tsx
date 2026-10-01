@@ -99,9 +99,11 @@ export function TimeSlotsView({ onOpenAddTimeSlot, onEditTimeSlot }: TimeSlotsVi
         <button
           id="add-new-timeslot-btn"
           onClick={onOpenAddTimeSlot}
-          className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer self-start sm:self-auto"
+          className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer self-start sm:self-auto"
+          title="Add Time Slot"
+          aria-label="Add Time Slot"
         >
-          Add
+          <Plus className="w-4 h-4" />
         </button>
       </div>
 

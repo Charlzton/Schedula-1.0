@@ -465,8 +465,8 @@ export function LecturersView({ onOpenAddLecturer, onEditLecturer }: LecturersVi
                     </button>
 
                     {openRolesDropdownId === lec.lecturerId && (
-                      <div className="absolute right-0 bottom-full mb-1.5 w-38 p-1.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl z-50 animate-in fade-in-50 zoom-in-95">
-                        <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-100 dark:border-zinc-800 mb-1">
+                      <div className="absolute right-0 bottom-full mb-1.5 w-40 p-1.5 rounded-2xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-2xl z-50 animate-in fade-in-50 zoom-in-95">
+                        <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 border-b border-zinc-200/60 dark:border-white/10 mb-1">
                           System Role
                         </div>
                         {[

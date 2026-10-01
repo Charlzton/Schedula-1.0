@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTimetable } from '@/context/TimetableContext';
 import { ScheduleAssignment } from '@/lib/dataset';
 import { exportGeneratedTimetablePDF, exportGeneratedTimetableExcel, exportGeneratedTimetableCSV } from '@/lib/exportUtils';
-import { Clock, MapPin, Users, Calendar, AlertCircle, FileSpreadsheet, FileText } from 'lucide-react';
+import { Clock, MapPin, Users, Calendar, AlertCircle, FileSpreadsheet, FileText, Download } from 'lucide-react';
 
 export function LecturerTeachingScheduleView() {
   const { user, lecturerProfile } = useAuth();
@@ -205,13 +205,15 @@ export function LecturerTeachingScheduleView() {
               type="button"
               onClick={() => setShowExportMenu(prev => !prev)}
               disabled={lecturerSchedules.length === 0}
-              className="px-3 py-2 rounded-2xl bg-white/70 dark:bg-white/5 hover:bg-black/5 dark:hover:bg-white/10 text-zinc-800 dark:text-zinc-200 text-xs font-semibold border border-zinc-200/80 dark:border-white/10 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+              className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer disabled:opacity-50"
+              title="Export"
+              aria-label="Export"
             >
-              Export
+              <Download className="w-4 h-4" />
             </button>
 
             {showExportMenu && (
-              <div className="absolute right-0 mt-1.5 w-44 rounded-2xl liquid-glass border border-zinc-200/80 dark:border-white/10 p-1.5 shadow-xl z-30 space-y-0.5">
+              <div className="absolute right-0 mt-2 w-52 p-2 rounded-2xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-2xl z-50 animate-in fade-in-50 zoom-in-95 space-y-1">
                 <button
                   type="button"
                   onClick={() => {
@@ -222,10 +224,10 @@ export function LecturerTeachingScheduleView() {
                     });
                     setShowExportMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
                 >
-                  <FileText className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Download PDF</span>
+                  <FileText className="w-4 h-4 text-rose-500" />
+                  <span>PDF Document (.pdf)</span>
                 </button>
                 <button
                   type="button"
@@ -237,10 +239,10 @@ export function LecturerTeachingScheduleView() {
                     });
                     setShowExportMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Download Excel</span>
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                  <span>Excel Workbook (.xlsx)</span>
                 </button>
                 <button
                   type="button"
@@ -252,9 +254,10 @@ export function LecturerTeachingScheduleView() {
                     });
                     setShowExportMenu(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left cursor-pointer"
                 >
-                  <span>Download CSV</span>
+                  <Download className="w-4 h-4 text-amber-500" />
+                  <span>CSV Dataset (.csv)</span>
                 </button>
               </div>
             )}
