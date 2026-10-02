@@ -1215,7 +1215,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isSigningOut,
     signInWithEmail,
     signUpWithEmail,
-    verifyLecturerEmail,
     activateLecturerAccount,
     sendPasswordReset,
     signInWithGoogle,
