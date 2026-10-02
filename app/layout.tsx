@@ -6,7 +6,7 @@ import { TimetableProvider } from '@/context/TimetableContext';
 import { ToastProvider } from '@/context/ToastContext';
 
 export const metadata: Metadata = {
-  title: 'Schedula | Intelligent University Timetable Scheduling System',
+  title: 'Schedula',
   description: 'Manage your schedule. Stay in control. Intelligent university timetable scheduling and hall allocation management system for academic administrators.',
   keywords: [
     'Schedula',
@@ -17,8 +17,15 @@ export const metadata: Metadata = {
     'Academic Timetable',
     'Conflict-free Scheduling'
   ],
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' }
+    ],
+    shortcut: '/icon.svg',
+    apple: '/icon.svg'
+  },
   openGraph: {
-    title: 'Schedula | Intelligent University Timetable Scheduling System',
+    title: 'Schedula',
     description: 'Intelligent timetable scheduling and hall allocation management system for academic administrators.',
     type: 'website',
   },
@@ -32,6 +39,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark h-full" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function() {
