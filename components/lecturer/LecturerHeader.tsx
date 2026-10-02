@@ -8,13 +8,11 @@ import {
   Search, 
   User as UserIcon, 
   ChevronDown, 
-  LogOut, 
   Settings,
-  Loader2
+  X
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 import { LecturerViewType } from '@/lib/lecturerTypes';
 import { NotificationBell } from '@/components/NotificationBell';
 
@@ -36,10 +34,10 @@ export function LecturerHeader({
   onOpenProfileModal
 }: LecturerHeaderProps) {
   const { theme, toggleTheme } = useTheme();
-  const { user, lecturerProfile, signOut, isSigningOut } = useAuth();
-  const router = useRouter();
+  const { user, lecturerProfile } = useAuth();
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
@@ -53,72 +51,79 @@ export function LecturerHeader({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSignOut = async () => {
-    setProfileDropdownOpen(false);
-    await signOut();
-    router.replace('/?loggedOut=true');
-  };
-
   const displayName = lecturerProfile?.fullName || user?.name || (user?.email ? user.email.split('@')[0] : 'Faculty Member');
   const displayTitle = lecturerProfile?.title || 'Faculty Member';
   const staffId = lecturerProfile?.lecturerId || user?.lecturerId;
 
   return (
-    <div className="sticky top-0 z-30 w-full px-3 sm:px-4 pt-3 sm:pt-4 pb-2 no-print">
-      <div className="w-full glass-panel px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4 rounded-2xl">
+    <header className="sticky top-0 z-30 w-full px-2 sm:px-4 pt-2 sm:pt-4 pb-2 no-print">
+      <div className="w-full glass-panel px-2.5 sm:px-5 py-2 sm:py-3 flex items-center justify-between gap-1.5 sm:gap-4 rounded-2xl min-w-0">
         
         {/* Left: Mobile Toggle & Welcome Greeting */}
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 sm:flex-initial">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 sm:flex-initial">
           <button
             id="mobile-sidebar-toggle"
             onClick={onOpenMobileMenu}
-            className="lg:hidden p-1.5 sm:p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
-            aria-label="Toggle Navigation Menu"
+            className="lg:hidden p-2 rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all shrink-0 cursor-pointer"
+            aria-label="Open Navigation Drawer"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="min-w-0">
-            <h2 className="text-sm sm:text-base font-bold tracking-tight text-zinc-900 dark:text-white truncate">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xs xs:text-sm sm:text-base font-bold tracking-tight text-zinc-900 dark:text-white truncate">
               {displayName}
             </h2>
             {displayTitle && (
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate -mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 truncate -mt-0.5">
                 {displayTitle} {staffId ? `• ID: ${staffId}` : ''}
               </p>
             )}
           </div>
         </div>
 
-        {/* Right Area: Search, Theme Toggle, Settings, Notification, Profile */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Right Area: Search, Theme Toggle, Settings, Notifications, Profile */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           
-          {/* Quick Search */}
+          {/* Desktop Search */}
           {onSearchChange && (
-            <div className="relative flex items-center">
+            <div className="hidden sm:flex relative items-center">
               <Search className="w-3.5 h-3.5 absolute left-2.5 text-zinc-400 pointer-events-none" />
               <input 
                 type="text"
-                placeholder="Search..."
+                placeholder="Search schedule..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 bg-white/60 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 w-28 xs:w-36 sm:w-48 transition-all"
+                className="pl-8 pr-3 py-1.5 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 bg-white/60 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 w-36 md:w-48 transition-all"
               />
             </div>
           )}
 
-          {/* Theme Toggle (Header Placement) */}
+          {/* Compact Mobile Search Button (< 640px) */}
+          {onSearchChange && (
+            <button
+              type="button"
+              onClick={() => setMobileSearchOpen(true)}
+              className="sm:hidden p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+              aria-label="Search"
+              title="Search"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="p-1.5 sm:p-2 rounded-xl text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none cursor-pointer"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
             id="lecturer-header-theme-toggle"
           >
             {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-zinc-300" />
+              <Sun className="w-4 h-4 text-amber-400" />
             ) : (
-              <Moon className="w-4 h-4 text-zinc-700" />
+              <Moon className="w-4 h-4 text-slate-700" />
             )}
           </button>
 
@@ -133,10 +138,10 @@ export function LecturerHeader({
             }}
             aria-label="Settings"
             title="Settings"
-            className={`p-1.5 sm:p-2 rounded-xl transition-colors focus:outline-none cursor-pointer ${
+            className={`p-2 rounded-xl transition-all cursor-pointer ${
               activeView === 'settings'
                 ? 'text-blue-600 dark:text-blue-400 bg-black/5 dark:bg-white/10 font-semibold'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'
+                : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'
             }`}
             id="lecturer-header-settings-button"
           >
@@ -153,7 +158,7 @@ export function LecturerHeader({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setProfileDropdownOpen(prev => !prev)}
-              className="flex items-center gap-2 p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              className="flex items-center gap-1 p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
               aria-label="User profile options"
               aria-expanded={profileDropdownOpen}
             >
@@ -222,22 +227,6 @@ export function LecturerHeader({
                     <span>Manage Profile</span>
                   </button>
                 </div>
-
-                {/* Sign Out Button */}
-                <div className="pt-2 border-t border-zinc-200/60 dark:border-white/10">
-                  <button
-                    onClick={handleSignOut}
-                    disabled={isSigningOut}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors text-left cursor-pointer disabled:opacity-50"
-                  >
-                    {isSigningOut ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <LogOut className="w-4 h-4" />
-                    )}
-                    <span>{isSigningOut ? 'Signing out...' : 'Sign out'}</span>
-                  </button>
-                </div>
               </div>
             )}
           </div>
@@ -245,6 +234,32 @@ export function LecturerHeader({
         </div>
 
       </div>
-    </div>
+
+      {/* Mobile Search Overlay (< 640px) */}
+      {mobileSearchOpen && onSearchChange && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 bg-black/60 backdrop-blur-sm sm:hidden animate-in fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/10 p-3">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-zinc-400 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                autoFocus
+                placeholder="Search schedule, courses, rooms..."
+                className="w-full text-sm bg-transparent focus:outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400"
+              />
+              <button
+                onClick={() => setMobileSearchOpen(false)}
+                className="p-1 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+                aria-label="Close search"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
   );
 }

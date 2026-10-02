@@ -119,49 +119,18 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header & Stats Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Courses
-            </h2>
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              {filteredCourses.length}
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Department of Computer Science
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent('open-advanced-import'))}
-            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
-            title="Import"
-            aria-label="Import"
-          >
-            <DownloadCloud className="w-4 h-4" />
-          </button>
-          <button
-            id="add-new-course-btn"
-            onClick={onOpenAddCourse}
-            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
-            title="Add Course"
-            aria-label="Add Course"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Courses
+        </h1>
       </div>
 
-      {/* Filters & Search Control Bar */}
+      {/* Filters, Search & Action Controls Grouped Logically (Requirement 5) */}
       <div className="space-y-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           
-          {/* Left group: Semester & Level */}
+          {/* Left group: Semester & Level Selectors */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Semester Selector */}
             <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs overflow-x-auto custom-scrollbar">
@@ -175,12 +144,13 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
                       : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
                   }`}
                 >
-                  {sem}
+                  <span className="hidden sm:inline">{sem}</span>
+                  <span className="inline sm:hidden">{sem === 'All' ? 'All' : sem === 'Semester 1' ? 'S1' : 'S2'}</span>
                 </button>
               ))}
             </div>
 
-            {/* Level Filter Tabs */}
+            {/* Level Filter Tabs (concise L100-L400 on mobile, full on desktop) (Requirement 4 & 9) */}
             <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs overflow-x-auto custom-scrollbar">
               {(['All', '100', '200', '300', '400'] as const).map((lvl) => (
                 <button
@@ -192,14 +162,45 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
                       : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
                   }`}
                 >
-                  {lvl === 'All' ? 'All Levels' : `Level ${lvl}`}
+                  {lvl === 'All' ? (
+                    <span>All</span>
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">Level {lvl}</span>
+                      <span className="inline sm:hidden">L{lvl}</span>
+                    </>
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Right group: Sort selector & Search box */}
-          <div className="flex items-center gap-2">
+          {/* Right group: Actions (Import & Add Course right-aligned) (Requirement 5) */}
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-advanced-import'))}
+              className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+              title="Import"
+              aria-label="Import"
+            >
+              <DownloadCloud className="w-4 h-4" />
+            </button>
+            <button
+              id="add-new-course-btn"
+              onClick={onOpenAddCourse}
+              className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+              title="Add Course"
+              aria-label="Add Course"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Second Row inside space-y-3: Sort selector & Search box */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2 ml-auto">
             <select
               value={`${sortField}-${sortAsc ? 'asc' : 'desc'}`}
               onChange={(e) => {
@@ -276,7 +277,7 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
       {/* Courses Data Table */}
       <div className="rounded-3xl glass-panel overflow-hidden border-white/60 dark:border-white/10">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full border-collapse text-xs min-w-[760px]">
+          <table className="w-full border-collapse text-xs min-w-full lg:min-w-[760px]">
             <thead>
               <tr className="border-b border-zinc-200/80 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-zinc-600 dark:text-zinc-400 uppercase font-bold text-[11px]">
                 <th className="p-3.5 text-center w-10">
@@ -300,26 +301,26 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
                     <ArrowUpDown className="w-3 h-3 text-zinc-400" />
                   </div>
                 </th>
-                <th className="p-3.5 text-left cursor-pointer select-none" onClick={() => handleSort('level')}>
+                <th className="p-3.5 text-left cursor-pointer select-none hidden lg:table-cell" onClick={() => handleSort('level')}>
                   <div className="flex items-center gap-1.5">
                     <span>Level</span>
                     <ArrowUpDown className="w-3 h-3 text-zinc-400" />
                   </div>
                 </th>
-                <th className="p-3.5 text-left">Semester</th>
-                <th className="p-3.5 text-left cursor-pointer select-none" onClick={() => handleSort('totalCredits')}>
+                <th className="p-3.5 text-left hidden lg:table-cell">Semester</th>
+                <th className="p-3.5 text-left cursor-pointer select-none hidden lg:table-cell" onClick={() => handleSort('totalCredits')}>
                   <div className="flex items-center gap-1.5">
                     <span>Credits</span>
                     <ArrowUpDown className="w-3 h-3 text-zinc-400" />
                   </div>
                 </th>
-                <th className="p-3.5 text-left cursor-pointer select-none" onClick={() => handleSort('expectedEnrollment')}>
+                <th className="p-3.5 text-left cursor-pointer select-none hidden lg:table-cell" onClick={() => handleSort('expectedEnrollment')}>
                   <div className="flex items-center gap-1.5">
                     <span>Class Size</span>
                     <ArrowUpDown className="w-3 h-3 text-zinc-400" />
                   </div>
                 </th>
-                <th className="p-3.5 text-left">Hours (L/P)</th>
+                <th className="p-3.5 text-left hidden lg:table-cell">Hours (L/P)</th>
                 <th className="p-3.5 text-left">Assigned Lecturer</th>
                 <th className="p-3.5 text-right actions-column">Actions</th>
               </tr>
@@ -354,25 +355,25 @@ export function CoursesView({ onOpenAddCourse, onEditCourse }: CoursesViewProps)
                         {course.courseCode}
                       </td>
                       <td className="p-3.5">
-                        <div className="font-semibold text-zinc-900 dark:text-white">{course.courseTitle}</div>
+                        <div className="font-semibold text-zinc-900 dark:text-white whitespace-normal break-words max-w-xs">{course.courseTitle}</div>
                         <div className="text-[11px] text-zinc-500 truncate max-w-xs">{course.department}</div>
                       </td>
-                      <td className="p-3.5 font-medium text-zinc-700 dark:text-zinc-300">
+                      <td className="p-3.5 font-medium text-zinc-700 dark:text-zinc-300 hidden lg:table-cell">
                         L{course.level}
                       </td>
-                      <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium">
+                      <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium hidden lg:table-cell">
                         {course.semester}
                       </td>
-                      <td className="p-3.5 font-bold text-zinc-900 dark:text-white">
+                      <td className="p-3.5 font-bold text-zinc-900 dark:text-white hidden lg:table-cell">
                         {course.totalCredits} Cr
                       </td>
-                      <td className="p-3.5 font-medium text-zinc-700 dark:text-zinc-300">
+                      <td className="p-3.5 font-medium text-zinc-700 dark:text-zinc-300 hidden lg:table-cell">
                         {course.expectedEnrollment} students
                       </td>
-                      <td className="p-3.5 text-zinc-600 dark:text-zinc-400">
+                      <td className="p-3.5 text-zinc-600 dark:text-zinc-400 hidden lg:table-cell">
                         {course.theoryHours}h Lec / {course.practicalHours}h Lab
                       </td>
-                      <td className="p-3.5 font-medium text-zinc-800 dark:text-zinc-200">
+                      <td className="p-3.5 font-medium text-zinc-800 dark:text-zinc-200 whitespace-normal break-words">
                         {course.assignedLecturerName || (
                           <span className="text-zinc-400 italic">Unassigned</span>
                         )}

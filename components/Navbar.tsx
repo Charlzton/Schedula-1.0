@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ArrowRight, Home, HelpCircle, Loader2, Sun, Moon } from 'lucide-react';
+import { Menu, X, Loader2, Sun, Moon } from 'lucide-react';
 import { SchedulaLogo } from './SchedulaLogo';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -91,7 +91,7 @@ export function Navbar({
               </a>
             </div>
 
-            {/* Center: Centered Direct Navigation Tabs */}
+            {/* Center: Desktop Navigation Tabs */}
             <nav className="hidden md:flex items-center gap-6">
               <button
                 type="button"
@@ -120,7 +120,7 @@ export function Navbar({
               </button>
             </nav>
 
-            {/* Right: Sign In / Dashboard Button */}
+            {/* Right Desktop Controls (Theme Toggle & Sign In) */}
             <div className="hidden sm:flex items-center gap-2 md:gap-3">
               {/* Theme Toggle Button */}
               <button
@@ -138,7 +138,7 @@ export function Navbar({
                 )}
               </button>
 
-              {/* Single Auth Button: Sign In (if not logged in) / Dashboard (if logged in) */}
+              {/* Desktop Sign In / Dashboard Button */}
               <button
                 type="button"
                 disabled={isNavigatingDashboard}
@@ -165,52 +165,29 @@ export function Navbar({
               </button>
             </div>
 
-            {/* Mobile Navigation Trigger */}
+            {/* Mobile Navigation Controls (Theme Toggle & Hamburger ONLY) */}
             <div className="flex sm:hidden items-center gap-1.5">
               {/* Mobile Theme Toggle */}
               <button
                 type="button"
                 onClick={toggleTheme}
                 aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                className="p-1.5 rounded-xl text-slate-800 dark:text-white/90 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-2 rounded-xl text-slate-800 dark:text-white/90 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                 id="mobile-nav-theme-toggle"
               >
                 {theme === 'dark' ? (
-                  <Sun className="w-4 h-4 text-amber-400" />
+                  <Sun className="w-4.5 h-4.5 text-amber-400" />
                 ) : (
-                  <Moon className="w-4 h-4 text-slate-700" />
+                  <Moon className="w-4.5 h-4.5 text-slate-700" />
                 )}
               </button>
 
-              <button
-                type="button"
-                disabled={isNavigatingDashboard}
-                aria-busy={isNavigatingDashboard}
-                onClick={() => {
-                  if (user) {
-                    if (onDashboardClick) onDashboardClick();
-                  } else {
-                    if (onOpenAuthModal) onOpenAuthModal('signin');
-                    else if (onDashboardClick) onDashboardClick();
-                  }
-                }}
-                className="px-3 py-1.5 rounded-full text-xs font-medium border border-slate-300 dark:border-white/30 bg-white/80 dark:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center gap-1.5 disabled:opacity-75 disabled:cursor-not-allowed"
-              >
-                {isNavigatingDashboard && user ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin shrink-0" />
-                    <span>Loading...</span>
-                  </>
-                ) : (
-                  <span>{user ? 'Dashboard' : 'Sign in'}</span>
-                )}
-              </button>
-
+              {/* Hamburger Toggle Button */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                aria-label="Toggle navigation menu"
-                className="p-1.5 rounded-xl text-slate-800 dark:text-white/90 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                className="p-2 rounded-xl text-slate-800 dark:text-white/90 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                 id="mobile-menu-toggle-btn"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -220,85 +197,65 @@ export function Navbar({
         </div>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Hamburger Navigation Menu (Contains EXACTLY: Overview, FAQ, Sign In) */}
       {mobileMenuOpen && (
         <>
           <div
             onClick={() => setMobileMenuOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 sm:hidden animate-in fade-in duration-200"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs z-40 sm:hidden animate-in fade-in duration-150"
+            aria-hidden="true"
           />
-          <div className="fixed top-16 inset-x-4 z-50 sm:hidden bg-slate-900 dark:bg-[#0F1424] rounded-3xl p-5 shadow-2xl border border-white/20 overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-white font-system">
-            <div className="space-y-4">
-              <div className="pb-3 border-b border-white/10 flex items-center justify-between">
-                <SchedulaLogo size="md" textColor="text-white" />
-                <span className="text-xs text-white/60">Navigation</span>
-              </div>
+          <div className="fixed top-16 right-4 left-4 z-50 sm:hidden max-w-xs ml-auto bg-white/95 dark:bg-[#0f1424]/95 rounded-2xl p-2 shadow-2xl border border-slate-200/80 dark:border-white/10 overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-900 dark:text-white backdrop-blur-xl">
+            <div className="flex flex-col gap-1">
+              {/* 1. Overview */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleHomeClick();
+                }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                Overview
+              </button>
 
-              <div className="space-y-1">
-                <button
-                  type="button"
-                  onClick={handleHomeClick}
-                  className="w-full flex items-center justify-between p-3 rounded-2xl text-left text-sm font-medium text-white/90 hover:bg-white/10 transition-colors"
-                >
-                  <span>Overview</span>
-                </button>
+              {/* 2. FAQ */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleFaqClick();
+                }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold text-slate-800 dark:text-slate-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                FAQ
+              </button>
 
-                <button
-                  type="button"
-                  onClick={handleFaqClick}
-                  className="w-full flex items-center justify-between p-3 rounded-2xl text-left text-sm font-medium text-white/90 hover:bg-white/10 transition-colors"
-                >
-                  <span>FAQ</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => toggleTheme()}
-                  className="w-full flex items-center justify-between p-3 rounded-2xl text-left text-sm font-medium text-white/90 hover:bg-white/10 transition-colors cursor-pointer"
-                >
+              {/* 3. Sign In / Dashboard */}
+              <button
+                type="button"
+                disabled={isNavigatingDashboard}
+                aria-busy={isNavigatingDashboard}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (user) {
+                    if (onDashboardClick) onDashboardClick();
+                  } else {
+                    if (onOpenAuthModal) onOpenAuthModal('signin');
+                    else if (onDashboardClick) onDashboardClick();
+                  }
+                }}
+                className="w-full px-3.5 py-2.5 rounded-xl text-left text-sm font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors cursor-pointer disabled:opacity-75 flex items-center justify-between"
+              >
+                {isNavigatingDashboard && user ? (
                   <span className="flex items-center gap-2">
-                    {theme === 'dark' ? (
-                      <Sun className="w-4 h-4 text-amber-400" />
-                    ) : (
-                      <Moon className="w-4 h-4 text-indigo-400" />
-                    )}
-                    <span>{theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    <span>Loading...</span>
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/70 capitalize">
-                    {theme}
-                  </span>
-                </button>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  disabled={isNavigatingDashboard}
-                  aria-busy={isNavigatingDashboard}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    if (user) {
-                      if (onDashboardClick) onDashboardClick();
-                    } else {
-                      if (onOpenAuthModal) onOpenAuthModal('signup');
-                      else if (onDashboardClick) onDashboardClick();
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-white/30 bg-white/10 hover:bg-white hover:text-slate-900 text-white text-sm font-medium shadow-xs transition-all disabled:opacity-75 disabled:cursor-not-allowed"
-                >
-                  {isNavigatingDashboard && user ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                      <span>Loading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>{user ? 'Dashboard' : 'Get Started'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
+                ) : (
+                  <span>{user ? 'Dashboard' : 'Sign In'}</span>
+                )}
+              </button>
             </div>
           </div>
         </>

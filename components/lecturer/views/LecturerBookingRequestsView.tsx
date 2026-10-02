@@ -68,26 +68,23 @@ export function LecturerBookingRequestsView({
   return (
     <div className="space-y-6 pb-12 font-system">
       
-      {/* 1. View Header */}
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Booking Requests
+        </h1>
+      </div>
+
+      {/* View Header controls bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              Booking Requests
-            </h1>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-              {bookingRequests.length} Total
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Ad-hoc lecture hall and computer lab reservations submitted for review
-          </p>
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          Ad-hoc lecture hall and computer lab reservations submitted for review
         </div>
 
         <button
           type="button"
           onClick={() => onNavigate('rooms')}
-          className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer self-start sm:self-auto"
+          className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer self-end sm:self-auto shrink-0"
           title="New Request"
           aria-label="New Request"
         >

@@ -87,23 +87,20 @@ export function LecturerOverviewView({ onNavigate, bookingRequests, onOpenProfil
   return (
     <div className="space-y-6 pb-12 font-system">
       
-      {/* 1. Header & Identity Bar */}
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Overview
+        </h1>
+      </div>
+
+      {/* Header & Identity Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              Faculty Overview
-            </h1>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-              {activeLecturer?.department || 'Computer Science'}
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            {activeLecturer?.title || 'Faculty Member'} • Staff ID: {activeLecturer?.lecturerId || 'FACULTY'}
-          </p>
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          Faculty portfolio and scheduled class summary for {lecturerName}
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <button
             type="button"
             onClick={() => onNavigate('rooms')}

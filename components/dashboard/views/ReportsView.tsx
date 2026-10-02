@@ -69,23 +69,20 @@ export function ReportsView() {
         </div>
       </div>
 
-      {/* Header */}
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Reports
+        </h1>
+      </div>
+
+      {/* Controls and Actions Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Reports
-            </h2>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-              {selectedSemester}
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Faculty workload and room utilization audit
-          </p>
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          Faculty workload and room utilization audit
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto no-print">
+        <div className="flex items-center gap-2 self-end sm:self-auto no-print">
           {/* Export Dropdown */}
           <div ref={exportDropdownRef} className="relative">
             <button
@@ -201,12 +198,12 @@ export function ReportsView() {
         </div>
 
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse text-xs min-w-[650px]">
+          <table className="w-full text-left border-collapse text-xs min-w-full lg:min-w-[650px]">
             <thead>
               <tr className="border-b border-zinc-200/80 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                 <th className="py-3 px-4">Lecturer Name</th>
-                <th className="py-3 px-4">Title / Rank</th>
-                <th className="py-3 px-4">Assigned Courses</th>
+                <th className="py-3 px-4 hidden lg:table-cell">Title / Rank</th>
+                <th className="py-3 px-4 hidden lg:table-cell">Assigned Courses</th>
                 <th className="py-3 px-3 text-center">Sessions Scheduled</th>
                 <th className="py-3 px-3 text-center">Weekly Contact Hours</th>
                 <th className="py-3 px-4 text-center">Workload Rating</th>
@@ -219,13 +216,13 @@ export function ReportsView() {
 
                 return (
                   <tr key={lec.lecturerId} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-zinc-900 dark:text-white">
+                    <td className="py-3.5 px-4 font-bold text-zinc-900 dark:text-white whitespace-normal break-words">
                       {lec.fullName}
                     </td>
-                    <td className="py-3.5 px-4 text-zinc-600 dark:text-zinc-400">
+                    <td className="py-3.5 px-4 text-zinc-600 dark:text-zinc-400 hidden lg:table-cell">
                       {lec.title}
                     </td>
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 hidden lg:table-cell">
                       <div className="flex flex-wrap gap-1">
                         {getCourses(lec.specializations || lec.assignedCourses).map(c => (
                           <span key={c} className="px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-mono text-[10px] font-bold">
@@ -270,11 +267,11 @@ export function ReportsView() {
         </div>
 
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse text-xs min-w-[650px]">
+          <table className="w-full text-left border-collapse text-xs min-w-full lg:min-w-[650px]">
             <thead>
               <tr className="border-b border-zinc-200/80 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[11px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                 <th className="py-3 px-4">Venue Name</th>
-                <th className="py-3 px-4">Type</th>
+                <th className="py-3 px-4 hidden lg:table-cell">Type</th>
                 <th className="py-3 px-4">Capacity</th>
                 <th className="py-3 px-3 text-center">Allocated Sessions</th>
                 <th className="py-3 px-3 text-center">Weekly Hours</th>
@@ -289,10 +286,10 @@ export function ReportsView() {
 
                 return (
                   <tr key={fac.hallId} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-zinc-900 dark:text-white">
+                    <td className="py-3.5 px-4 font-bold text-zinc-900 dark:text-white whitespace-normal break-words">
                       {fac.hallName}
                     </td>
-                    <td className="py-3.5 px-4 text-zinc-600 dark:text-zinc-400">
+                    <td className="py-3.5 px-4 text-zinc-600 dark:text-zinc-400 hidden lg:table-cell">
                       {fac.venueType}
                     </td>
                     <td className="py-3.5 px-4 font-mono font-semibold text-zinc-800 dark:text-zinc-200">

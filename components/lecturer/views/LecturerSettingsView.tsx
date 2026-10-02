@@ -168,51 +168,49 @@ export function LecturerSettingsView() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      {/* Header Section */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Faculty Settings
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Settings
         </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-          Manage your faculty profile, appearance preferences, and account security.
-        </p>
       </div>
 
-      {/* Tabs Navigation */}
+      {/* Tabs Navigation (shortened on mobile to eliminate horizontal scroll) */}
       <div className="flex border-b border-zinc-200 dark:border-white/10 gap-2">
         <button
           onClick={() => setActiveTab('account')}
-          className={`flex items-center gap-2 py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
+          className={`flex items-center justify-center gap-2 py-3 px-3 border-b-2 font-medium text-sm transition-colors flex-1 ${
             activeTab === 'account'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
               : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
           }`}
         >
-          <UserIcon className="w-4 h-4" />
-          <span>Faculty Profile</span>
+          <UserIcon className="w-4 h-4 shrink-0" />
+          <span className="hidden sm:inline">Faculty Profile</span>
+          <span className="inline sm:hidden">Profile</span>
         </button>
 
         <button
           onClick={() => setActiveTab('appearance')}
-          className={`flex items-center gap-2 py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
+          className={`flex items-center justify-center gap-2 py-3 px-3 border-b-2 font-medium text-sm transition-colors flex-1 ${
             activeTab === 'appearance'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
               : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
           }`}
         >
-          <Palette className="w-4 h-4" />
+          <Palette className="w-4 h-4 shrink-0" />
           <span>Appearance</span>
         </button>
 
         <button
           onClick={() => setActiveTab('security')}
-          className={`flex items-center gap-2 py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
+          className={`flex items-center justify-center gap-2 py-3 px-3 border-b-2 font-medium text-sm transition-colors flex-1 ${
             activeTab === 'security'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
               : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
           }`}
         >
-          <Shield className="w-4 h-4" />
+          <Shield className="w-4 h-4 shrink-0" />
           <span>Security</span>
         </button>
       </div>

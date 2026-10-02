@@ -155,26 +155,23 @@ export function LecturerTeachingScheduleView() {
 
   return (
     <div className="space-y-6 pb-12 font-system">
-      
-      {/* 1. Header & Segmented View Mode Toggle */}
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Schedule
+        </h1>
+      </div>
+
+      {/* View Mode Toggle & Export Controls Bar (Requirement 17, 26) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              Teaching Schedule
-            </h1>
-            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-              ({lecturerSchedules.length} Sessions)
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            {currentLecturer.fullName} ({currentLecturer.lecturerId}) • {totalWeeklyTeachingHours} weekly contact hours
-          </p>
+        {/* Empty space or additional label */}
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          Personal faculty course timetable
         </div>
 
-        {/* View Mode Toggle & Export Controls */}
-        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-          <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs">
+        {/* View Mode Toggle (hidden on mobile, defaults to agenda view) & Export Controls */}
+        <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto shrink-0">
+          <div className="hidden sm:flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs">
             <button
               type="button"
               onClick={() => setViewMode('agenda')}

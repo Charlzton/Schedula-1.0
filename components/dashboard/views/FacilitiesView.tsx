@@ -97,31 +97,11 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header & Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Facilities
-            </h2>
-            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              {facilities.length}
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Department of Computer Science
-          </p>
-        </div>
-
-        <button
-          id="add-new-facility-btn"
-          onClick={onOpenAddFacility}
-          className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer self-start sm:self-auto"
-          title="Add Facility"
-          aria-label="Add Facility"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Facilities
+        </h1>
       </div>
 
       {/* Success Notification */}
@@ -134,7 +114,7 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
         </div>
       )}
 
-      {/* Filter and Search Bar */}
+      {/* Filter, Search & Actions Bar (Requirement 17 & 26) */}
       <div className="space-y-3 no-print">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1">
@@ -149,17 +129,28 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-end">
             <button
               onClick={handleSelectAll}
               className="px-3 py-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
             >
               {isAllFilteredSelected ? 'Deselect all' : 'Select all'}
             </button>
+
+            {/* Add Facility right-aligned on same row (Requirement 17 & 26) */}
+            <button
+              id="add-new-facility-btn"
+              onClick={onOpenAddFacility}
+              className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer shrink-0"
+              title="Add Facility"
+              aria-label="Add Facility"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* Venue Type Filter */}
+        {/* Venue Type Filter (shortened on mobile) (Requirement 7 & 9) */}
         <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 p-1 rounded-2xl border border-zinc-200/60 dark:border-white/10 text-xs overflow-x-auto custom-scrollbar max-w-full">
           {['All', 'Lecture Theatre', 'Lecture Hall', 'Auditorium', 'Computer Lab'].map(type => (
             <button
@@ -171,7 +162,10 @@ export function FacilitiesView({ onOpenAddFacility, onEditFacility }: Facilities
                   : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
               }`}
             >
-              {type}
+              <span className="hidden sm:inline">{type}</span>
+              <span className="inline sm:hidden">
+                {type === 'Lecture Theatre' ? 'Theatre' : type === 'Lecture Hall' ? 'Hall' : type === 'Computer Lab' ? 'Lab' : type}
+              </span>
             </button>
           ))}
         </div>

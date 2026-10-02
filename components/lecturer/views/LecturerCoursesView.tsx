@@ -71,38 +71,14 @@ export function LecturerCoursesView() {
 
   return (
     <div className="space-y-6 pb-12 font-system">
-      {/* 1. Header & Identity */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              Assigned Courses
-            </h1>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-              {filteredCourses.length} {filteredCourses.length === 1 ? 'Course' : 'Courses'}
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Teaching catalog allocated to {facultyName} ({facultyId}) • {activeAcademicPeriod?.academicYear || currentAcademicYear}
-          </p>
-        </div>
-
-        {/* Export button */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            disabled={filteredCourses.length === 0}
-            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer disabled:opacity-50"
-            title="Export"
-            aria-label="Export"
-          >
-            <Download className="w-4 h-4" />
-          </button>
-        </div>
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          My Courses
+        </h1>
       </div>
 
-      {/* 2. Filter Toolbar */}
+      {/* 2. Filter Toolbar & Export button (Requirement 17, 26) */}
       <div className="p-4 sm:p-5 rounded-3xl liquid-glass border border-zinc-200/70 dark:border-white/10 space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Search Field */}
@@ -117,7 +93,7 @@ export function LecturerCoursesView() {
             />
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
             {/* Semester Selector */}
             <div className="flex items-center gap-1 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-xs">
               {(['All', 'Semester 1', 'Semester 2'] as const).map((sem) => (
@@ -131,7 +107,8 @@ export function LecturerCoursesView() {
                       : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
                   }`}
                 >
-                  {sem}
+                  <span className="hidden sm:inline">{sem}</span>
+                  <span className="inline sm:hidden">{sem === 'All' ? 'All' : sem === 'Semester 1' ? 'S1' : 'S2'}</span>
                 </button>
               ))}
             </div>
@@ -149,10 +126,29 @@ export function LecturerCoursesView() {
                       : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
                   }`}
                 >
-                  {lvl}
+                  {lvl === 'All' ? (
+                    <span>All</span>
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">Level {lvl}</span>
+                      <span className="inline sm:hidden">L{lvl}</span>
+                    </>
+                  )}
                 </button>
               ))}
             </div>
+
+            {/* Export button aligned next to filters */}
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              disabled={filteredCourses.length === 0}
+              className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer disabled:opacity-50 shrink-0"
+              title="Export"
+              aria-label="Export"
+            >
+              <Download className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>

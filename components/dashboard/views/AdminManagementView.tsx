@@ -184,18 +184,20 @@ export function AdminManagementView() {
 
   return (
     <div className="w-full space-y-6">
-      {/* Top Header Card */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800">
-        <div>
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-            Administrator Accounts
-          </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Manage administrative access, privilege levels, and provision secure institutional accounts
-          </p>
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Administrators
+        </h1>
+      </div>
+
+      {/* Controls and Actions Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800">
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          Manage administrative access, privilege levels, and provision secure institutional accounts
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <button
             id="refresh-admins-btn"
             onClick={fetchAdminList}

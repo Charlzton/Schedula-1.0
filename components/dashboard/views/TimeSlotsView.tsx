@@ -80,45 +80,16 @@ export function TimeSlotsView({ onOpenAddTimeSlot, onEditTimeSlot }: TimeSlotsVi
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Academic Time Slots & Period Matrix
-            </h2>
-            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-              ({timeSlots.length} Period Blocks)
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Standardized lecture & practical period blocks • Monday through Friday (07:30 AM - 05:30 PM)
-          </p>
-        </div>
-
-        <button
-          id="add-new-timeslot-btn"
-          onClick={onOpenAddTimeSlot}
-          className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer self-start sm:self-auto"
-          title="Add Time Slot"
-          aria-label="Add Time Slot"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Time Slots
+        </h1>
       </div>
 
-      {/* Success Notification */}
-      {bulkSuccessMsg && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-          <span>{bulkSuccessMsg}</span>
-          <button onClick={() => setBulkSuccessMsg(null)} className="text-zinc-400 hover:text-zinc-700 dark:hover:text-white">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Day Filter Tabs and Select All */}
+      {/* Filter and Actions Bar (Requirement 17 & 26) */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 no-print">
+        {/* Left Filters */}
         <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 sm:pb-0 max-w-full">
           <button
             onClick={() => setDayFilter('All')}
@@ -128,33 +99,53 @@ export function TimeSlotsView({ onOpenAddTimeSlot, onEditTimeSlot }: TimeSlotsVi
                 : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
             }`}
           >
-            All Days ({timeSlots.length})
+            All Days
           </button>
-          {daysOfWeek.map(day => {
-            const count = timeSlots.filter(s => s.day === day).length;
-            return (
-              <button
-                key={day}
-                onClick={() => setDayFilter(day)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  dayFilter === day
-                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
-                }`}
-              >
-                {day} ({count})
-              </button>
-            );
-          })}
+          {daysOfWeek.map(day => (
+            <button
+              key={day}
+              onClick={() => setDayFilter(day)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                dayFilter === day
+                  ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 shadow-xs'
+                  : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+              }`}
+            >
+              {day}
+            </button>
+          ))}
         </div>
 
-        <button
-          onClick={handleSelectAll}
-          className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer self-start sm:self-auto shrink-0"
-        >
-          {isAllFilteredSelected ? 'Deselect All' : 'Select All Filtered'}
-        </button>
+        {/* Right Actions */}
+        <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-end">
+          <button
+            onClick={handleSelectAll}
+            className="px-3 py-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 border border-zinc-200/60 dark:border-white/10 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+          >
+            {isAllFilteredSelected ? 'Deselect all' : 'Select all'}
+          </button>
+
+          <button
+            id="add-new-timeslot-btn"
+            onClick={onOpenAddTimeSlot}
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer shrink-0"
+            title="Add Time Slot"
+            aria-label="Add Time Slot"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
       </div>
+
+      {/* Success Notification */}
+      {bulkSuccessMsg && (
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <span>{bulkSuccessMsg}</span>
+          <button onClick={() => setBulkSuccessMsg(null)} className="p-4 text-zinc-400 hover:text-zinc-700 dark:hover:text-white cursor-pointer" aria-label="Dismiss notification">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Floating Bulk Actions Bar */}
       {selectedIds.length > 0 && (

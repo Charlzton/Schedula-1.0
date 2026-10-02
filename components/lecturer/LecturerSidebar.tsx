@@ -7,7 +7,6 @@ import {
   CalendarDays, 
   BookOpen,
   ClipboardList, 
-  Settings,
   LogOut,
   X,
   Loader2
@@ -32,8 +31,7 @@ export function LecturerSidebar({
   setActiveView,
   pendingRequestsCount = 0,
   mobileOpen = false,
-  onCloseMobile,
-  onOpenProfileModal
+  onCloseMobile
 }: LecturerSidebarProps) {
   const { signOut, user, lecturerProfile, isSigningOut: authIsSigningOut } = useAuth();
   const { theme, mounted } = useTheme();
@@ -104,9 +102,9 @@ export function LecturerSidebar({
   const staffId = lecturerProfile?.lecturerId || user?.lecturerId || 'Faculty';
 
   const renderSidebarContent = (isExpanded: boolean, isMobileView: boolean = false) => (
-    <div className="w-full h-full glass-sidebar flex flex-col justify-between overflow-hidden rounded-3xl">
+    <div className="w-full h-full glass-sidebar flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border border-zinc-200/80 dark:border-white/10 shadow-2xl">
       
-      {/* Top Section: Brand Logo */}
+      {/* Top Section: Brand Logo & Close button */}
       <div className="p-3 sm:p-3.5 border-b border-zinc-200/60 dark:border-white/10 shrink-0">
         <div className={`flex items-center min-h-[36px] ${isExpanded ? 'justify-between' : 'justify-center'}`}>
           <div className={`flex items-center min-w-0 overflow-hidden ${isExpanded ? 'gap-2.5' : 'justify-center w-full'}`}>
@@ -125,13 +123,13 @@ export function LecturerSidebar({
               className="p-1.5 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="Close navigation menu"
             >
-              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+              <X className="w-5 h-5" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Middle: Navigation Items */}
+      {/* Middle: Navigation Items (Scrollable if viewport is short) */}
       <div className="flex-1 flex flex-col justify-start gap-1 sm:gap-1.5 px-2 sm:px-3 py-2.5 min-h-0 overflow-y-auto custom-scrollbar">
         <div className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 shrink-0 h-4 flex items-center justify-center mb-1">
           <span className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
@@ -154,7 +152,7 @@ export function LecturerSidebar({
               className={`
                 w-full flex items-center transition-all duration-200 group cursor-pointer shrink-0 rounded-2xl select-none
                 ${isExpanded 
-                  ? `px-2.5 py-1.5 justify-between ${
+                  ? `px-2.5 py-2 justify-between ${
                       isActive 
                         ? 'bg-zinc-200/70 dark:bg-white/10 text-zinc-900 dark:text-white font-semibold border border-zinc-300/60 dark:border-white/15 shadow-2xs' 
                         : 'text-zinc-700 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white border border-transparent'
@@ -163,7 +161,7 @@ export function LecturerSidebar({
                 }
               `}
             >
-              {/* Left Group: Direct Icon + Revealable Label */}
+              {/* Left Group: Icon + Label */}
               <div className={`flex items-center min-w-0 ${isExpanded ? 'gap-3' : 'justify-center w-full'}`}>
                 <div 
                   className={`
@@ -179,13 +177,13 @@ export function LecturerSidebar({
                 </div>
 
                 <div className={`sidebar-text-reveal text-left ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
-                  <span className={`truncate block text-[13px] ${isActive ? 'font-semibold text-zinc-900 dark:text-white' : 'font-medium'}`}>
+                  <span className={`truncate block text-xs sm:text-[13px] ${isActive ? 'font-semibold text-zinc-900 dark:text-white' : 'font-medium'}`}>
                     {item.label}
                   </span>
                 </div>
               </div>
 
-              {/* Right Group: Raw Number Count (No pill container) */}
+              {/* Right Group: Badge Count */}
               {item.badge !== undefined && (
                 <div className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
                   <span className={`text-xs font-semibold ml-1.5 ${
@@ -200,8 +198,8 @@ export function LecturerSidebar({
         })}
       </div>
 
-      {/* Bottom: Current Faculty Profile & Sign Out */}
-      <div className="p-2.5 sm:p-3 border-t border-zinc-200/70 dark:border-white/10 bg-black/5 dark:bg-black/20 shrink-0 space-y-2">
+      {/* Bottom: Anchored Faculty Profile & ALWAYS ACCESSIBLE Sign Out */}
+      <div className="p-2.5 sm:p-3 border-t border-zinc-200/70 dark:border-white/10 bg-black/5 dark:bg-black/20 shrink-0 space-y-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <div 
           onClick={() => {
             setActiveView('settings');
@@ -211,7 +209,7 @@ export function LecturerSidebar({
           title={!isExpanded ? displayName : 'Faculty Profile & Settings'}
         >
           {user?.avatar ? (
-            <div className="w-10.5 h-10.5 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shrink-0 shadow-2xs flex items-center justify-center">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-800 shrink-0 shadow-2xs flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={user.avatar}
@@ -220,7 +218,7 @@ export function LecturerSidebar({
               />
             </div>
           ) : (
-            <div className="w-10.5 h-10.5 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center text-xs font-bold shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center text-xs font-bold shrink-0">
               {displayName.charAt(0).toUpperCase()}
             </div>
           )}
@@ -235,13 +233,14 @@ export function LecturerSidebar({
           </div>
         </div>
 
+        {/* ALWAYS ACCESSIBLE SIGN OUT BUTTON */}
         <button
           id="lecturer-sidebar-logout"
           onClick={handleLogout}
           disabled={isSigningOut || authIsSigningOut}
           title={!isExpanded ? 'Sign Out' : undefined}
-          className={`w-full flex items-center rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-60 ${
-            isExpanded ? 'px-3 py-2 justify-start gap-2.5' : 'p-0 justify-center h-10.5'
+          className={`w-full flex items-center rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 active:scale-98 transition-all cursor-pointer disabled:opacity-60 ${
+            isExpanded ? 'px-3 py-2 justify-start gap-2.5' : 'p-0 justify-center h-10'
           }`}
         >
           {isSigningOut || authIsSigningOut ? (
@@ -250,7 +249,7 @@ export function LecturerSidebar({
             <LogOut className="w-4 h-4 shrink-0" />
           )}
           <div className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
-            <span>{isSigningOut || authIsSigningOut ? 'Signing out...' : 'Sign out'}</span>
+            <span>{isSigningOut || authIsSigningOut ? 'Signing out...' : 'Sign Out'}</span>
           </div>
         </button>
       </div>
@@ -264,7 +263,7 @@ export function LecturerSidebar({
       {/* =================================================================== */}
       {mobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 dark:bg-black/75 z-50 lg:hidden backdrop-blur-sm transition-opacity duration-300 animate-in fade-in no-print cursor-pointer"
+          className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 lg:hidden backdrop-blur-md transition-opacity duration-200 animate-in fade-in no-print cursor-pointer"
           onClick={onCloseMobile}
           aria-hidden="true"
         />
@@ -273,9 +272,9 @@ export function LecturerSidebar({
       <aside 
         id="lecturer-sidebar-mobile"
         className={`
-          no-print fixed top-0 left-0 h-screen z-50 lg:hidden
-          w-72 max-w-[85vw] p-3 shrink-0
-          flex flex-col transition-transform duration-300 ease-in-out
+          no-print fixed top-0 left-0 h-[100dvh] max-h-[100dvh] z-50 lg:hidden
+          w-72 max-w-[85vw] p-2.5 sm:p-3 shrink-0
+          flex flex-col transition-transform duration-250 ease-out
           ${mobileOpen 
             ? 'translate-x-0 shadow-2xl' 
             : '-translate-x-full pointer-events-none invisible'
@@ -287,7 +286,6 @@ export function LecturerSidebar({
 
       {/* =================================================================== */}
       {/* 2. Desktop Floating Overlay Sidebar (>= 1024px)                     */}
-      {/* Static 88px layout footprint prevents content reflow.               */}
       {/* =================================================================== */}
       <div 
         className="hidden lg:block w-[88px] shrink-0 h-screen relative z-40 no-print"

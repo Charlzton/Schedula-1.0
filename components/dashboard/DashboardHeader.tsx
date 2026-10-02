@@ -11,18 +11,15 @@ import {
   Users, 
   User as UserIcon,
   ChevronDown,
-  LogOut,
   Sliders,
-  Shield,
-  Loader2,
   Sun,
-  Moon
+  Moon,
+  X
 } from 'lucide-react';
 import { useTimetable } from '@/context/TimetableContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { NotificationBell } from '@/components/NotificationBell';
-import Image from 'next/image';
 
 interface DashboardHeaderProps {
   onOpenMobileMenu: () => void;
@@ -38,12 +35,13 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
     facilities,
     lecturers
   } = useTimetable();
-  const { user, signOut, isSigningOut } = useAuth();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileSearchModalOpen, setMobileSearchModalOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Profile dropdown
@@ -83,34 +81,35 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
   const totalResults = filteredCourses.length + filteredFacilities.length + filteredLecturers.length;
 
   return (
-    <div className="sticky top-0 z-30 w-full px-3 sm:px-4 pt-3 sm:pt-4 pb-2 no-print">
-      <div className="w-full glass-panel px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4 rounded-2xl">
+    <header className="sticky top-0 z-30 w-full px-2 sm:px-4 pt-2 sm:pt-4 pb-2 no-print">
+      <div className="w-full glass-panel px-2.5 sm:px-5 py-2 sm:py-3 flex items-center justify-between gap-1.5 sm:gap-4 rounded-2xl min-w-0">
         
         {/* Left: Mobile Toggle & Welcome Greeting */}
-        <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 sm:flex-initial">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 sm:flex-initial">
           <button
             id="mobile-sidebar-toggle"
             onClick={onOpenMobileMenu}
-            className="lg:hidden p-1.5 sm:p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0"
-            aria-label="Toggle Navigation Menu"
+            className="lg:hidden p-2 rounded-xl text-zinc-700 dark:text-zinc-200 hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all shrink-0 cursor-pointer"
+            aria-label="Open Navigation Drawer"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="min-w-0">
-            <h1 className="text-sm sm:text-base lg:text-lg font-bold tracking-tight text-zinc-900 dark:text-white truncate">
-              <span>Welcome, </span><span className="text-blue-600 dark:text-blue-400">{formattedName}</span>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xs xs:text-sm sm:text-base lg:text-lg font-bold tracking-tight text-zinc-900 dark:text-white truncate">
+              <span className="hidden xs:inline text-zinc-500 dark:text-zinc-400 font-medium">Welcome, </span>
+              <span className="text-blue-600 dark:text-blue-400 font-bold">{formattedName}</span>
             </h1>
           </div>
         </div>
 
-        {/* Right Area: Search, Theme Toggle, Settings, Profile */}
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        {/* Right Area: Search, Theme Toggle, Notifications, Settings, Profile */}
+        <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
           
-          {/* Minimalist Glass Search Bar */}
-          <div ref={searchRef} className="relative">
-            <div className="relative flex items-center glass-input px-2.5 sm:px-3 py-1.5 w-28 xs:w-36 sm:w-48 md:w-60 transition-all">
-              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-400 mr-1.5 sm:mr-2 shrink-0" />
+          {/* Desktop Search Bar (Hidden on Mobile) */}
+          <div ref={searchRef} className="hidden sm:block relative">
+            <div className="relative flex items-center glass-input px-3 py-1.5 w-40 md:w-56 lg:w-64 transition-all">
+              <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-400 mr-2 shrink-0" />
               <input
                 id="global-search-input"
                 type="text"
@@ -120,16 +119,16 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
                   setSearchOpen(true);
                 }}
                 onFocus={() => setSearchOpen(true)}
-                placeholder="Search..."
+                placeholder="Search schedule..."
                 className="bg-transparent text-xs sm:text-sm w-full focus:outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400 min-w-0"
               />
             </div>
 
-            {/* Live Search Results Dropdown - Perfectly Viewport-Contained */}
+            {/* Desktop Live Search Results Dropdown */}
             {searchOpen && searchQuery.trim().length > 0 && (
               <div 
                 id="global-search-results-dropdown"
-                className="fixed sm:absolute top-[64px] sm:top-full left-3 sm:left-auto right-3 sm:right-0 sm:w-88 md:w-96 mt-2 p-2.5 sm:p-3 rounded-2xl glass-modal z-50 animate-in fade-in-50 zoom-in-95 max-w-[calc(100vw-24px)] sm:max-w-none max-h-[min(70vh,420px)] flex flex-col"
+                className="absolute top-full right-0 w-88 md:w-96 mt-2 p-3 rounded-2xl glass-modal z-50 shadow-2xl animate-in fade-in-50 zoom-in-95 max-h-[70vh] flex flex-col"
               >
                 {totalResults === 0 ? (
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center py-4">
@@ -219,12 +218,23 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
             )}
           </div>
 
+          {/* Compact Mobile Search Button (< 640px) */}
+          <button
+            type="button"
+            onClick={() => setMobileSearchModalOpen(true)}
+            className="sm:hidden p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+            aria-label="Search"
+            title="Search"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer"
+            className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
             id="dashboard-header-theme-toggle"
           >
             {theme === 'dark' ? (
@@ -245,7 +255,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
             onClick={() => setActiveView('settings')}
             aria-label="Open Settings"
             title="Settings"
-            className={`p-2 rounded-xl transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 cursor-pointer ${
+            className={`p-2 rounded-xl transition-all cursor-pointer ${
               activeView === 'settings'
                 ? 'text-blue-600 dark:text-blue-400 bg-black/5 dark:bg-white/10 font-semibold'
                 : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'
@@ -260,10 +270,10 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
               onClick={() => setProfileOpen(prev => !prev)}
               aria-label="User profile menu"
               title="Manage Account"
-              className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+              className="flex items-center gap-1 p-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-all cursor-pointer"
             >
               {user?.avatar ? (
-                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-blue-500/30 ring-1 ring-white/50 dark:ring-white/10 shrink-0">
+                <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border border-blue-500/30 ring-1 ring-white/50 dark:ring-white/10 shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={user.avatar}
@@ -272,16 +282,16 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
                   />
                 </div>
               ) : (
-                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
                   {formattedName.charAt(0).toUpperCase()}
                 </div>
               )}
               <ChevronDown className="w-3 h-3 text-zinc-400 hidden sm:block" />
             </button>
 
-            {/* Glassmorphic Profile Menu Dropdown */}
+            {/* Profile Dropdown Menu (Clean & Focused on Account/Preferences) */}
             {profileOpen && (
-              <div className="absolute top-full right-0 mt-2 w-64 max-w-[calc(100vw-24px)] p-3 rounded-2xl glass-modal z-50 animate-in fade-in-50 zoom-in-95">
+              <div className="absolute top-full right-0 mt-2 w-64 max-w-[calc(100vw-24px)] p-3 rounded-2xl glass-modal z-50 shadow-2xl animate-in fade-in-50 zoom-in-95">
                 {/* User Info Header */}
                 <div className="p-2 border-b border-zinc-200/60 dark:border-white/10 flex items-center gap-3">
                   {user?.avatar ? (
@@ -311,7 +321,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
                   </div>
                 </div>
 
-                {/* Navigation Links */}
+                {/* Account Links */}
                 <div className="py-2 space-y-1">
                   <button
                     onClick={() => {
@@ -335,32 +345,122 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
                     <span>Scheduling Preferences</span>
                   </button>
                 </div>
-
-                {/* Sign Out Action */}
-                <div className="pt-2 border-t border-zinc-200/60 dark:border-white/10">
-                  <button
-                    onClick={async () => {
-                      setProfileOpen(false);
-                      await signOut();
-                      router.replace('/?loggedOut=true');
-                    }}
-                    disabled={isSigningOut}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors text-left cursor-pointer disabled:opacity-50"
-                  >
-                    {isSigningOut ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <LogOut className="w-4 h-4" />
-                    )}
-                    <span>{isSigningOut ? 'Signing out...' : 'Sign Out'}</span>
-                  </button>
-                </div>
               </div>
             )}
           </div>
 
         </div>
       </div>
-    </div>
+
+      {/* Mobile Search Modal Overlay (< 640px) */}
+      {mobileSearchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 bg-black/60 backdrop-blur-sm sm:hidden animate-in fade-in">
+          <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-white/10 overflow-hidden">
+            <div className="p-3 border-b border-zinc-200/60 dark:border-white/10 flex items-center gap-2">
+              <Search className="w-4 h-4 text-zinc-400 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                placeholder="Search courses, halls, faculty..."
+                className="w-full text-sm bg-transparent focus:outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400"
+              />
+              <button
+                onClick={() => {
+                  setMobileSearchModalOpen(false);
+                  setSearchQuery('');
+                }}
+                className="p-1 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white cursor-pointer"
+                aria-label="Close search"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 max-h-[60vh] overflow-y-auto">
+              {!searchQuery.trim() ? (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center py-6">
+                  Type to search courses, facilities, and lecturers.
+                </p>
+              ) : totalResults === 0 ? (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 text-center py-6">
+                  No matches found for &ldquo;{searchQuery}&rdquo;
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {filteredCourses.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 py-1">Courses</div>
+                      {filteredCourses.map(c => (
+                        <div
+                          key={c.courseCode}
+                          onClick={() => {
+                            setActiveView('courses');
+                            setMobileSearchModalOpen(false);
+                          }}
+                          className="flex items-center justify-between p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                            <BookOpen className="w-4 h-4 text-blue-500 shrink-0" />
+                            <span className="font-bold text-zinc-900 dark:text-white shrink-0">{c.courseCode}</span>
+                            <span className="text-zinc-500 dark:text-zinc-400 truncate">{c.courseTitle}</span>
+                          </div>
+                          <span className="text-xs text-zinc-500 shrink-0">L{c.level}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {filteredFacilities.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 py-1">Facilities</div>
+                      {filteredFacilities.map(f => (
+                        <div
+                          key={f.hallId}
+                          onClick={() => {
+                            setActiveView('facilities');
+                            setMobileSearchModalOpen(false);
+                          }}
+                          className="flex items-center justify-between p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                            <Building2 className="w-4 h-4 text-zinc-400 shrink-0" />
+                            <span className="font-bold text-zinc-900 dark:text-white shrink-0">{f.hallName}</span>
+                          </div>
+                          <span className="text-xs text-zinc-500 shrink-0">{f.capacity} seats</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {filteredLecturers.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 py-1">Faculty</div>
+                      {filteredLecturers.map(l => (
+                        <div
+                          key={l.lecturerId}
+                          onClick={() => {
+                            setActiveView('lecturers');
+                            setMobileSearchModalOpen(false);
+                          }}
+                          className="flex items-center justify-between p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                            <Users className="w-4 h-4 text-indigo-500 shrink-0" />
+                            <span className="font-bold text-zinc-900 dark:text-white truncate">{l.fullName}</span>
+                          </div>
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">{l.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
   );
 }

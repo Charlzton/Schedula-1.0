@@ -136,24 +136,21 @@ export function LecturerRoomAvailabilityView({ onAddBookingRequest }: LecturerRo
   return (
     <div className="space-y-6 pb-12 font-system">
       
-      {/* 1. Header */}
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Room Availability
+        </h1>
+      </div>
+
+      {/* Header Controls and Status Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              Room Availability
-            </h1>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-              {availableCount} Open Now
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Campus lecture halls, seminar rooms, and computer labs
-          </p>
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          Campus lecture halls, seminar rooms, and computer labs
         </div>
 
         {/* Status Count Badges */}
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-2 text-xs self-end sm:self-auto shrink-0">
           <span className="px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
             {availableCount} Available
           </span>

@@ -238,25 +238,21 @@ export function GeneratedTimetablesView() {
         </div>
       </div>
 
-      {/* Header with Title & Action Controls */}
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Schedule
+        </h1>
+      </div>
+
+      {/* Action Controls Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
-              Timetables
-            </h2>
-            <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-              ({filteredSchedules.length} Sessions)
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              Department of Computer Science • {currentAcademicYear} {selectedSemester} • {isCurrentPeriodPublished ? 'Published' : 'Draft'}
-            </span>
-          </div>
+        {/* Left side label */}
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          Timetable allocations ({filteredSchedules.length} Sessions)
         </div>
 
-        <div className="flex items-center flex-wrap gap-2.5 self-start sm:self-auto no-print">
+        <div className="flex items-center flex-wrap gap-2.5 self-end sm:self-auto no-print">
           {/* Publish / Unpublish Official Timetable Button */}
           <button
             id="publish-timetable-btn"
@@ -412,7 +408,8 @@ export function GeneratedTimetablesView() {
                       : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
                   }`}
                 >
-                  {sem}
+                  <span className="hidden sm:inline">{sem}</span>
+                  <span className="inline sm:hidden">{sem === 'All' ? 'All' : sem === 'Semester 1' ? 'S1' : 'S2'}</span>
                 </button>
               ))}
             </div>
@@ -430,7 +427,14 @@ export function GeneratedTimetablesView() {
                     : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
                 }`}
               >
-                {lvl === 'All' ? 'All Levels' : `Level ${lvl}`}
+                {lvl === 'All' ? (
+                  <span>All</span>
+                ) : (
+                  <>
+                    <span className="hidden sm:inline">Level {lvl}</span>
+                    <span className="inline sm:hidden">L{lvl}</span>
+                  </>
+                )}
               </button>
             ))}
           </div>
@@ -549,7 +553,7 @@ export function GeneratedTimetablesView() {
             </span>
           </div>
           <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full border-collapse text-xs min-w-[750px]">
+            <table className="w-full border-collapse text-xs min-w-full lg:min-w-[750px]">
               <thead>
                 <tr className="border-b border-zinc-200/80 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-zinc-600 dark:text-zinc-400 uppercase font-bold text-[11px]">
                   {canManageSchedules && (
@@ -563,9 +567,9 @@ export function GeneratedTimetablesView() {
                       />
                     </th>
                   )}
-                  <th className="p-3.5 text-left">Course Code & Title</th>
-                  <th className="p-3.5 text-left">Level</th>
-                  <th className="p-3.5 text-left">Semester</th>
+                  <th className="p-3.5 text-left">Course</th>
+                  <th className="p-3.5 text-left hidden lg:table-cell">Level</th>
+                  <th className="p-3.5 text-left hidden lg:table-cell">Semester</th>
                   <th className="p-3.5 text-left">Day & Time Period</th>
                   <th className="p-3.5 text-left">Lecture Facility</th>
                   <th className="p-3.5 text-left">Assigned Lecturer</th>
@@ -603,23 +607,26 @@ export function GeneratedTimetablesView() {
                         )}
                         <td className="p-3.5">
                           <div className="font-bold text-zinc-900 dark:text-white">{session.courseCode}</div>
-                          <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate max-w-xs">{session.courseTitle}</div>
+                          <div className="text-[11px] text-zinc-500 dark:text-zinc-400 whitespace-normal break-words max-w-xs">{session.courseTitle}</div>
                         </td>
-                        <td className="p-3.5">
+                        <td className="p-3.5 hidden lg:table-cell">
                           <span className="font-semibold px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                             Level {session.level}
                           </span>
                         </td>
-                        <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium">{session.semester}</td>
+                        <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium hidden lg:table-cell">{session.semester}</td>
                         <td className="p-3.5">
-                          <div className="font-semibold text-zinc-900 dark:text-white">{session.day}</div>
-                          <div className="text-[11px] text-zinc-500">{session.timeSlotLabel} (P{session.periodNumber})</div>
+                          <div className="font-semibold text-zinc-900 dark:text-white sm:block hidden">{session.day}</div>
+                          <div className="text-[11px] text-zinc-500 sm:block hidden">{session.timeSlotLabel} (P{session.periodNumber})</div>
+                          <div className="text-xs font-semibold text-zinc-900 dark:text-white block sm:hidden">
+                            {session.day.substring(0, 3)} • {session.timeSlotLabel}
+                          </div>
                         </td>
                         <td className="p-3.5">
                           <div className="font-medium text-zinc-900 dark:text-white">{session.hallName}</div>
                           <div className="text-[11px] text-zinc-500">ID: {session.hallId}</div>
                         </td>
-                        <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium">{session.lecturerName}</td>
+                        <td className="p-3.5 text-zinc-700 dark:text-zinc-300 font-medium whitespace-normal break-words">{session.lecturerName}</td>
                         <td className="p-3.5 text-right no-print">
                           <button
                             onClick={() => {

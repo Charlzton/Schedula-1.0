@@ -165,23 +165,11 @@ export function BookingRequestsView() {
   return (
     <div className="space-y-6 pb-12 font-system animate-in fade-in duration-300">
       
-      {/* 1. Header & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-              Booking Requests
-            </h2>
-            {counts.pending > 0 && (
-              <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                {counts.pending} pending
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Room reservations submitted by academic faculty
-          </p>
-        </div>
+      {/* 1. Centered Bold Page Heading (Requirement 12, 13, 14) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
+          Booking Requests
+        </h1>
       </div>
 
       {/* 2. Status Navigation & Search Bar */}

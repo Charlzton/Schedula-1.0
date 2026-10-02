@@ -212,57 +212,59 @@ export function SettingsView() {
 
   return (
     <div className="space-y-6 pb-12 max-w-4xl mx-auto w-full">
-      {/* Page Header */}
-      <div>
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight">
+      {/* Page Header (Centered) (Requirement 13) */}
+      <div className="text-center py-2 shrink-0">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white text-center">
           Settings
-        </h2>
+        </h1>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs overflow-x-auto">
+      {/* Tabs Navigation (shortened on mobile to eliminate horizontal scroll) (Requirement 8 & 21) */}
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs">
         <button
           onClick={() => setActiveTab('account')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex-1 text-center py-2 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'account'
               ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
           }`}
         >
-          Manage Account
+          <span className="hidden sm:inline">Manage Account</span>
+          <span className="inline sm:hidden">Account</span>
         </button>
 
         <button
           onClick={() => setActiveTab('appearance')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex-1 text-center py-2 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'appearance'
               ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
           }`}
         >
-          Appearance
+          <span>Appearance</span>
         </button>
 
         <button
           onClick={() => setActiveTab('security')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex-1 text-center py-2 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'security'
               ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
           }`}
         >
-          Security
+          <span>Security</span>
         </button>
 
         <button
           onClick={() => setActiveTab('scheduling')}
-          className={`px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex-1 text-center py-2 rounded-lg font-semibold transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'scheduling'
               ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs'
               : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
           }`}
         >
-          Scheduling Preferences
+          <span className="hidden sm:inline">Scheduling Preferences</span>
+          <span className="inline sm:hidden">Preferences</span>
         </button>
       </div>
 
