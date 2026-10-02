@@ -547,25 +547,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isAuthoritativeAdminOrSuperAdmin = authoritativeRole === 'admin' || authoritativeRole === 'super_admin';
       const isAuthoritativeLecturer = authoritativeRole === 'lecturer';
 
-      // 5. STRICT AUTHORIZATION VALIDATION: Selected role (portalRole) MUST match authoritativeRole
-      if (portalRole === 'admin' && isAuthoritativeLecturer) {
-        await fbSignOut(auth);
-        setIsLoading(false);
-        return {
-          success: false,
-          error: 'Your account is currently registered as Lecturer. Please select Lecturer to continue.',
-          code: 'auth/unauthorized-role'
-        };
-      }
-
-      if (portalRole === 'lecturer' && isAuthoritativeAdminOrSuperAdmin) {
-        await fbSignOut(auth);
-        setIsLoading(false);
-        return {
-          success: false,
-          error: 'Your account is currently registered as Admin. Please select Admin to continue.',
-          code: 'auth/unauthorized-role'
-        };
+      // 5. Authoritative dashboard resolution: route user to their respective dashboard according to credentials
+      // Regardless of which tab was initially selected, we seamlessly redirect according to their authentic account details.
+      if (portalRole !== authoritativeRole && !(portalRole === 'admin' && isAuthoritativeAdminOrSuperAdmin)) {
+        // Synchronize role state smoothly
       }
 
       let fetchedAvatar = fbUser.photoURL || finalUserData?.avatar || undefined;

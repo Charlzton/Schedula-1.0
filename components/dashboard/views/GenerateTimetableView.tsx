@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useTimetable } from '@/context/TimetableContext';
 import { useToast } from '@/context/ToastContext';
 import { GenerationResult } from '@/lib/schedulerEngine';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 export function GenerateTimetableView() {
   const { 
@@ -173,9 +174,13 @@ export function GenerateTimetableView() {
                 id="run-generation-algorithm-btn"
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="w-full py-3 px-6 rounded-2xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                className="w-full py-3 px-6 rounded-2xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-bold text-xs shadow-xs transition-all cursor-pointer disabled:opacity-75 flex items-center justify-center select-none"
               >
-                {isGenerating ? 'Generating...' : 'Generate'}
+                <LoadingButtonContent
+                  loading={isGenerating}
+                  loadingText="Generating"
+                  defaultText="Generate"
+                />
               </button>
             </div>
           </div>

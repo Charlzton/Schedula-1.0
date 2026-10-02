@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
 import { UserRole } from '@/context/AuthContext';
@@ -11,7 +12,7 @@ interface AuthModalProps {
   onClose: () => void;
   initialMode?: 'signin' | 'signup';
   initialRole?: UserRole;
-  onAuthSuccess?: () => void;
+  onAuthSuccess?: (targetRoute?: string) => void;
 }
 
 export function AuthModal({
@@ -21,7 +22,18 @@ export function AuthModal({
   initialRole = 'lecturer',
   onAuthSuccess
 }: AuthModalProps) {
+  const router = useRouter();
+
   if (!isOpen) return null;
+
+  const handleSuccess = (targetRoute?: string) => {
+    if (onAuthSuccess) {
+      onAuthSuccess(targetRoute);
+    }
+    if (targetRoute) {
+      router.replace(targetRoute);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -58,10 +70,7 @@ export function AuthModal({
             initialMode={initialMode}
             initialRole={initialRole}
             showHeaderLogo={false}
-            onSuccess={() => {
-              onClose();
-              if (onAuthSuccess) onAuthSuccess();
-            }}
+            onSuccess={handleSuccess}
           />
         </motion.div>
       </div>

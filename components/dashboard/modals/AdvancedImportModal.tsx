@@ -20,6 +20,7 @@ import {
 import { useTimetable } from '@/context/TimetableContext';
 import { parseUploadedFile, generateExcelTemplate, ParsedDataset } from '@/lib/importParser';
 import { useAuth } from '@/context/AuthContext';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 interface AdvancedImportModalProps {
   isOpen: boolean;
@@ -170,7 +171,9 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
   };
 
   const handleExecuteImport = () => {
-    let importedCount = 0;
+    setIsProcessing(true);
+    setTimeout(() => {
+      let importedCount = 0;
     let updatedCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
@@ -292,8 +295,10 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
     });
 
     addActivity('Bulk Data Import', `Successfully imported ${fileName} (${importedCount} added, ${updatedCount} updated)`, 'import');
+    setIsProcessing(false);
     setStep('results');
-  };
+  }, 650);
+};
 
   const currentDataset = datasets[activeDatasetIndex] || datasets[0];
 
@@ -627,10 +632,15 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
                 <button
                   type="button"
                   onClick={handleExecuteImport}
-                  className="px-6 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer inline-flex items-center gap-2 shadow-lg"
+                  disabled={isProcessing}
+                  className="px-6 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition-all cursor-pointer inline-flex items-center justify-center gap-2 shadow-lg disabled:opacity-75 select-none"
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Confirm & Import Data</span>
+                  <LoadingButtonContent
+                    loading={isProcessing}
+                    loadingText="Importing"
+                    defaultText="Confirm & Import Data"
+                    icon={<Sparkles className="w-3.5 h-3.5" />}
+                  />
                 </button>
               </>
             )}

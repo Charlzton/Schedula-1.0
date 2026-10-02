@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { RoomBookingRequest, LecturerViewType } from '@/lib/lecturerTypes';
 import { useTimetable } from '@/context/TimetableContext';
 import { DoorOpen, Plus, Search, AlertCircle } from 'lucide-react';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 interface LecturerBookingRequestsViewProps {
   bookingRequests: RoomBookingRequest[];

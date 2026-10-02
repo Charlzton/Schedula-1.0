@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { useAuth, UserRole } from '@/context/AuthContext';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 export interface CanonicalAuthCardProps {
   initialMode?: 'signin' | 'signup';
@@ -63,15 +64,17 @@ export function CanonicalAuthCard({
   const [creating, setCreating] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const hasRedirectedRef = useRef(false);
+
   // Auto-redirect if user is already authenticated
   useEffect(() => {
-    if (user && !authLoading) {
+    if (user && !authLoading && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
       const target = user.role === 'lecturer' ? '/lecturer' : '/dashboard';
       if (onSuccess) {
         onSuccess(target);
-      } else {
-        router.replace(target);
       }
+      router.replace(target);
     }
   }, [user, authLoading, router, onSuccess]);
 
@@ -110,18 +113,19 @@ export function CanonicalAuthCard({
     try {
       const res = await signInWithGoogle(role);
       if (res.success) {
-        const target = res.targetRoute || (role === 'lecturer' ? '/lecturer' : '/dashboard');
+        const target = res.targetRoute || (user?.role === 'lecturer' ? '/lecturer' : '/dashboard');
+        hasRedirectedRef.current = true;
         if (onSuccess) {
           onSuccess(target);
-        } else {
-          router.replace(target);
         }
+        router.replace(target);
+        return;
       } else {
         setError(res.error || 'Failed to sign in with Google');
+        setGoogleLoading(false);
       }
     } catch {
       setError('An unexpected error occurred during Google sign in');
-    } finally {
       setGoogleLoading(false);
     }
   };
@@ -140,8 +144,13 @@ export function CanonicalAuthCard({
     }
 
     setVerifying(true);
+    const startTime = Date.now();
     try {
       const res = await verifyLecturerEmail(cleanEmail);
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 650) {
+        await new Promise((r) => setTimeout(r, 650 - elapsed));
+      }
       if (res.success && res.verified) {
         setVerifiedLecturer({
           lecturerId: res.lecturerId || '',
@@ -183,24 +192,30 @@ export function CanonicalAuthCard({
     }
 
     setCreating(true);
+    const startTime = Date.now();
     try {
       const targetEmail = verifiedLecturer?.email || email.trim().toLowerCase();
       const targetLecturerId = verifiedLecturer?.lecturerId;
 
       const res = await activateLecturerAccount(targetEmail, newPassword, targetLecturerId);
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 700) {
+        await new Promise((r) => setTimeout(r, 700 - elapsed));
+      }
       if (res.success) {
         const target = res.targetRoute || '/lecturer';
+        hasRedirectedRef.current = true;
         if (onSuccess) {
           onSuccess(target);
-        } else {
-          router.replace(target);
         }
+        router.replace(target);
+        return;
       } else {
         setError(res.error || 'Failed to activate account. Please try again.');
+        setCreating(false);
       }
     } catch {
       setError('An unexpected error occurred during account activation. Please try again.');
-    } finally {
       setCreating(false);
     }
   };
@@ -219,21 +234,29 @@ export function CanonicalAuthCard({
     }
 
     setLoading(true);
+    const startTime = Date.now();
     try {
       const res = await signInWithEmail(cleanEmail, password, role);
       if (res.success) {
-        const target = res.targetRoute || (role === 'lecturer' ? '/lecturer' : '/dashboard');
+        // Ensure user perceives the smooth loading state and sequential dot animation
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 750) {
+          await new Promise((resolve) => setTimeout(resolve, 750 - elapsed));
+        }
+
+        const target = res.targetRoute || (user?.role === 'lecturer' ? '/lecturer' : '/dashboard');
+        hasRedirectedRef.current = true;
         if (onSuccess) {
           onSuccess(target);
-        } else {
-          router.replace(target);
         }
+        router.replace(target);
+        return;
       } else {
         setError(res.error || 'Incorrect email or password');
+        setLoading(false);
       }
     } catch {
       setError('Authentication failed. Please check your credentials and try again.');
-    } finally {
       setLoading(false);
     }
   };
@@ -312,9 +335,13 @@ export function CanonicalAuthCard({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center disabled:opacity-50 cursor-pointer"
+                  className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center disabled:opacity-75 cursor-pointer"
                 >
-                  {loading ? 'Sending link...' : 'Send Reset Link'}
+                  <LoadingButtonContent
+                    loading={loading}
+                    loadingText="Sending link"
+                    defaultText="Send Reset Link"
+                  />
                 </button>
               </form>
             )}
@@ -395,9 +422,13 @@ export function CanonicalAuthCard({
                   <button
                     type="submit"
                     disabled={verifying}
-                    className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-xs sm:text-sm transition-all shadow-xs active:scale-[0.99] disabled:opacity-60 cursor-pointer flex items-center justify-center"
+                    className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-xs sm:text-sm transition-all shadow-xs active:scale-[0.99] disabled:opacity-75 cursor-pointer flex items-center justify-center select-none"
                   >
-                    {verifying ? 'Verifying' : 'Verify'}
+                    <LoadingButtonContent
+                      loading={verifying}
+                      loadingText="Verifying"
+                      defaultText="Verify"
+                    />
                   </button>
                 </div>
               </form>
@@ -456,9 +487,13 @@ export function CanonicalAuthCard({
                   <button
                     type="submit"
                     disabled={creating}
-                    className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-xs sm:text-sm transition-all shadow-xs active:scale-[0.99] disabled:opacity-60 cursor-pointer flex items-center justify-center"
+                    className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-xs sm:text-sm transition-all shadow-xs active:scale-[0.99] disabled:opacity-75 cursor-pointer flex items-center justify-center select-none"
                   >
-                    {creating ? 'Creating' : 'Create'}
+                    <LoadingButtonContent
+                      loading={creating}
+                      loadingText="Creating"
+                      defaultText="Create"
+                    />
                   </button>
                 </div>
 
@@ -487,15 +522,23 @@ export function CanonicalAuthCard({
                       type="button"
                       onClick={handleGoogleSignIn}
                       disabled={googleLoading || loading}
-                      className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-white dark:bg-white/5 border border-zinc-200/90 dark:border-white/10 text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-white/10 transition-all shadow-xs active:scale-[0.99] cursor-pointer disabled:opacity-60"
+                      className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-white dark:bg-white/5 border border-zinc-200/90 dark:border-white/10 text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-white/10 transition-all shadow-xs active:scale-[0.99] cursor-pointer disabled:opacity-75 select-none"
                     >
-                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.19v3.15C3.17 21.36 7.24 24 12 24z"/>
-                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.19C.43 8.12 0 9.87 0 12s.43 3.88 1.19 5.42l4.09-3.15z"/>
-                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.24 0 3.17 2.64 1.19 6.58l4.09 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-                      </svg>
-                      <span>{googleLoading ? 'Connecting...' : 'Continue with Google'}</span>
+                      <LoadingButtonContent
+                        loading={googleLoading}
+                        loadingText="Connecting"
+                        defaultText={
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                              <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                              <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.19v3.15C3.17 21.36 7.24 24 12 24z"/>
+                              <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.19C.43 8.12 0 9.87 0 12s.43 3.88 1.19 5.42l4.09-3.15z"/>
+                              <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.24 0 3.17 2.64 1.19 6.58l4.09 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                            </svg>
+                            <span>Continue with Google</span>
+                          </span>
+                        }
+                      />
                     </button>
 
                     {/* Divider */}
@@ -559,9 +602,14 @@ export function CanonicalAuthCard({
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-xs sm:text-sm transition-all shadow-xs active:scale-[0.99] disabled:opacity-60 cursor-pointer flex items-center justify-center"
+                      aria-label={loading ? 'Signing in' : 'Sign In'}
+                      className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 font-semibold text-xs sm:text-sm transition-all shadow-xs active:scale-[0.99] disabled:opacity-80 cursor-pointer flex items-center justify-center select-none"
                     >
-                      {loading ? 'Signing in...' : 'Sign In'}
+                      <LoadingButtonContent
+                        loading={loading}
+                        loadingText="Signing in"
+                        defaultText="Sign In"
+                      />
                     </button>
                   </div>
                 </form>

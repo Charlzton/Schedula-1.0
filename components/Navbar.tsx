@@ -120,7 +120,7 @@ export function Navbar({
               </button>
             </nav>
 
-            {/* Right: Sign In / Get Started Buttons */}
+            {/* Right: Sign In / Dashboard Button */}
             <div className="hidden sm:flex items-center gap-2 md:gap-3">
               {/* Theme Toggle Button */}
               <button
@@ -138,22 +138,7 @@ export function Navbar({
                 )}
               </button>
 
-              {/* Sign In Text Button (if not logged in) */}
-              {!user && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (onOpenAuthModal) onOpenAuthModal('signin');
-                    else if (onDashboardClick) onDashboardClick();
-                  }}
-                  className="px-3.5 py-2 text-xs sm:text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-zinc-200 dark:hover:text-white transition-colors cursor-pointer"
-                  id="nav-signin-text-btn"
-                >
-                  Sign In
-                </button>
-              )}
-
-              {/* Action Pill Button */}
+              {/* Single Auth Button: Sign In (if not logged in) / Dashboard (if logged in) */}
               <button
                 type="button"
                 disabled={isNavigatingDashboard}
@@ -162,12 +147,12 @@ export function Navbar({
                   if (user) {
                     if (onDashboardClick) onDashboardClick();
                   } else {
-                    if (onOpenAuthModal) onOpenAuthModal('signup');
+                    if (onOpenAuthModal) onOpenAuthModal('signin');
                     else if (onDashboardClick) onDashboardClick();
                   }
                 }}
                 className="px-5 py-2 rounded-full text-xs sm:text-sm font-semibold border border-slate-300/80 dark:border-white/20 bg-white/90 dark:bg-white/10 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 text-slate-900 dark:text-white hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shadow-xs backdrop-blur-md disabled:opacity-75 disabled:cursor-not-allowed disabled:hover:scale-100 min-w-[100px] flex items-center justify-center gap-1.5"
-                id="nav-auth-cta-btn"
+                id="nav-signin-btn"
               >
                 {isNavigatingDashboard && user ? (
                   <>
@@ -175,7 +160,7 @@ export function Navbar({
                     <span>Loading...</span>
                   </>
                 ) : (
-                  <span>{user ? 'Dashboard' : 'Sign up'}</span>
+                  <span>{user ? 'Dashboard' : 'Sign In'}</span>
                 )}
               </button>
             </div>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, BookOpen, Users, Clock, GraduationCap, Building2, Check, AlertCircle } from 'lucide-react';
 import { Course } from '@/lib/dataset';
 import { useTimetable } from '@/context/TimetableContext';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 interface CourseModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function CourseModal({ isOpen, onClose, initialCourse }: CourseModalProps
   const [department, setDepartment] = useState('Department of Computer Science');
   const [assignedLecturerId, setAssignedLecturerId] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialCourse) {
@@ -94,13 +96,16 @@ export function CourseModal({ isOpen, onClose, initialCourse }: CourseModalProps
       assignedLecturerName: lecturer?.fullName
     };
 
-    if (initialCourse) {
-      updateCourse(initialCourse.courseCode, courseData);
-    } else {
-      addCourse(courseData);
-    }
-
-    onClose();
+    setIsSubmitting(true);
+    setTimeout(() => {
+      if (initialCourse) {
+        updateCourse(initialCourse.courseCode, courseData);
+      } else {
+        addCourse(courseData);
+      }
+      setIsSubmitting(false);
+      onClose();
+    }, 550);
   };
 
   return (
@@ -300,9 +305,14 @@ export function CourseModal({ isOpen, onClose, initialCourse }: CourseModalProps
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 transition-all cursor-pointer disabled:opacity-75 flex items-center justify-center select-none"
             >
-              {initialCourse ? 'Save' : 'Create'}
+              <LoadingButtonContent
+                loading={isSubmitting}
+                loadingText={initialCourse ? 'Saving' : 'Creating'}
+                defaultText={initialCourse ? 'Save' : 'Create'}
+              />
             </button>
           </div>
         </form>

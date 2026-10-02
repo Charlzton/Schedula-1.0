@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Clock, CalendarDays, Check, AlertCircle } from 'lucide-react';
 import { TimeSlot } from '@/lib/dataset';
 import { useTimetable } from '@/context/TimetableContext';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 interface TimeSlotModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export function TimeSlotModal({ isOpen, onClose, initialSlot }: TimeSlotModalPro
   const [durationMinutes, setDurationMinutes] = useState(120);
   const [sessionType, setSessionType] = useState<TimeSlot['sessionType']>('Theory');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialSlot) {
@@ -80,13 +82,16 @@ export function TimeSlotModal({ isOpen, onClose, initialSlot }: TimeSlotModalPro
       sessionType
     };
 
-    if (initialSlot) {
-      updateTimeSlot(initialSlot.slotId, slotData);
-    } else {
-      addTimeSlot(slotData);
-    }
-
-    onClose();
+    setIsSubmitting(true);
+    setTimeout(() => {
+      if (initialSlot) {
+        updateTimeSlot(initialSlot.slotId, slotData);
+      } else {
+        addTimeSlot(slotData);
+      }
+      setIsSubmitting(false);
+      onClose();
+    }, 550);
   };
 
   return (
@@ -238,9 +243,14 @@ export function TimeSlotModal({ isOpen, onClose, initialSlot }: TimeSlotModalPro
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md shadow-amber-600/20 transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md shadow-amber-600/20 transition-all cursor-pointer disabled:opacity-75 flex items-center justify-center select-none"
             >
-              {initialSlot ? 'Save' : 'Create'}
+              <LoadingButtonContent
+                loading={isSubmitting}
+                loadingText={initialSlot ? 'Saving' : 'Creating'}
+                defaultText={initialSlot ? 'Save' : 'Create'}
+              />
             </button>
           </div>
         </form>

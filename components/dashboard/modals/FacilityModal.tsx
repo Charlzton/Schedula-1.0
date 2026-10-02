@@ -5,6 +5,7 @@ import { X, Building2, Armchair, Check, AlertCircle } from 'lucide-react';
 import { generateLowestAvailableId } from '@/lib/idHelper';
 import { useTimetable } from '@/context/TimetableContext';
 import { LectureFacility } from '@/lib/dataset';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 interface FacilityModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export function FacilityModal({ isOpen, onClose, initialFacility }: FacilityModa
   const [hasSoundSystem, setHasSoundSystem] = useState(true);
   const [status, setStatus] = useState<LectureFacility['status']>('Active');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialFacility) {
@@ -105,13 +107,16 @@ export function FacilityModal({ isOpen, onClose, initialFacility }: FacilityModa
       status
     };
 
-    if (initialFacility) {
-      updateFacility(initialFacility.hallId, facilityData);
-    } else {
-      addFacility(facilityData);
-    }
-
-    onClose();
+    setIsSubmitting(true);
+    setTimeout(() => {
+      if (initialFacility) {
+        updateFacility(initialFacility.hallId, facilityData);
+      } else {
+        addFacility(facilityData);
+      }
+      setIsSubmitting(false);
+      onClose();
+    }, 550);
   };
 
   return (
@@ -326,9 +331,14 @@ export function FacilityModal({ isOpen, onClose, initialFacility }: FacilityModa
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-75 flex items-center justify-center select-none"
             >
-              {initialFacility ? 'Save' : 'Register'}
+              <LoadingButtonContent
+                loading={isSubmitting}
+                loadingText={initialFacility ? 'Saving' : 'Registering'}
+                defaultText={initialFacility ? 'Save' : 'Register'}
+              />
             </button>
           </div>
         </form>

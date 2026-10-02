@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Check, User, Mail, Phone, MapPin, Building, Calendar } from 'lucide-react';
+import { X, Check, User, Mail, Phone, MapPin, Building, Calendar } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 interface LecturerProfileModalProps {
   isOpen: boolean;
@@ -265,16 +266,13 @@ export function LecturerProfileModal({ isOpen, onClose }: LecturerProfileModalPr
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+              className="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 select-none"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <span>Save Changes</span>
-              )}
+              <LoadingButtonContent
+                loading={isSubmitting}
+                loadingText="Saving"
+                defaultText="Save Changes"
+              />
             </button>
           </div>
         </form>

@@ -20,6 +20,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { AdminUserRecord } from '@/lib/adminAuthService';
 import { DeleteConfirmationModal } from '@/components/dashboard/modals/DeleteConfirmationModal';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 export function AdminManagementView() {
   const { user, createAdmin, updateAdminRole, deleteAdminAccount, getAdministrators } = useAuth();
@@ -560,19 +561,14 @@ export function AdminManagementView() {
                   id="submit-provision-admin-btn"
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 rounded-xl transition-all cursor-pointer disabled:opacity-75 select-none"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Provisioning...
-                    </>
-                  ) : (
-                    <>
-                      <Key className="w-3.5 h-3.5" />
-                      Create Administrator
-                    </>
-                  )}
+                  <LoadingButtonContent
+                    loading={isSubmitting}
+                    loadingText="Provisioning"
+                    defaultText="Create Administrator"
+                    icon={<Key className="w-3.5 h-3.5" />}
+                  />
                 </button>
               </div>
             </form>

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Loader2, Check } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { LectureFacility, Course } from '@/lib/dataset';
 import { RoomBookingRequest } from '@/lib/lecturerTypes';
 import { useAuth } from '@/context/AuthContext';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 interface RoomBookingModalProps {
   isOpen: boolean;
@@ -237,20 +238,19 @@ export function RoomBookingModal({
             <button
               type="submit"
               disabled={isSubmitting || isSuccess}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 transition-all cursor-pointer flex items-center gap-2 shadow-xs disabled:opacity-60"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs disabled:opacity-75 select-none"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Submitting...</span>
-                </>
-              ) : isSuccess ? (
+              {isSuccess ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-500" />
                   <span>Submitted</span>
                 </>
               ) : (
-                <span>Submit Request</span>
+                <LoadingButtonContent
+                  loading={isSubmitting}
+                  loadingText="Submitting"
+                  defaultText="Submit Request"
+                />
               )}
             </button>
           </div>

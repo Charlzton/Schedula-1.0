@@ -23,6 +23,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 import { useTheme } from '@/context/ThemeContext';
 
 const PRESET_AVATARS = [
@@ -322,14 +323,14 @@ export function LecturerSettingsView() {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isSavingProfile}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-60"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-75 select-none"
                   >
-                    {isSavingProfile ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Upload className="w-3.5 h-3.5" />
-                    )}
-                    <span>Upload Custom Image</span>
+                    <LoadingButtonContent
+                      loading={isSavingProfile}
+                      loadingText="Uploading"
+                      defaultText="Upload Custom Image"
+                      icon={<Upload className="w-3.5 h-3.5" />}
+                    />
                   </button>
                 </div>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -511,14 +512,14 @@ export function LecturerSettingsView() {
                 <button
                   type="submit"
                   disabled={isSavingProfile}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-60"
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-75 select-none"
                 >
-                  {isSavingProfile ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Check className="w-4 h-4" />
-                  )}
-                  <span>Save Faculty Profile</span>
+                  <LoadingButtonContent
+                    loading={isSavingProfile}
+                    loadingText="Saving"
+                    defaultText="Save Faculty Profile"
+                    icon={<Check className="w-4 h-4" />}
+                  />
                 </button>
               </div>
             </form>
@@ -663,14 +664,14 @@ export function LecturerSettingsView() {
                 <button
                   type="submit"
                   disabled={isChangingPassword}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-60"
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-75 select-none"
                 >
-                  {isChangingPassword ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Shield className="w-4 h-4" />
-                  )}
-                  <span>Update Password</span>
+                  <LoadingButtonContent
+                    loading={isChangingPassword}
+                    loadingText="Updating"
+                    defaultText="Update Password"
+                    icon={<Shield className="w-4 h-4" />}
+                  />
                 </button>
               </div>
             </form>

@@ -130,6 +130,11 @@ export default function SchedulaApp() {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         initialMode={authModalMode}
+        onAuthSuccess={(targetRoute) => {
+          if (targetRoute) {
+            router.replace(targetRoute);
+          }
+        }}
       />
 
       {/* Landing Page Back To Top Floating Action */}

@@ -19,6 +19,7 @@ import { useTimetable } from '@/context/TimetableContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { DeleteConfirmationModal } from '@/components/dashboard/modals/DeleteConfirmationModal';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 const PRESET_AVATARS = [
   {
@@ -506,19 +507,14 @@ export function SettingsView() {
                 <button
                   type="submit"
                   disabled={isSavingProfile}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-semibold text-xs transition-all cursor-pointer disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-950 font-semibold text-xs transition-all cursor-pointer disabled:opacity-75 select-none"
                 >
-                  {isSavingProfile ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Save Changes</span>
-                    </>
-                  )}
+                  <LoadingButtonContent
+                    loading={isSavingProfile}
+                    loadingText="Saving"
+                    defaultText="Save Changes"
+                    icon={<Check className="w-3.5 h-3.5" />}
+                  />
                 </button>
               </div>
             </form>

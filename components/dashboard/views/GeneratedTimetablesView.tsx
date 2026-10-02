@@ -31,6 +31,7 @@ import {
 import { useTimetable } from '@/context/TimetableContext';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 import { TimetableEntry } from '@/lib/dataset';
 import { 
   exportGeneratedTimetablePDF, 
@@ -261,14 +262,18 @@ export function GeneratedTimetablesView() {
             id="publish-timetable-btn"
             onClick={handleTogglePublish}
             disabled={isPublishing}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-50 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer disabled:opacity-75 flex items-center justify-center select-none ${
               isCurrentPeriodPublished
                 ? 'bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
                 : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20'
             }`}
             title={isCurrentPeriodPublished ? 'Click to unpublish timetable back to draft' : 'Publish official timetable to lecturers and students'}
           >
-            {isPublishing ? 'Updating...' : isCurrentPeriodPublished ? 'Unpublish' : 'Publish'}
+            <LoadingButtonContent
+              loading={isPublishing}
+              loadingText="Updating"
+              defaultText={isCurrentPeriodPublished ? 'Unpublish' : 'Publish'}
+            />
           </button>
 
           {/* Auto-Generate AI Button */}
@@ -520,10 +525,14 @@ export function GeneratedTimetablesView() {
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-lg hover:bg-blue-700 transition-all cursor-pointer inline-flex items-center gap-2 disabled:opacity-60"
+            className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-lg hover:bg-blue-700 transition-all cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-75 select-none"
           >
-            {isGenerating ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <Sparkles className="w-4 h-4 shrink-0" />}
-            <span>{isGenerating ? 'Optimizing Schedule...' : 'Generate Timetable'}</span>
+            <LoadingButtonContent
+              loading={isGenerating}
+              loadingText="Optimizing Schedule"
+              defaultText="Generate Timetable"
+              icon={<Sparkles className="w-4 h-4 shrink-0" />}
+            />
           </button>
         </div>
       ) : (

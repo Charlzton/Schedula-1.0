@@ -5,6 +5,7 @@ import { X, Users, Mail, Phone, BookOpen, Check, AlertCircle } from 'lucide-reac
 import { generateLowestAvailableId } from '@/lib/idHelper';
 import { useTimetable } from '@/context/TimetableContext';
 import { Lecturer } from '@/lib/dataset';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 interface LecturerModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [accountStatus, setAccountStatus] = useState<'active' | 'unclaimed' | 'suspended'>('unclaimed');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialLecturer) {
@@ -102,13 +104,16 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
       registeredAt: initialLecturer?.registeredAt
     };
 
-    if (initialLecturer) {
-      updateLecturer(initialLecturer.lecturerId, lecturerData);
-    } else {
-      addLecturer(lecturerData);
-    }
-
-    onClose();
+    setIsSubmitting(true);
+    setTimeout(() => {
+      if (initialLecturer) {
+        updateLecturer(initialLecturer.lecturerId, lecturerData);
+      } else {
+        addLecturer(lecturerData);
+      }
+      setIsSubmitting(false);
+      onClose();
+    }, 550);
   };
 
   const toggleCourse = (code: string) => {
@@ -304,9 +309,14 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+              disabled={isSubmitting}
+              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-600/20 transition-all cursor-pointer disabled:opacity-75 flex items-center justify-center select-none"
             >
-              {initialLecturer ? 'Save' : 'Register'}
+              <LoadingButtonContent
+                loading={isSubmitting}
+                loadingText={initialLecturer ? 'Saving' : 'Registering'}
+                defaultText={initialLecturer ? 'Save' : 'Register'}
+              />
             </button>
           </div>
         </form>

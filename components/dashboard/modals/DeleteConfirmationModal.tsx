@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -99,9 +100,13 @@ export function DeleteConfirmationModal({
               onClose();
             }}
             disabled={isDeleting}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-[0.98] shadow-md shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-[0.98] shadow-md shadow-rose-600/20 transition-all cursor-pointer disabled:opacity-75 flex items-center justify-center select-none"
           >
-            {isDeleting ? 'Deleting...' : 'Delete'}
+            <LoadingButtonContent
+              loading={isDeleting}
+              loadingText="Deleting"
+              defaultText="Delete"
+            />
           </button>
         </div>
       </div>
