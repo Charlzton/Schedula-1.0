@@ -39,7 +39,7 @@ export function HeroSection({
       {/* ========================================================================= */}
       <section
         id="schedula-hero-section"
-        className="relative w-full rounded-b-[40px] sm:rounded-b-[56px] lg:rounded-b-[72px] pt-32 sm:pt-36 md:pt-40 pb-20 sm:pb-24 lg:pb-28 px-4 sm:px-6 lg:px-8 text-slate-900 dark:text-white select-none overflow-hidden transition-colors duration-700"
+        className="relative w-full rounded-b-[40px] sm:rounded-b-[56px] lg:rounded-b-[72px] pt-32 sm:pt-36 md:pt-40 pb-20 sm:pb-24 lg:pb-28 px-4 sm:px-6 lg:px-8 text-slate-900 dark:text-white select-none overflow-hidden transition-colors duration-220"
       >
         {/* Animated SaaS Motion Background */}
         <HeroBackground isDark={isDark} />

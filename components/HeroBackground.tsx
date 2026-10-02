@@ -144,7 +144,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
       {/* 1. BASE BACKGROUND CANVASES (THEME ADAPTIVE)                            */}
       {/* ----------------------------------------------------------------------- */}
       <div
-        className={`absolute inset-0 transition-colors duration-700 ${
+        className={`absolute inset-0 transition-colors duration-120 ${
           isDark
             ? 'bg-[#060812]'
             : 'bg-gradient-to-b from-[#F4F7FC] via-[#EDF3FA] to-[#E2E8F4]'
@@ -153,7 +153,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
 
       {/* Subtle Radial Gradient Canvas Tint */}
       <div
-        className={`absolute inset-0 transition-opacity duration-700 ${
+        className={`absolute inset-0 transition-opacity duration-120 ${
           isDark
             ? 'bg-[radial-gradient(circle_at_50%_30%,_#0e172e_0%,_transparent_70%)] opacity-80'
             : 'bg-[radial-gradient(circle_at_50%_30%,_#ffffff_0%,_transparent_75%)] opacity-90'
@@ -187,7 +187,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
         {/* ==================================================================== */}
         <motion.div
           animate={floatOrb1}
-          className={`absolute -top-12 -right-12 sm:top-[-4%] sm:right-[2%] w-[280px] sm:w-[420px] lg:w-[520px] h-[280px] sm:h-[420px] lg:h-[520px] rounded-full filter transition-all duration-700 ${
+          className={`absolute -top-12 -right-12 sm:top-[-4%] sm:right-[2%] w-[280px] sm:w-[420px] lg:w-[520px] h-[280px] sm:h-[420px] lg:h-[520px] rounded-full filter transition-all duration-120 ${
             subdued ? 'blur-[45px] sm:blur-[70px]' : 'blur-[1px] sm:blur-[2px]'
           }`}
           style={{
@@ -203,7 +203,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
 
         {/* Ambient Specular Highlight Glow behind Sphere 1 */}
         <div
-          className={`absolute top-0 right-0 w-[350px] sm:w-[550px] h-[350px] sm:h-[550px] rounded-full blur-[60px] sm:blur-[100px] pointer-events-none transition-all duration-700 ${
+          className={`absolute top-0 right-0 w-[350px] sm:w-[550px] h-[350px] sm:h-[550px] rounded-full blur-[60px] sm:blur-[100px] pointer-events-none transition-all duration-120 ${
             isDark ? (subdued ? 'bg-cyan-500/15' : 'bg-cyan-500/25') : (subdued ? 'bg-sky-400/12' : 'bg-sky-400/20')
           }`}
         />
@@ -213,7 +213,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
         {/* ==================================================================== */}
         <motion.div
           animate={floatOrb2}
-          className={`absolute -bottom-20 -left-16 sm:bottom-[-8%] sm:left-[-5%] w-[260px] sm:w-[400px] lg:w-[480px] h-[260px] sm:h-[400px] lg:h-[480px] rounded-full filter transition-all duration-700 ${
+          className={`absolute -bottom-20 -left-16 sm:bottom-[-8%] sm:left-[-5%] w-[260px] sm:w-[400px] lg:w-[480px] h-[260px] sm:h-[400px] lg:h-[480px] rounded-full filter transition-all duration-120 ${
             subdued ? 'blur-[45px] sm:blur-[70px]' : 'blur-[1px] sm:blur-[2px]'
           }`}
           style={{
@@ -229,7 +229,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
 
         {/* Ambient Specular Highlight Glow behind Sphere 2 */}
         <div
-          className={`absolute bottom-0 left-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] rounded-full blur-[70px] sm:blur-[110px] pointer-events-none transition-all duration-700 ${
+          className={`absolute bottom-0 left-0 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] rounded-full blur-[70px] sm:blur-[110px] pointer-events-none transition-all duration-120 ${
             isDark ? (subdued ? 'bg-blue-600/18' : 'bg-blue-600/30') : (subdued ? 'bg-blue-400/14' : 'bg-blue-400/20')
           }`}
         />
@@ -239,7 +239,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
         {/* ==================================================================== */}
         <motion.div
           animate={floatOrb3}
-          className={`absolute top-[28%] left-[2%] sm:left-[5%] lg:left-[8%] w-[64px] sm:w-[96px] lg:w-[120px] h-[64px] sm:h-[96px] lg:h-[120px] rounded-full filter transition-all duration-700 ${
+          className={`absolute top-[28%] left-[2%] sm:left-[5%] lg:left-[8%] w-[64px] sm:w-[96px] lg:w-[120px] h-[64px] sm:h-[96px] lg:h-[120px] rounded-full filter transition-all duration-120 ${
             subdued ? 'blur-[25px] sm:blur-[40px]' : 'blur-[0.5px]'
           }`}
           style={{
@@ -258,7 +258,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
         {/* ==================================================================== */}
         <motion.div
           animate={floatOrb4}
-          className={`absolute bottom-[2%] left-[45%] sm:left-[48%] -translate-x-1/2 w-[140px] sm:w-[200px] lg:w-[260px] h-[140px] sm:h-[200px] lg:h-[260px] rounded-full filter transition-all duration-700 ${
+          className={`absolute bottom-[2%] left-[45%] sm:left-[48%] -translate-x-1/2 w-[140px] sm:w-[200px] lg:w-[260px] h-[140px] sm:h-[200px] lg:h-[260px] rounded-full filter transition-all duration-120 ${
             subdued ? 'blur-[35px] sm:blur-[55px]' : 'blur-[1px]'
           }`}
           style={{
@@ -277,7 +277,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
         {/* ==================================================================== */}
         <motion.div
           animate={floatOrb5}
-          className={`absolute top-[-5%] left-[22%] sm:left-[28%] w-[110px] sm:w-[160px] lg:w-[210px] h-[110px] sm:h-[160px] lg:h-[210px] rounded-full filter transition-all duration-700 ${
+          className={`absolute top-[-5%] left-[22%] sm:left-[28%] w-[110px] sm:w-[160px] lg:w-[210px] h-[110px] sm:h-[160px] lg:h-[210px] rounded-full filter transition-all duration-120 ${
             subdued ? 'blur-[35px] sm:blur-[50px]' : 'blur-[1.5px]'
           }`}
           style={{
@@ -297,7 +297,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
         {!subdued && (
           <motion.div
             animate={floatGlassCard}
-            className="absolute inset-x-3 sm:inset-x-8 lg:inset-x-16 top-16 sm:top-20 bottom-8 sm:bottom-12 rounded-[28px] sm:rounded-[40px] lg:rounded-[48px] overflow-hidden pointer-events-none transition-all duration-700"
+            className="absolute inset-x-3 sm:inset-x-8 lg:inset-x-16 top-16 sm:top-20 bottom-8 sm:bottom-12 rounded-[28px] sm:rounded-[40px] lg:rounded-[48px] overflow-hidden pointer-events-none transition-all duration-120"
             style={{
               background: isDark
                 ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.42) 0%, rgba(10, 15, 30, 0.28) 50%, rgba(15, 23, 42, 0.38) 100%)'
@@ -314,7 +314,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
           >
             {/* Top Specular Edge Highlight Gradient */}
             <div
-              className={`absolute top-0 left-0 right-0 h-[1px] transition-opacity duration-700 ${
+              className={`absolute top-0 left-0 right-0 h-[1px] transition-opacity duration-120 ${
                 isDark
                   ? 'bg-gradient-to-r from-transparent via-white/35 to-transparent'
                   : 'bg-gradient-to-r from-transparent via-white/90 to-transparent'
@@ -323,7 +323,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
 
             {/* Left Specular Edge Highlight Gradient */}
             <div
-              className={`absolute top-0 bottom-0 left-0 w-[1px] transition-opacity duration-700 ${
+              className={`absolute top-0 bottom-0 left-0 w-[1px] transition-opacity duration-120 ${
                 isDark
                   ? 'bg-gradient-to-b from-white/30 via-white/10 to-transparent'
                   : 'bg-gradient-to-b from-white/80 via-white/40 to-transparent'
@@ -338,7 +338,7 @@ export function HeroBackground({ isDark = false, subdued = false }: HeroBackgrou
 
             {/* Soft Radial Ambient Refraction Glint Inside Panel */}
             <div
-              className={`absolute -top-1/2 left-1/4 w-[500px] h-[500px] rounded-full blur-[90px] transition-all duration-700 ${
+              className={`absolute -top-1/2 left-1/4 w-[500px] h-[500px] rounded-full blur-[90px] transition-all duration-120 ${
                 isDark ? 'bg-cyan-400/12' : 'bg-blue-300/20'
               }`}
             />

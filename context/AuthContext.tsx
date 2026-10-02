@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { 
   auth, 
   googleProvider, 
@@ -1208,32 +1208,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return await getAdministratorAccounts(user?.role);
   };
 
+  const contextValue = useMemo(() => ({
+    user,
+    lecturerProfile,
+    isLoading,
+    isSigningOut,
+    signInWithEmail,
+    signUpWithEmail,
+    verifyLecturerEmail,
+    activateLecturerAccount,
+    sendPasswordReset,
+    signInWithGoogle,
+    updateUserProfile,
+    updateLecturerProfile: updateLecturerProfileDetails,
+    updateLecturerProfileDetails,
+    changePassword,
+    removeProfilePicture,
+    signOut,
+    createAdmin,
+    updateAdminRole,
+    deleteAdminAccount,
+    deleteCurrentUserAccount,
+    getAdministrators,
+  }), [
+    user,
+    lecturerProfile,
+    isLoading,
+    isSigningOut,
+    signInWithEmail,
+    signUpWithEmail,
+    verifyLecturerEmail,
+    activateLecturerAccount,
+    sendPasswordReset,
+    signInWithGoogle,
+    updateUserProfile,
+    updateLecturerProfileDetails,
+    changePassword,
+    removeProfilePicture,
+    signOut,
+    createAdmin,
+    updateAdminRole,
+    deleteAdminAccount,
+    deleteCurrentUserAccount,
+    getAdministrators,
+  ]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        lecturerProfile,
-        isLoading,
-        isSigningOut,
-        signInWithEmail,
-        signUpWithEmail,
-        verifyLecturerEmail,
-        activateLecturerAccount,
-        sendPasswordReset,
-        signInWithGoogle,
-        updateUserProfile,
-        updateLecturerProfile: updateLecturerProfileDetails,
-        updateLecturerProfileDetails,
-        changePassword,
-        removeProfilePicture,
-        signOut,
-        createAdmin,
-        updateAdminRole,
-        deleteAdminAccount,
-        deleteCurrentUserAccount,
-        getAdministrators,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

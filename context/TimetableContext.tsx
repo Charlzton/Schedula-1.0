@@ -334,176 +334,184 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
   }, [courses, facilities, lecturers, timeSlots, schedules, systemActivities, bookingRequests, notifications]);
 
   // Firestore Real-Time Subscriptions & Initialization
+  // 1. Stable, non-profile dependent global feeds
   useEffect(() => {
-    // Only proceed once authentication has finished loading and an authenticated user is present
     if (!db || isLoading || !user) return;
 
     let isMounted = true;
     const unsubscribes: (() => void)[] = [];
 
-    async function initAndSubscribe() {
-      try {
-        setIsFirestoreSyncing(true);
+    setIsFirestoreSyncing(true);
 
+    try {
+      // Subscribe to Facilities
+      const unsubFacilities = onSnapshot(collection(db, 'facilities'), (snapshot) => {
         if (!isMounted) return;
-
-        // Step 2: Subscribe to Courses (Strict server-side isolation for faculty)
-        const currentLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
-        let coursesQuery = null;
-        let skipCoursesSubscription = false;
-
-        if (user?.role === 'lecturer') {
-          if (currentLecturerId) {
-            coursesQuery = query(
-              collection(db, 'courses'),
-              where('assignedLecturerId', '==', currentLecturerId)
-            );
-          } else {
-            setCourses([]);
-            skipCoursesSubscription = true;
-          }
-        } else {
-          coursesQuery = query(collection(db, 'courses'));
+        const remoteFacilities = snapshot.docs.map((docSnap) => docSnap.data() as LectureFacility);
+        if (remoteFacilities.length > 0 || snapshot.empty) {
+          setFacilities(remoteFacilities);
         }
-
-        if (!skipCoursesSubscription && coursesQuery) {
-          const unsubCourses = onSnapshot(coursesQuery, (snapshot) => {
-            if (!isMounted) return;
-            const remoteCourses = snapshot.docs.map((docSnap) => docSnap.data() as Course);
-            setCourses(remoteCourses);
-            setFirestoreStatus('connected');
-          }, () => {
-            if (isMounted) setFirestoreStatus('offline');
-          });
-          unsubscribes.push(unsubCourses);
-        }
-
-        // Step 3: Subscribe to Facilities
-        const unsubFacilities = onSnapshot(collection(db, 'facilities'), (snapshot) => {
-          if (!isMounted) return;
-          const remoteFacilities = snapshot.docs.map((docSnap) => docSnap.data() as LectureFacility);
-          if (remoteFacilities.length > 0 || snapshot.empty) {
-            setFacilities(remoteFacilities);
-          }
-        }, () => {});
-        unsubscribes.push(unsubFacilities);
-
-        // Step 4: Subscribe to Lecturers
-        const unsubLecturers = onSnapshot(collection(db, 'lecturers'), (snapshot) => {
-          if (!isMounted) return;
-          const remoteLecturers = snapshot.docs.map((docSnap) => docSnap.data() as Lecturer);
-          if (remoteLecturers.length > 0 || snapshot.empty) {
-            setLecturers(remoteLecturers);
-          }
-        }, () => {});
-        unsubscribes.push(unsubLecturers);
-
-        // Step 5: Subscribe to TimeSlots
-        const unsubTimeSlots = onSnapshot(collection(db, 'timeslots'), (snapshot) => {
-          if (!isMounted) return;
-          const remoteSlots = snapshot.docs.map((docSnap) => docSnap.data() as TimeSlot);
-          if (remoteSlots.length > 0 || snapshot.empty) {
-            setTimeSlots(remoteSlots);
-          }
-        }, () => {});
-        unsubscribes.push(unsubTimeSlots);
-
-        // Step 6: Subscribe to Timetables (filtered for lecturers, full for admin)
-        const timetableLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
-        let timetablesQuery = null;
-        let skipSubscription = false;
-
-        if (user?.role === 'lecturer') {
-          if (timetableLecturerId) {
-            timetablesQuery = query(
-              collection(db, 'timetables'),
-              where('status', '==', 'published'),
-              where('lecturerId', '==', timetableLecturerId)
-            );
-          } else {
-            setSchedules([]);
-            skipSubscription = true;
-          }
-        } else {
-          timetablesQuery = query(collection(db, 'timetables'));
-        }
-
-        if (!skipSubscription && timetablesQuery) {
-          const unsubTimetables = onSnapshot(timetablesQuery, (snapshot) => {
-            if (!isMounted) return;
-            if (!snapshot.empty) {
-              const remoteSchedules = snapshot.docs.map((docSnap) => docSnap.data() as TimetableEntry);
-              setSchedules(remoteSchedules);
-            } else {
-              setSchedules([]);
-            }
-          }, () => {});
-          unsubscribes.push(unsubTimetables);
-        }
-
-        // Step 6b: Subscribe to Academic Periods
-        const unsubAcademicPeriods = onSnapshot(collection(db, 'academic_periods'), (snapshot) => {
-          if (!isMounted) return;
-          if (!snapshot.empty) {
-            const remotePeriods = snapshot.docs.map((docSnap) => docSnap.data() as AcademicPeriod);
-            setAcademicPeriods(remotePeriods);
-            try {
-              localStorage.setItem(STORAGE_KEY_PERIODS, JSON.stringify(remotePeriods));
-            } catch {}
-          }
-        }, () => {});
-        unsubscribes.push(unsubAcademicPeriods);
-
-        // Step 7: Subscribe to Activities
-        const unsubActivities = onSnapshot(collection(db, 'activities'), (snapshot) => {
-          if (!isMounted) return;
-          if (!snapshot.empty) {
-            const remoteActs = snapshot.docs.map((docSnap) => docSnap.data() as SystemActivity);
-            remoteActs.sort((a, b) => {
-              const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-              const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-              return timeB - timeA;
-            });
-            setSystemActivities(remoteActs.slice(0, 50));
-          }
-        }, () => {});
-        unsubscribes.push(unsubActivities);
-
-        // Step 8: Subscribe to Bookings
-        const unsubBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
-          if (!isMounted) return;
-          const remoteBookings = snapshot.docs.map((docSnap) => docSnap.data() as RoomBookingRequest);
-          remoteBookings.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
-          setBookingRequests(remoteBookings);
-        }, () => {});
-        unsubscribes.push(unsubBookings);
-
-        // Step 9: Subscribe to Notifications
-        const unsubNotifications = onSnapshot(collection(db, 'notifications'), (snapshot) => {
-          if (!isMounted) return;
-          const remoteNotifs = snapshot.docs.map((docSnap) => docSnap.data() as NotificationItem);
-          // Sort by creation time newest first
-          remoteNotifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          setNotifications(remoteNotifs);
-        }, () => {});
-        unsubscribes.push(unsubNotifications);
-
-      } catch {
+        setFirestoreStatus('connected');
+      }, () => {
         if (isMounted) setFirestoreStatus('offline');
-      } finally {
-        if (isMounted) {
-          setIsFirestoreSyncing(false);
+      });
+      unsubscribes.push(unsubFacilities);
+
+      // Subscribe to Lecturers
+      const unsubLecturers = onSnapshot(collection(db, 'lecturers'), (snapshot) => {
+        if (!isMounted) return;
+        const remoteLecturers = snapshot.docs.map((docSnap) => docSnap.data() as Lecturer);
+        if (remoteLecturers.length > 0 || snapshot.empty) {
+          setLecturers(remoteLecturers);
         }
+      }, () => {});
+      unsubscribes.push(unsubLecturers);
+
+      // Subscribe to TimeSlots
+      const unsubTimeSlots = onSnapshot(collection(db, 'timeslots'), (snapshot) => {
+        if (!isMounted) return;
+        const remoteSlots = snapshot.docs.map((docSnap) => docSnap.data() as TimeSlot);
+        if (remoteSlots.length > 0 || snapshot.empty) {
+          setTimeSlots(remoteSlots);
+        }
+      }, () => {});
+      unsubscribes.push(unsubTimeSlots);
+
+      // Subscribe to Academic Periods
+      const unsubAcademicPeriods = onSnapshot(collection(db, 'academic_periods'), (snapshot) => {
+        if (!isMounted) return;
+        if (!snapshot.empty) {
+          const remotePeriods = snapshot.docs.map((docSnap) => docSnap.data() as AcademicPeriod);
+          setAcademicPeriods(remotePeriods);
+          try {
+            localStorage.setItem(STORAGE_KEY_PERIODS, JSON.stringify(remotePeriods));
+          } catch {}
+        }
+      }, () => {});
+      unsubscribes.push(unsubAcademicPeriods);
+
+      // Subscribe to Activities
+      const unsubActivities = onSnapshot(collection(db, 'activities'), (snapshot) => {
+        if (!isMounted) return;
+        if (!snapshot.empty) {
+          const remoteActs = snapshot.docs.map((docSnap) => docSnap.data() as SystemActivity);
+          remoteActs.sort((a, b) => {
+            const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return timeB - timeA;
+          });
+          setSystemActivities(remoteActs.slice(0, 50));
+        }
+      }, () => {});
+      unsubscribes.push(unsubActivities);
+
+      // Subscribe to Bookings
+      const unsubBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
+        if (!isMounted) return;
+        const remoteBookings = snapshot.docs.map((docSnap) => docSnap.data() as RoomBookingRequest);
+        remoteBookings.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+        setBookingRequests(remoteBookings);
+      }, () => {});
+      unsubscribes.push(unsubBookings);
+
+      // Subscribe to Notifications
+      const unsubNotifications = onSnapshot(collection(db, 'notifications'), (snapshot) => {
+        if (!isMounted) return;
+        const remoteNotifs = snapshot.docs.map((docSnap) => docSnap.data() as NotificationItem);
+        // Sort by creation time newest first
+        remoteNotifs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setNotifications(remoteNotifs);
+      }, () => {});
+      unsubscribes.push(unsubNotifications);
+
+    } catch (err) {
+      console.warn('Feeds subscription exception:', err);
+      if (isMounted) setFirestoreStatus('offline');
+    } finally {
+      if (isMounted) {
+        setIsFirestoreSyncing(false);
       }
     }
-
-    initAndSubscribe();
 
     return () => {
       isMounted = false;
       unsubscribes.forEach((unsub) => unsub());
     };
-  }, [user, lecturerProfile, isLoading]);
+  }, [user, isLoading]);
+
+  // 2. Profile-dependent custom feeds (Courses and Schedules)
+  useEffect(() => {
+    if (!db || isLoading || !user) return;
+
+    let isMounted = true;
+    const unsubscribes: (() => void)[] = [];
+
+    const currentLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
+
+    // Courses subscription (filtered for lecturers, full for admin)
+    let coursesQuery = null;
+    let skipCoursesSubscription = false;
+
+    if (user?.role === 'lecturer') {
+      if (currentLecturerId) {
+        coursesQuery = query(
+          collection(db, 'courses'),
+          where('assignedLecturerId', '==', currentLecturerId)
+        );
+      } else {
+        setCourses([]);
+        skipCoursesSubscription = true;
+      }
+    } else {
+      coursesQuery = query(collection(db, 'courses'));
+    }
+
+    if (!skipCoursesSubscription && coursesQuery) {
+      const unsubCourses = onSnapshot(coursesQuery, (snapshot) => {
+        if (!isMounted) return;
+        const remoteCourses = snapshot.docs.map((docSnap) => docSnap.data() as Course);
+        setCourses(remoteCourses);
+      }, () => {});
+      unsubscribes.push(unsubCourses);
+    }
+
+    // Timetables subscription (filtered for lecturers, full for admin)
+    let timetablesQuery = null;
+    let skipTimetableSubscription = false;
+
+    if (user?.role === 'lecturer') {
+      if (currentLecturerId) {
+        timetablesQuery = query(
+          collection(db, 'timetables'),
+          where('status', '==', 'published'),
+          where('lecturerId', '==', currentLecturerId)
+        );
+      } else {
+        setSchedules([]);
+        skipTimetableSubscription = true;
+      }
+    } else {
+      timetablesQuery = query(collection(db, 'timetables'));
+    }
+
+    if (!skipTimetableSubscription && timetablesQuery) {
+      const unsubTimetables = onSnapshot(timetablesQuery, (snapshot) => {
+        if (!isMounted) return;
+        if (!snapshot.empty) {
+          const remoteSchedules = snapshot.docs.map((docSnap) => docSnap.data() as TimetableEntry);
+          setSchedules(remoteSchedules);
+        } else {
+          setSchedules([]);
+        }
+      }, () => {});
+      unsubscribes.push(unsubTimetables);
+    }
+
+    return () => {
+      isMounted = false;
+      unsubscribes.forEach((unsub) => unsub());
+    };
+  }, [user, lecturerProfile?.lecturerId, isLoading]);
 
   const addActivity = (
     action: string, 

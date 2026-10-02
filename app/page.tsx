@@ -87,7 +87,7 @@ export default function SchedulaApp() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F9FB] dark:bg-[#0A0B10] text-[#111827] dark:text-[#F9FAFB] font-system selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-900 relative transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-[#F7F9FB] dark:bg-[#0A0B10] text-[#111827] dark:text-[#F9FAFB] font-system selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-zinc-900 relative transition-colors duration-120">
       {/* Schedula Top Navigation Bar */}
       <Navbar
         onDashboardClick={handleOpenDashboard}
