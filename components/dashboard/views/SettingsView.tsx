@@ -21,39 +21,6 @@ import { useTheme } from '@/context/ThemeContext';
 import { DeleteConfirmationModal } from '@/components/dashboard/modals/DeleteConfirmationModal';
 import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 
-const PRESET_AVATARS = [
-  {
-    id: 'avatar-1',
-    label: 'Academic Director',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%233b82f6"/><stop offset="100%" stop-color="%231d4ed8"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g1)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-2',
-    label: 'CS Professor',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%236366f1"/><stop offset="100%" stop-color="%234338ca"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g2)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-3',
-    label: 'Lead Administrator',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%2310b981"/><stop offset="100%" stop-color="%23047857"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g3)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-4',
-    label: 'Faculty Convenor',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%238b5cf6"/><stop offset="100%" stop-color="%236d28d9"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g4)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-5',
-    label: 'Research Fellow',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23f59e0b"/><stop offset="100%" stop-color="%23b45309"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g5)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-6',
-    label: 'Tech Specialist',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g6" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%2306b6d4"/><stop offset="100%" stop-color="%230e7490"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g6)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  }
-];
-
 export function SettingsView() {
   const { 
     resetToDefaultDataset, 
@@ -141,25 +108,6 @@ export function SettingsView() {
       }
     } catch (err: any) {
       setProfileError(err?.message || 'Failed to remove photo.');
-    } finally {
-      setIsSavingProfile(false);
-    }
-  };
-
-  // Handle Select Preset Avatar
-  const handleSelectPresetAvatar = async (avatarUrl: string) => {
-    setIsSavingProfile(true);
-    setProfileError(null);
-    try {
-      const res = await updateUserProfile(displayName || user?.name || 'Administrator', avatarUrl);
-      if (res.success) {
-        setProfileSuccess('Profile picture updated successfully');
-        setTimeout(() => setProfileSuccess(null), 3000);
-      } else {
-        setProfileError(res.error || 'Failed to set avatar.');
-      }
-    } catch (err: any) {
-      setProfileError(err?.message || 'Failed to set avatar.');
     } finally {
       setIsSavingProfile(false);
     }
@@ -395,49 +343,8 @@ export function SettingsView() {
                   )}
                 </div>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  JPG, PNG, WebP up to 10MB
+                  JPG, PNG, WebP up to 10MB (Uploaded directly to Firebase Storage)
                 </p>
-              </div>
-            </div>
-
-            {/* Quick Preset Avatars Selector */}
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                  Preset Avatars
-                </label>
-                {isSavingProfile && (
-                  <span className="text-[11px] text-zinc-500 font-semibold flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Updating...
-                  </span>
-                )}
-              </div>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
-                {PRESET_AVATARS.map((preset) => {
-                  const isSelected = user?.avatar === preset.url;
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => handleSelectPresetAvatar(preset.url)}
-                      disabled={isSavingProfile}
-                      className={`relative flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'border-zinc-900 dark:border-white bg-zinc-100 dark:bg-zinc-800'
-                          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600'
-                      }`}
-                      title={`Select ${preset.label}`}
-                    >
-                      <div className="w-10 h-10 rounded-full overflow-hidden border border-zinc-200 dark:border-zinc-700 shrink-0">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={preset.url} alt={preset.label} className="w-full h-full object-cover" />
-                      </div>
-                      <span className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400 truncate w-full text-center">
-                        {preset.label}
-                      </span>
-                    </button>
-                  );
-                })}
               </div>
             </div>
           </div>

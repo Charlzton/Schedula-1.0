@@ -26,39 +26,6 @@ import { useAuth } from '@/context/AuthContext';
 import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 import { useTheme } from '@/context/ThemeContext';
 
-const PRESET_AVATARS = [
-  {
-    id: 'avatar-1',
-    label: 'Academic Director',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%233b82f6"/><stop offset="100%" stop-color="%231d4ed8"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g1)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-2',
-    label: 'CS Professor',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%236366f1"/><stop offset="100%" stop-color="%234338ca"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g2)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-3',
-    label: 'Lead Administrator',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%2310b981"/><stop offset="100%" stop-color="%23047857"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g3)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-4',
-    label: 'Faculty Convenor',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%238b5cf6"/><stop offset="100%" stop-color="%236d28d9"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g4)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-5',
-    label: 'Research Fellow',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23f59e0b"/><stop offset="100%" stop-color="%23b45309"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g5)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  },
-  {
-    id: 'avatar-6',
-    label: 'Tech Specialist',
-    url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g6" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%2306b6d4"/><stop offset="100%" stop-color="%230e7490"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(%23g6)"/><circle cx="60" cy="45" r="20" fill="%23ffffff"/><path d="M 22,102 C 22,76 38,68 60,68 C 82,68 98,76 98,102 Z" fill="%23ffffff"/></svg>'
-  }
-];
-
 export function LecturerSettingsView() {
   const { user, lecturerProfile, updateLecturerProfile, updateUserProfile, changePassword, removeProfilePicture } = useAuth();
   const { theme, setTheme, toggleTheme, mounted } = useTheme();
@@ -117,21 +84,6 @@ export function LecturerSettingsView() {
     } finally {
       setIsSavingProfile(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const handleSelectPresetAvatar = async (url: string) => {
-    try {
-      setIsSavingProfile(true);
-      setProfileError(null);
-      setProfileSuccess(null);
-      await updateUserProfile({ avatar: url });
-      setProfileSuccess('Profile avatar updated.');
-    } catch (err: unknown) {
-      console.error('Failed to select preset avatar:', err);
-      setProfileError(err instanceof Error ? err.message : 'Failed to select avatar.');
-    } finally {
-      setIsSavingProfile(false);
     }
   };
 
@@ -276,7 +228,7 @@ export function LecturerSettingsView() {
               Profile Photo
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              Select an academic avatar or upload your own custom photo.
+              Upload a profile photo to identify your account across Schedula.
             </p>
 
             <div className="mt-5 flex flex-col sm:flex-row items-start sm:items-center gap-6">
@@ -328,52 +280,14 @@ export function LecturerSettingsView() {
                     <LoadingButtonContent
                       loading={isSavingProfile}
                       loadingText="Uploading"
-                      defaultText="Upload Custom Image"
+                      defaultText="Upload Profile Image"
                       icon={<Upload className="w-3.5 h-3.5" />}
                     />
                   </button>
                 </div>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  Supported formats: JPG, PNG, WEBP (Max 5MB). Photo is compressed and synced across devices.
+                  Supported formats: JPG, PNG, WEBP (Max 10MB). Image is uploaded directly to Firebase Cloud Storage.
                 </p>
-              </div>
-            </div>
-
-            {/* Preset Avatars Selection */}
-            <div className="mt-6 pt-5 border-t border-zinc-200/60 dark:border-white/10">
-              <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300 block mb-3">
-                Or choose an Academic Preset:
-              </span>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                {PRESET_AVATARS.map((preset) => {
-                  const isCurrent = user?.avatar === preset.url;
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => handleSelectPresetAvatar(preset.url)}
-                      disabled={isSavingProfile}
-                      className={`relative group p-2 rounded-xl border transition-all flex flex-col items-center gap-2 text-center cursor-pointer ${
-                        isCurrent
-                          ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-900/20 ring-2 ring-blue-600/30'
-                          : 'border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 bg-black/[0.01] dark:bg-white/[0.01]'
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-full overflow-hidden shadow-2xs">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={preset.url} alt={preset.label} className="w-full h-full object-cover" />
-                      </div>
-                      <span className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400 line-clamp-1">
-                        {preset.label}
-                      </span>
-                      {isCurrent && (
-                        <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center">
-                          <Check className="w-2.5 h-2.5 stroke-[3]" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
               </div>
             </div>
           </div>

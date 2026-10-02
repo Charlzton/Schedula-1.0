@@ -918,29 +918,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       let avatarUrl = typeof avatar === 'string' ? avatar : undefined;
 
       if (auth.currentUser) {
-        if (avatar && typeof avatar !== 'string') {
+        // Case 1: Avatar is a File or Blob -> Upload directly to Firebase Storage
+        if (avatar && (avatar instanceof File || avatar instanceof Blob)) {
           try {
             avatarUrl = await uploadProfileImageToStorage(avatar, auth.currentUser.uid);
           } catch (storageErr: any) {
             console.error('Firebase Storage upload failed:', storageErr);
             return {
               success: false,
-              error: storageErr?.message || 'Failed to upload profile image to cloud storage.'
+              error: storageErr?.message || 'Failed to upload profile image to Firebase Storage.'
             };
           }
-        } else if (avatar && typeof avatar === 'string' && avatar.startsWith('data:image')) {
-          // If a base64 data URI was provided, convert it to a Blob and upload to Firebase Storage
-          try {
-            const response = await fetch(avatar);
-            const blob = await response.blob();
-            avatarUrl = await uploadProfileImageToStorage(blob, auth.currentUser.uid);
-          } catch (blobErr: any) {
-            console.error('Failed to convert and upload image to Firebase Storage:', blobErr);
-            return {
-              success: false,
-              error: 'Failed to process and upload profile image to storage.'
-            };
-          }
+        } 
+        // Case 2: Avatar is an image URL string
+        else if (avatar && typeof avatar === 'string') {
+          avatarUrl = avatar;
         }
 
         try {
@@ -956,16 +948,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userDocRef = doc(db, 'users', auth.currentUser.uid);
           await setDoc(userDocRef, {
             name: cleanName,
-            ...(avatarUrl !== undefined ? { avatar: avatarUrl } : {})
+            ...(avatarUrl !== undefined ? { avatar: avatarUrl, photoURL: avatarUrl } : {})
           }, { merge: true });
 
           // Also update lecturer directory document if user is linked to a faculty profile
-          if (lecturerProfile?.lecturerId) {
-            const cleanId = lecturerProfile.lecturerId.replace(/[\/\s#$[\]]/g, '_');
+          const targetLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
+          if (targetLecturerId) {
+            const cleanId = targetLecturerId.replace(/[\/\s#$[\]]/g, '_');
             const lecDocRef = doc(db, 'lecturers', cleanId);
             await setDoc(lecDocRef, {
               fullName: cleanName,
-              ...(avatarUrl !== undefined ? { avatar: avatarUrl } : {})
+              ...(avatarUrl !== undefined ? { avatar: avatarUrl, photoURL: avatarUrl } : {})
             }, { merge: true });
           }
         } catch (dbErr) {
@@ -1016,6 +1009,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await setDoc(userDocRef, {
             avatar: ''
           }, { merge: true });
+
+          const targetLecturerId = lecturerProfile?.lecturerId || user?.lecturerId;
+          if (targetLecturerId) {
+            const cleanId = targetLecturerId.replace(/[\/\s#$[\]]/g, '_');
+            const lecDocRef = doc(db, 'lecturers', cleanId);
+            await setDoc(lecDocRef, {
+              avatar: ''
+            }, { merge: true });
+          }
         } catch (dbErr) {
           console.warn('Firestore profile picture remove note:', dbErr);
         }
@@ -1032,6 +1034,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {}
         return updated;
       });
+
+      if (lecturerProfile) {
+        setLecturerProfile(prev => prev ? {
+          ...prev,
+          avatar: undefined
+        } : prev);
+      }
 
       return { success: true };
     } catch (err: any) {
