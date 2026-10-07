@@ -52,13 +52,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error('Failed to persist theme in localStorage', e);
     }
+
+    const docEl = document.documentElement;
+    docEl.classList.add('theme-transition');
+
     if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.colorScheme = 'dark';
+      docEl.classList.add('dark');
+      docEl.style.colorScheme = 'dark';
     } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.style.colorScheme = 'light';
+      docEl.classList.remove('dark');
+      docEl.style.colorScheme = 'light';
     }
+
+    setTimeout(() => {
+      docEl.classList.remove('theme-transition');
+    }, 180);
   };
 
   const toggleTheme = () => {

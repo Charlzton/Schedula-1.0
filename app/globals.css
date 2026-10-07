@@ -24,11 +24,23 @@
     line-height: 1.5;
   }
 
-  /* Synchronized immediate & smooth theme transitions for all themable properties */
-  *, *::before, *::after {
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, box-shadow;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 120ms;
+  /* Synchronized immediate & smooth theme transitions across all themeable properties */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, box-shadow !important;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition-duration: 150ms !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html.theme-transition,
+    html.theme-transition *,
+    html.theme-transition *::before,
+    html.theme-transition *::after {
+      transition-duration: 0.01ms !important;
+    }
   }
 
   /* Standard Heading Hierarchy */

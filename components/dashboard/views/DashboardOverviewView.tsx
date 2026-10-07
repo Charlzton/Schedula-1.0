@@ -281,7 +281,7 @@ export function DashboardOverviewView({
 
         {/* Card 2: Scheduling Efficiency */}
         <div 
-          onClick={() => setActiveView('generate')}
+          onClick={() => window.dispatchEvent(new CustomEvent('open-ai-scheduler'))}
           className="group relative p-4 sm:p-5 rounded-3xl glass-panel hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 cursor-pointer overflow-hidden"
         >
           <div className="flex items-start gap-3.5 sm:gap-4">
@@ -433,7 +433,7 @@ export function DashboardOverviewView({
 
         {/* Pending / Unsatisfied Courses */}
         <div 
-          onClick={() => setActiveView('generate')}
+          onClick={() => window.dispatchEvent(new CustomEvent('open-ai-scheduler'))}
           className="p-3.5 rounded-2xl bg-white/70 dark:bg-[#13141B]/70 backdrop-blur-md border border-zinc-200/70 dark:border-white/5 hover:border-blue-400/40 dark:hover:border-blue-400/30 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1">
@@ -1188,7 +1188,7 @@ export function DashboardOverviewView({
               </button>
 
               <button
-                onClick={() => setActiveView('generate')}
+                onClick={() => window.dispatchEvent(new CustomEvent('open-ai-scheduler'))}
                 className="w-full flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-bold border border-amber-500/20 transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">

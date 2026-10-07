@@ -58,7 +58,7 @@ export function AdminDashboard() {
           document.getElementById('global-search-input')?.focus();
           break;
         case 'n':
-          setActiveView('generate');
+          window.dispatchEvent(new CustomEvent('toggle-ai-scheduler'));
           break;
         case 'd':
           setActiveView('dashboard');
@@ -96,6 +96,14 @@ export function AdminDashboard() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [setActiveView, setMobileMenuOpen]);
+
+  // Auto-redirect legacy 'generate' view state to dashboard overview and open floating AI panel
+  useEffect(() => {
+    if (activeView === 'generate') {
+      setActiveView('dashboard');
+      window.dispatchEvent(new CustomEvent('open-ai-scheduler'));
+    }
+  }, [activeView, setActiveView]);
 
   // Close mobile drawer on view change or viewport resize to desktop
   useEffect(() => {
