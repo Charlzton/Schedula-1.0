@@ -130,7 +130,7 @@ export function AiSchedulingMiniPanel({ isOpen, onClose }: AiSchedulingMiniPanel
               <h2 id="ai-scheduler-panel-title" className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white tracking-tight truncate flex items-center gap-1.5">
                 <span>AI Scheduler</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 font-semibold border border-blue-500/20">
-                  {activeAcademicPeriod?.name ? activeAcademicPeriod.name.split(' ')[0] : 'Auto'}
+                  {activeAcademicPeriod ? activeAcademicPeriod.academicYear : 'Auto'}
                 </span>
               </h2>
               <p className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">

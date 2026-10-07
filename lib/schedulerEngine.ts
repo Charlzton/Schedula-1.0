@@ -11,6 +11,7 @@ export interface GenerationOptions {
   targetLevel?: number | 'All';
   separateTheoryAndPracticalDays?: boolean;
   strictCapacityCheck?: boolean;
+  preventLecturerClash?: boolean;
   academicYear?: string;
   status?: 'generated' | 'published' | 'draft';
 }
