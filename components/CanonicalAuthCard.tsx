@@ -66,9 +66,9 @@ export function CanonicalAuthCard({
 
   const hasRedirectedRef = useRef(false);
 
-  // Auto-redirect if user is already authenticated
+  // Auto-redirect if user is already authenticated on initial mount
   useEffect(() => {
-    if (user && !authLoading && !hasRedirectedRef.current) {
+    if (user && !authLoading && !loading && !googleLoading && !verifying && !creating && !hasRedirectedRef.current) {
       hasRedirectedRef.current = true;
       const target = user.role === 'lecturer' ? '/lecturer' : '/dashboard';
       if (onSuccess) {
@@ -76,7 +76,7 @@ export function CanonicalAuthCard({
       }
       router.replace(target);
     }
-  }, [user, authLoading, router, onSuccess]);
+  }, [user, authLoading, loading, googleLoading, verifying, creating, router, onSuccess]);
 
   // Sync mode and initial role when props change
   useEffect(() => {

@@ -547,10 +547,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isAuthoritativeAdminOrSuperAdmin = authoritativeRole === 'admin' || authoritativeRole === 'super_admin';
       const isAuthoritativeLecturer = authoritativeRole === 'lecturer';
 
-      // 5. Authoritative dashboard resolution: route user to their respective dashboard according to credentials
-      // Regardless of which tab was initially selected, we seamlessly redirect according to their authentic account details.
-      if (portalRole !== authoritativeRole && !(portalRole === 'admin' && isAuthoritativeAdminOrSuperAdmin)) {
-        // Synchronize role state smoothly
+      // 5. STRICT AUTHORITATIVE ROLE ENFORCEMENT ON LOGIN CONTEXT (portalRole)
+      // CASE 2: Lecturer credentials entered with Admin portal selected -> REJECT IMMEDIATELY
+      if (portalRole === 'admin' && !isAuthoritativeAdminOrSuperAdmin) {
+        await fbSignOut(auth);
+        setUser(null);
+        setLecturerProfile(null);
+        try {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          localStorage.removeItem(LECTURER_STORAGE_KEY);
+        } catch {}
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'No admin account is associated with these credentials.',
+          code: 'auth/unauthorized-role'
+        };
+      }
+
+      // CASE 4 & CASE 6: Admin or Super Admin credentials entered with Lecturer portal selected -> REJECT IMMEDIATELY
+      if (portalRole === 'lecturer' && !isAuthoritativeLecturer) {
+        await fbSignOut(auth);
+        setUser(null);
+        setLecturerProfile(null);
+        try {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          localStorage.removeItem(LECTURER_STORAGE_KEY);
+        } catch {}
+        setIsLoading(false);
+        return {
+          success: false,
+          error: 'No lecturer account is associated with these credentials.',
+          code: 'auth/unauthorized-role'
+        };
       }
 
       let fetchedAvatar = fbUser.photoURL || finalUserData?.avatar || undefined;
@@ -808,22 +837,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isAuthoritativeLecturer = authoritativeRole === 'lecturer';
 
       // STRICT AUTHORIZATION VALIDATION: Selected role (portalRole) MUST match authoritativeRole
-      if (portalRole === 'admin' && isAuthoritativeLecturer) {
+      if (portalRole === 'admin' && !isAuthoritativeAdminOrSuperAdmin) {
         await fbSignOut(auth);
+        setUser(null);
+        setLecturerProfile(null);
+        try {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          localStorage.removeItem(LECTURER_STORAGE_KEY);
+        } catch {}
         setIsLoading(false);
         return {
           success: false,
-          error: 'Your account is currently registered as Lecturer. Please select Lecturer to continue.',
+          error: 'No admin account is associated with these credentials.',
           code: 'auth/unauthorized-role'
         };
       }
 
-      if (portalRole === 'lecturer' && isAuthoritativeAdminOrSuperAdmin) {
+      if (portalRole === 'lecturer' && !isAuthoritativeLecturer) {
         await fbSignOut(auth);
+        setUser(null);
+        setLecturerProfile(null);
+        try {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          localStorage.removeItem(LECTURER_STORAGE_KEY);
+        } catch {}
         setIsLoading(false);
         return {
           success: false,
-          error: 'Your account is currently registered as Admin. Please select Admin to continue.',
+          error: 'No lecturer account is associated with these credentials.',
           code: 'auth/unauthorized-role'
         };
       }
