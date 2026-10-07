@@ -17,23 +17,46 @@ import {
   FileSpreadsheet,
   FileText
 } from 'lucide-react';
-import { Course } from '@/lib/dataset';
+import { Course, isCourseAllocatedToLecturer } from '@/lib/dataset';
 
 export function LecturerCoursesView() {
   const { user, lecturerProfile } = useAuth();
-  const { courses, schedules, activeAcademicPeriod, currentAcademicYear } = useTimetable();
+  const { courses, lecturers, schedules, activeAcademicPeriod, currentAcademicYear } = useTimetable();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSemester, setSelectedSemester] = useState<'All' | 'Semester 1' | 'Semester 2'>('All');
   const [selectedLevel, setSelectedLevel] = useState<'All' | '100' | '200' | '300' | '400'>('All');
 
+  // Find effective lecturer profile
+  const activeLecturer = useMemo(() => {
+    if (lecturerProfile) return lecturerProfile;
+    if (user?.lecturerId) {
+      const found = lecturers.find(l => l.lecturerId === user.lecturerId);
+      if (found) return found;
+    }
+    if (user?.email) {
+      const emailLower = user.email.toLowerCase();
+      const found = lecturers.find(l => 
+        (l.officeEmail && l.officeEmail.toLowerCase() === emailLower) ||
+        (l.email && l.email.toLowerCase() === emailLower)
+      );
+      if (found) return found;
+    }
+    return null;
+  }, [lecturerProfile, user, lecturers]);
+
   // Authenticated lecturer label
-  const facultyName = lecturerProfile?.fullName || user?.name || 'Faculty Member';
-  const facultyId = lecturerProfile?.lecturerId || user?.lecturerId || '';
+  const facultyName = activeLecturer?.fullName || user?.name || 'Faculty Member';
+  const facultyId = activeLecturer?.lecturerId || user?.lecturerId || '';
+
+  // Filter courses strictly for this lecturer
+  const myAssignedCourses = useMemo(() => {
+    return courses.filter(c => isCourseAllocatedToLecturer(c, activeLecturer, user?.id));
+  }, [courses, activeLecturer, user]);
 
   // Filter courses by search, semester, and level
   const filteredCourses = useMemo(() => {
-    return courses.filter(c => {
+    return myAssignedCourses.filter(c => {
       const matchesSearch = 
         c.courseCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.courseTitle.toLowerCase().includes(searchTerm.toLowerCase());
@@ -43,7 +66,7 @@ export function LecturerCoursesView() {
 
       return matchesSearch && matchesSemester && matchesLevel;
     });
-  }, [courses, searchTerm, selectedSemester, selectedLevel]);
+  }, [myAssignedCourses, searchTerm, selectedSemester, selectedLevel]);
 
   // Export scoped courses as CSV
   const handleExportCSV = () => {

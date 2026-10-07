@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { useTimetable } from '@/context/TimetableContext';
-import { LectureFacility } from '@/lib/dataset';
+import { LectureFacility, isCourseAllocatedToLecturer } from '@/lib/dataset';
 import { RoomBookingRequest } from '@/lib/lecturerTypes';
 import { RoomBookingModal } from '../modals/RoomBookingModal';
 import { Search, DoorOpen, Plus } from 'lucide-react';
@@ -12,11 +13,35 @@ interface LecturerRoomAvailabilityViewProps {
 }
 
 export function LecturerRoomAvailabilityView({ onAddBookingRequest }: LecturerRoomAvailabilityViewProps) {
-  const { facilities, schedules, timeSlots, courses, bookingRequests } = useTimetable();
+  const { user, lecturerProfile } = useAuth();
+  const { facilities, schedules, timeSlots, courses, lecturers, bookingRequests } = useTimetable();
+
+  // Find effective lecturer profile for the authenticated user
+  const activeLecturer = useMemo(() => {
+    if (lecturerProfile) return lecturerProfile;
+    if (user?.lecturerId) {
+      const found = lecturers.find(l => l.lecturerId === user.lecturerId);
+      if (found) return found;
+    }
+    if (user?.email) {
+      const emailLower = user.email.toLowerCase();
+      const found = lecturers.find(l => 
+        (l.officeEmail && l.officeEmail.toLowerCase() === emailLower) ||
+        (l.email && l.email.toLowerCase() === emailLower)
+      );
+      if (found) return found;
+    }
+    return null;
+  }, [lecturerProfile, user, lecturers]);
+
+  // Lecturer's assigned courses from authoritative Firestore data
+  const myAssignedCourses = useMemo(() => {
+    return courses.filter(c => isCourseAllocatedToLecturer(c, activeLecturer, user?.id));
+  }, [courses, activeLecturer, user]);
 
   // Filters
   const [selectedDay, setSelectedDay] = useState<'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday'>('Monday');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('07:30 - 09:30');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
   const [minCapacity, setMinCapacity] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [venueTypeFilter, setVenueTypeFilter] = useState<string>('All');
@@ -30,21 +55,23 @@ export function LecturerRoomAvailabilityView({ onAddBookingRequest }: LecturerRo
   // Modal state
   const [selectedFacilityForBooking, setSelectedFacilityForBooking] = useState<LectureFacility | null>(null);
 
-  // Available slots from timeSlots or default schedule blocks
+  // Dynamic time slots directly from Firestore /timeslots
   const availableSlots = useMemo(() => {
     if (timeSlots && timeSlots.length > 0) {
       const unique = Array.from(new Set(timeSlots.map(t => `${t.startTime} - ${t.endTime}`)));
       return unique.sort();
     }
-    return [
-      '07:30 - 09:30',
-      '09:30 - 11:30',
-      '11:30 - 13:30',
-      '13:30 - 15:30',
-      '15:30 - 17:30',
-      '17:30 - 19:30'
-    ];
+    return [];
   }, [timeSlots]);
+
+  // Auto-sync active selected time slot when availableSlots update
+  useEffect(() => {
+    if (availableSlots.length > 0 && (!selectedTimeSlot || !availableSlots.includes(selectedTimeSlot))) {
+      setSelectedTimeSlot(availableSlots[0]);
+    } else if (availableSlots.length === 0) {
+      setSelectedTimeSlot('');
+    }
+  }, [availableSlots, selectedTimeSlot]);
 
   // Venue Types in dataset
   const venueTypes = useMemo(() => {
@@ -193,15 +220,21 @@ export function LecturerRoomAvailabilityView({ onAddBookingRequest }: LecturerRo
             <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
               Time Slot
             </label>
-            <select
-              value={selectedTimeSlot}
-              onChange={(e) => setSelectedTimeSlot(e.target.value)}
-              className="w-full glass-input px-3 py-2 text-xs text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              {availableSlots.map(slot => (
-                <option key={slot} value={slot}>{slot}</option>
-              ))}
-            </select>
+            {availableSlots.length === 0 ? (
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-medium truncate">
+                No time slots currently available
+              </div>
+            ) : (
+              <select
+                value={selectedTimeSlot}
+                onChange={(e) => setSelectedTimeSlot(e.target.value)}
+                className="w-full glass-input px-3 py-2 text-xs text-zinc-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {availableSlots.map(slot => (
+                  <option key={slot} value={slot}>{slot}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Minimum Capacity */}
@@ -448,7 +481,8 @@ export function LecturerRoomAvailabilityView({ onAddBookingRequest }: LecturerRo
           facility={selectedFacilityForBooking}
           defaultDay={selectedDay}
           defaultSlot={selectedTimeSlot}
-          courses={courses}
+          courses={myAssignedCourses}
+          timeSlots={timeSlots}
           onSubmit={async (req) => {
             await onAddBookingRequest(req);
             setSelectedFacilityForBooking(null);

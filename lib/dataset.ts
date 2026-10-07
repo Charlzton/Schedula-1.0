@@ -384,25 +384,40 @@ export const INITIAL_NOTIFICATIONS = [
 
 export function isCourseAllocatedToLecturer(
   course: Course | null | undefined,
-  lecturer: Lecturer | null | undefined
+  lecturer: Lecturer | null | undefined,
+  userAuthUid?: string | null
 ): boolean {
-  if (!course || !lecturer) return false;
+  if (!course) return false;
 
-  // 1. Direct ID match
+  // 1. Direct Auth UID match if passed
+  if (userAuthUid && course.assignedLecturerId && course.assignedLecturerId === userAuthUid) {
+    return true;
+  }
+
+  if (!lecturer) return false;
+
+  // 2. Direct Lecturer ID match
   if (course.assignedLecturerId && lecturer.lecturerId) {
     if (course.assignedLecturerId.trim().toUpperCase() === lecturer.lecturerId.trim().toUpperCase()) {
       return true;
     }
   }
 
-  // 2. Full name match
+  // 3. Auth UID match on lecturer object
+  if (course.assignedLecturerId && lecturer.authUid) {
+    if (course.assignedLecturerId === lecturer.authUid) {
+      return true;
+    }
+  }
+
+  // 4. Full name match
   if (course.assignedLecturerName && lecturer.fullName) {
     if (course.assignedLecturerName.trim().toLowerCase() === lecturer.fullName.trim().toLowerCase()) {
       return true;
     }
   }
 
-  // 3. Lecturer assignedCourses field check
+  // 5. Lecturer assignedCourses field check
   if (lecturer.assignedCourses && course.courseCode) {
     const courseCodeClean = course.courseCode.replace(/\s+/g, '').toUpperCase();
     const assignedList = Array.isArray(lecturer.assignedCourses)

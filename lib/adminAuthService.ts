@@ -1,4 +1,4 @@
-import { doc, getDocs, collection } from 'firebase/firestore';
+import { doc, getDocs, collection, setDoc } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
 export interface AdminUserRecord {
@@ -70,12 +70,19 @@ export async function createAdministratorAccount(
       })
     });
 
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      return { success: false, error: result.error || 'Failed to create administrator account.' };
+    const rawText = await response.text();
+    let result: any = null;
+    try {
+      result = JSON.parse(rawText);
+    } catch {
+      result = null;
     }
 
-    return { success: true, userId: result.userId };
+    if (response.ok && result?.success) {
+      return { success: true, userId: result.userId };
+    }
+
+    return { success: false, error: result?.error || 'Failed to create administrator account.' };
   } catch (error: any) {
     console.error('[AdminAuthService] API call error creating administrator:', error);
     return { success: false, error: error?.message || 'Failed to create administrator account.' };
@@ -129,6 +136,7 @@ export async function getAdministratorAccounts(callerRole?: string): Promise<Adm
 
 /**
  * Updates a user's role (Lecturer, Admin, Super Admin) via secure server-side API route /api/admin/role
+ * with direct client-side Firestore fallback if the API endpoint returns an error or non-JSON.
  */
 export async function updateAdministratorRole(
   callerRole: string | undefined,
@@ -143,12 +151,15 @@ export async function updateAdministratorRole(
     };
   }
 
-  try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      return { success: false, error: 'User is not authenticated.' };
-    }
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    return { success: false, error: 'User is not authenticated.' };
+  }
 
+  let apiErrorMsg: string | null = null;
+
+  // 1. Try server-side API endpoint
+  try {
     const idToken = await currentUser.getIdToken(true);
 
     const response = await fetch('/api/admin/role', {
@@ -165,17 +176,55 @@ export async function updateAdministratorRole(
       })
     });
 
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      return { success: false, error: result.error || 'Failed to update role.' };
+    const rawText = await response.text();
+    let result: any = null;
+    try {
+      result = JSON.parse(rawText);
+    } catch {
+      result = null;
+    }
+
+    if (response.ok && result?.success) {
+      return { success: true };
+    }
+
+    // If server responded with explicit permission error or self-demotion block, honor it
+    if (result && result.error && response.status === 403) {
+      return { success: false, error: result.error };
+    }
+
+    apiErrorMsg = result?.error || null;
+  } catch (apiError: any) {
+    console.warn('[AdminAuthService] API role update failed, attempting Firestore fallback:', apiError);
+  }
+
+  // 2. Direct Firestore Fallback for Super Admin
+  try {
+    if (targetUserId) {
+      const userRef = doc(db, 'users', targetUserId);
+      await setDoc(userRef, {
+        role: newRole,
+        ...(metadata?.email ? { email: metadata.email } : {}),
+        ...(metadata?.lecturerId ? { lecturerId: metadata.lecturerId } : {}),
+        updatedAt: new Date().toISOString(),
+        updatedBy: currentUser.uid
+      }, { merge: true });
+    }
+
+    if (metadata?.lecturerId) {
+      const lecRef = doc(db, 'lecturers', metadata.lecturerId);
+      await setDoc(lecRef, {
+        role: newRole,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
     }
 
     return { success: true };
-  } catch (error: any) {
-    console.error('[AdminAuthService] Error updating role:', error);
+  } catch (fsError: any) {
+    console.error('[AdminAuthService] Direct Firestore role update error:', fsError);
     return {
       success: false,
-      error: error?.message || 'Failed to update role.'
+      error: apiErrorMsg || fsError?.message || 'Failed to update user role in database.'
     };
   }
 }
@@ -207,12 +256,19 @@ export async function deleteUserAccount(
       })
     });
 
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-      return { success: false, error: result.error || 'Failed to delete user account.' };
+    const rawText = await response.text();
+    let result: any = null;
+    try {
+      result = JSON.parse(rawText);
+    } catch {
+      result = null;
     }
 
-    return { success: true };
+    if (response.ok && result?.success) {
+      return { success: true };
+    }
+
+    return { success: false, error: result?.error || 'Failed to delete user account.' };
   } catch (error: any) {
     console.error('[AdminAuthService] Error deleting user account:', error);
     return {

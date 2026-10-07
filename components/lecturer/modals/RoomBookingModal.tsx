@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, Check } from 'lucide-react';
-import { LectureFacility, Course } from '@/lib/dataset';
+import React, { useState, useEffect } from 'react';
+import { X, Check, AlertCircle } from 'lucide-react';
+import { LectureFacility, Course, TimeSlot } from '@/lib/dataset';
 import { RoomBookingRequest } from '@/lib/lecturerTypes';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingButtonContent } from '@/components/LoadingButtonContent';
@@ -14,6 +14,7 @@ interface RoomBookingModalProps {
   defaultDay: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
   defaultSlot: string;
   courses: Course[];
+  timeSlots: TimeSlot[];
   onSubmit: (request: Omit<RoomBookingRequest, 'id' | 'submittedAt' | 'status'>) => Promise<void> | void;
 }
 
@@ -24,24 +25,68 @@ export function RoomBookingModal({
   defaultDay,
   defaultSlot,
   courses,
+  timeSlots,
   onSubmit
 }: RoomBookingModalProps) {
   const { user, lecturerProfile } = useAuth();
 
   const [day, setDay] = useState<'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday'>(defaultDay);
-  const [timeSlot, setTimeSlot] = useState<string>(defaultSlot);
-  const [courseCode, setCourseCode] = useState<string>(courses[0]?.courseCode || 'DCIT 201');
-  const [expectedAttendance, setExpectedAttendance] = useState<number>(facility ? Math.min(60, facility.capacity) : 50);
+  const [timeSlot, setTimeSlot] = useState<string>('');
+  const [courseCode, setCourseCode] = useState<string>('');
+  const [expectedAttendance, setExpectedAttendance] = useState<number>(50);
   const [purpose, setPurpose] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync initial selection values when modal opens or props update
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setDay(defaultDay);
+
+    // Format available slots
+    const formattedSlots = timeSlots.map(s => `${s.startTime} - ${s.endTime}`);
+    if (defaultSlot && formattedSlots.includes(defaultSlot)) {
+      setTimeSlot(defaultSlot);
+    } else if (formattedSlots.length > 0) {
+      setTimeSlot(formattedSlots[0]);
+    } else {
+      setTimeSlot('');
+    }
+
+    if (courses.length > 0) {
+      setCourseCode(courses[0].courseCode);
+      setExpectedAttendance(Math.min(courses[0].expectedEnrollment || 50, facility?.capacity || 100));
+    } else {
+      setCourseCode('');
+    }
+  }, [isOpen, defaultDay, defaultSlot, courses, timeSlots, facility]);
+
+  // Update expected attendance when selected course changes
+  const handleCourseChange = (selectedCode: string) => {
+    setCourseCode(selectedCode);
+    const selectedCourse = courses.find(c => c.courseCode === selectedCode);
+    if (selectedCourse && facility) {
+      setExpectedAttendance(Math.min(selectedCourse.expectedEnrollment || 50, facility.capacity));
+    }
+  };
 
   if (!isOpen || !facility) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (courses.length === 0 || !courseCode) {
+      setError('No assigned course selected. You can only request room reservations for your assigned courses.');
+      return;
+    }
+
+    if (timeSlots.length === 0 || !timeSlot) {
+      setError('No valid time slot selected. An active time slot must be selected for room requests.');
+      return;
+    }
 
     if (expectedAttendance <= 0) {
       setError('Please enter a valid student attendance count.');
@@ -133,13 +178,14 @@ export function RoomBookingModal({
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-semibold text-rose-600 dark:text-rose-400">
-              {error}
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
           )}
 
           {/* Schedule Period Selectors */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
                 Day of Week
@@ -161,43 +207,57 @@ export function RoomBookingModal({
               <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
                 Time Slot
               </label>
-              <select
-                value={timeSlot}
-                onChange={(e) => setTimeSlot(e.target.value)}
-                className="w-full glass-input px-3 py-2 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="07:30 - 09:30">07:30 - 09:30</option>
-                <option value="09:30 - 11:30">09:30 - 11:30</option>
-                <option value="11:30 - 13:30">11:30 - 13:30</option>
-                <option value="13:30 - 15:30">13:30 - 15:30</option>
-                <option value="15:30 - 17:30">15:30 - 17:30</option>
-                <option value="17:30 - 19:30">17:30 - 19:30</option>
-              </select>
+              {timeSlots.length === 0 ? (
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                  No time slots are currently available.
+                </div>
+              ) : (
+                <select
+                  value={timeSlot}
+                  onChange={(e) => setTimeSlot(e.target.value)}
+                  className="w-full glass-input px-3 py-2 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {timeSlots.map((slot) => {
+                    const label = `${slot.startTime} - ${slot.endTime}`;
+                    return (
+                      <option key={slot.slotId || label} value={label}>
+                        {label} ({slot.sessionType})
+                      </option>
+                    );
+                  })}
+                </select>
+              )}
             </div>
           </div>
 
           {/* Course Selection */}
           <div>
             <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-              Course
+              Assigned Course
             </label>
-            <select
-              value={courseCode}
-              onChange={(e) => setCourseCode(e.target.value)}
-              className="w-full glass-input px-3 py-2 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              {courses.map((c) => (
-                <option key={c.courseCode} value={c.courseCode}>
-                  {c.courseCode} — {c.courseTitle} (Level {c.level})
-                </option>
-              ))}
-            </select>
+            {courses.length === 0 ? (
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-medium">
+                No courses are currently assigned to your faculty profile in the university catalog.
+              </div>
+            ) : (
+              <select
+                value={courseCode}
+                onChange={(e) => handleCourseChange(e.target.value)}
+                className="w-full glass-input px-3 py-2 rounded-xl text-xs text-zinc-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {courses.map((c) => (
+                  <option key={c.courseCode} value={c.courseCode}>
+                    {c.courseCode} — {c.courseTitle} (Level {c.level})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Expected Attendance */}
           <div>
             <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
-              Expected Attendance (Max: {facility.capacity})
+              Expected Attendance (Venue Max: {facility.capacity})
             </label>
             <input
               type="number"
@@ -237,8 +297,8 @@ export function RoomBookingModal({
 
             <button
               type="submit"
-              disabled={isSubmitting || isSuccess}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs disabled:opacity-75 select-none"
+              disabled={isSubmitting || isSuccess || courses.length === 0 || timeSlots.length === 0}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 select-none"
             >
               {isSuccess ? (
                 <>
