@@ -241,7 +241,11 @@ export function DashboardOverviewView({
       {/* ========================================================================= */}
       {/* 1. TOP 3 HERO KPI CARDS */}
       {/* ========================================================================= */}
-      <section aria-label="Key Performance Indicators" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5 no-print">
+      <section 
+        data-tour="admin-overview"
+        aria-label="Key Performance Indicators" 
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5 no-print"
+      >
         
         {/* Card 1: Total Courses & Curriculum Load */}
         <div 

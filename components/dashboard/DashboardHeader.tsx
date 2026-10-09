@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { 
   Menu, 
   Search, 
-  Settings, 
   BookOpen, 
   Building2, 
   Users, 
@@ -107,7 +106,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
         <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
           
           {/* Desktop Search Bar (Hidden on Mobile) */}
-          <div ref={searchRef} className="hidden sm:block relative">
+          <div ref={searchRef} data-tour="quick-search" className="hidden sm:block relative">
             <div className="relative flex items-center glass-input px-3 py-1.5 w-40 md:w-56 lg:w-64 transition-all">
               <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-400 mr-2 shrink-0" />
               <input
@@ -221,6 +220,7 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
           {/* Compact Mobile Search Button (< 640px) */}
           <button
             type="button"
+            data-tour="quick-search"
             onClick={() => setMobileSearchModalOpen(true)}
             className="sm:hidden p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
             aria-label="Search"
@@ -229,9 +229,11 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
             <Search className="w-4 h-4" />
           </button>
 
-          {/* Theme Toggle Button */}
-          <button
-            onClick={toggleTheme}
+          {/* Action Controls Cluster */}
+          <div data-tour="header-extras" className="flex items-center gap-1.5 sm:gap-2.5">
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             className="p-2 rounded-xl text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
@@ -249,20 +251,6 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
             variant="admin" 
             onNavigateToRequests={() => setActiveView('booking_requests')} 
           />
-
-          {/* Settings Gear Icon */}
-          <button
-            onClick={() => setActiveView('settings')}
-            aria-label="Open Settings"
-            title="Settings"
-            className={`p-2 rounded-xl transition-all cursor-pointer ${
-              activeView === 'settings'
-                ? 'text-blue-600 dark:text-blue-400 bg-black/5 dark:bg-white/10 font-semibold'
-                : 'text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-          </button>
 
           {/* Profile / Account Icon & Dropdown */}
           <div ref={profileRef} className="relative">
@@ -348,9 +336,10 @@ export function DashboardHeader({ onOpenMobileMenu, onOpenImportExport }: Dashbo
               </div>
             )}
           </div>
-
         </div>
+
       </div>
+    </div>
 
       {/* Mobile Search Modal Overlay (< 640px) */}
       {mobileSearchModalOpen && (

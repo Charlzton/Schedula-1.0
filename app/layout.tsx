@@ -4,6 +4,8 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { TimetableProvider } from '@/context/TimetableContext';
 import { ToastProvider } from '@/context/ToastContext';
+import { TourProvider } from '@/context/TourContext';
+import { OnboardingTour } from '@/components/tour/OnboardingTour';
 
 export const metadata: Metadata = {
   title: 'Schedula',
@@ -64,7 +66,10 @@ export default function RootLayout({
           <AuthProvider>
             <TimetableProvider>
               <ToastProvider>
-                {children}
+                <TourProvider>
+                  {children}
+                  <OnboardingTour />
+                </TourProvider>
               </ToastProvider>
             </TimetableProvider>
           </AuthProvider>

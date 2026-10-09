@@ -133,7 +133,11 @@ export function LecturerOverviewView({ onNavigate, bookingRequests, onOpenProfil
       )}
 
       {/* 2. Key Metrics Strip (Admin Style) */}
-      <section aria-label="Key Faculty Metrics" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <section 
+        data-tour="lecturer-overview"
+        aria-label="Key Faculty Metrics" 
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+      >
         {/* Weekly Sessions */}
         <div 
           onClick={() => onNavigate('schedule')}

@@ -79,7 +79,7 @@ export function FloatingSchedulerButton() {
                 ? 'bg-zinc-950/85 backdrop-blur-xl border border-white/15 shadow-xl shadow-black/40 hover:bg-zinc-900/90 hover:border-white/30 hover:shadow-cyan-500/20'
                 : 'bg-white/90 backdrop-blur-xl border border-white/40 shadow-lg shadow-cyan-500/15 hover:bg-white hover:border-cyan-400/50 hover:shadow-xl hover:shadow-cyan-500/25'
             }
-            ${isPanelOpen ? 'ring-2 ring-cyan-400/80 ring-offset-2 dark:ring-offset-zinc-950 scale-105 shadow-2xl' : 'animate-subtle-float hover:scale-105 active:scale-95'}
+            ${isPanelOpen ? 'ring-2 ring-cyan-400/80 ring-offset-2 dark:ring-offset-zinc-950 scale-105 shadow-2xl' : 'hover:scale-105 active:scale-95'}
             transition-all duration-200 ease-out
           `}
         >

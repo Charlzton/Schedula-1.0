@@ -83,7 +83,7 @@ export function LecturerHeader({
         </div>
 
         {/* Right Area: Search, Theme Toggle, Settings, Notifications, Profile */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div data-tour="header-extras" id="lecturer-header-actions" className="flex items-center gap-1 sm:gap-2 shrink-0">
           
           {/* Desktop Search */}
           {onSearchChange && (

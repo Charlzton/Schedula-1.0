@@ -105,6 +105,15 @@ export function AdminDashboard() {
     }
   }, [activeView, setActiveView]);
 
+  // Handle tour reset to overview
+  useEffect(() => {
+    const handleReset = () => {
+      setActiveView('dashboard');
+    };
+    window.addEventListener('schedula-reset-to-overview', handleReset);
+    return () => window.removeEventListener('schedula-reset-to-overview', handleReset);
+  }, [setActiveView]);
+
   // Close mobile drawer on view change or viewport resize to desktop
   useEffect(() => {
     setMobileMenuOpen(false);

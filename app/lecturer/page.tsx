@@ -45,6 +45,15 @@ export default function LecturerPage() {
     }
   }, [user, isLoading, isSigningOut, router]);
 
+  // Handle tour reset to overview
+  useEffect(() => {
+    const handleReset = () => {
+      setActiveView('overview');
+    };
+    window.addEventListener('schedula-reset-to-overview', handleReset);
+    return () => window.removeEventListener('schedula-reset-to-overview', handleReset);
+  }, []);
+
   // Lecturer's personal booking requests (filtered by lecturerId or email)
   const myBookingRequests = useMemo(() => {
     if (!user) return [];

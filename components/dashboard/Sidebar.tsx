@@ -10,11 +10,14 @@ import {
   LogOut,
   X,
   Loader2,
-  ShieldCheck
+  ShieldCheck,
+  Compass,
+  Settings
 } from 'lucide-react';
 import { useTimetable, DashboardViewType } from '@/context/TimetableContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useTour } from '@/context/TourContext';
 import { useRouter } from 'next/navigation';
 import { SchedulaLogo } from '@/components/SchedulaLogo';
 
@@ -29,10 +32,19 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
   const { activeView, setActiveView, analytics } = useTimetable();
   const { signOut, user, isSigningOut: authIsSigningOut } = useAuth();
   const { theme, mounted } = useTheme();
+  const { startTour, forceSidebarExpand } = useTour();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const isDark = mounted ? theme === 'dark' : false;
   const router = useRouter();
+
+  const handleStartTour = () => {
+    if (activeView !== 'dashboard') {
+      setActiveView('dashboard');
+    }
+    startTour();
+    if (onCloseMobile) onCloseMobile();
+  };
 
   // Handle body scroll lock when mobile menu is open
   useEffect(() => {
@@ -71,8 +83,21 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
     { id: 'generated_timetables', label: 'Schedule', icon: CalendarDays, badge: analytics.kpi.successfullyScheduled > 0 ? `${analytics.kpi.successfullyScheduled}` : undefined },
     ...(user?.role === 'super_admin' ? [
       { id: 'admin_management' as DashboardViewType, label: 'Admins', icon: ShieldCheck }
-    ] : [])
+    ] : []),
+    { id: 'settings', label: 'Settings', icon: Settings }
   ];
+
+  const getTourDataAttribute = (id: DashboardViewType) => {
+    switch (id) {
+      case 'courses': return 'sidebar-courses';
+      case 'lecturers': return 'sidebar-lecturers';
+      case 'facilities': return 'sidebar-facilities';
+      case 'generated_timetables': return 'sidebar-schedules';
+      case 'admin_management': return 'sidebar-admins';
+      case 'settings': return 'sidebar-settings';
+      default: return undefined;
+    }
+  };
 
   const handleNavClick = (view: DashboardViewType) => {
     setActiveView(view);
@@ -116,7 +141,10 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
       </div>
 
       {/* Middle: Navigation Items (Scrolls smoothly if height is limited) */}
-      <div className="flex-1 flex flex-col justify-start gap-1 sm:gap-1.5 px-2 sm:px-3 py-2.5 min-h-0 overflow-y-auto custom-scrollbar">
+      <div 
+        data-tour="admin-nav" 
+        className="flex-1 flex flex-col justify-start gap-1 sm:gap-1.5 px-2 sm:px-3 py-2.5 min-h-0 overflow-y-auto custom-scrollbar"
+      >
         <div className="px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 shrink-0 h-4 flex items-center justify-center mb-1">
           <span className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
             Navigation
@@ -133,6 +161,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
             <button
               key={item.id}
               id={`nav-item-${item.id}`}
+              data-tour={getTourDataAttribute(item.id)}
               onClick={() => handleNavClick(item.id)}
               title={!isExpanded ? item.label : undefined}
               className={`
@@ -162,7 +191,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
                   <Icon className="w-4.5 h-4.5 shrink-0 stroke-[1.85]" />
                 </div>
 
-                <div className={`sidebar-text-reveal text-left ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
+                <div className={`sidebar-text-reveal text-left ${isExpanded ? 'sidebar-text-expanded opacity-100 visible' : 'sidebar-text-collapsed opacity-0 hidden'}`}>
                   <span className={`truncate block text-xs sm:text-[13px] ${isActive ? 'font-semibold text-zinc-900 dark:text-white' : 'font-medium'}`}>
                     {item.label}
                   </span>
@@ -219,6 +248,24 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
           </div>
         </div>
 
+        {/* TAKE A TOUR BUTTON */}
+        <button
+          id="sidebar-tour-button"
+          data-tour="sidebar-tour-btn"
+          type="button"
+          onClick={handleStartTour}
+          title={!isExpanded ? 'Take a tour' : undefined}
+          aria-label="Take a tour"
+          className={`w-full flex items-center rounded-xl text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 active:scale-98 transition-all cursor-pointer ${
+            isExpanded ? 'px-3 py-2 justify-start gap-2.5' : 'p-0 justify-center h-10'
+          }`}
+        >
+          <Compass className="w-4 h-4 shrink-0 stroke-[2]" />
+          <div className={`sidebar-text-reveal ${isExpanded ? 'sidebar-text-expanded' : 'sidebar-text-collapsed'}`}>
+            <span>Take a tour</span>
+          </div>
+        </button>
+
         {/* ALWAYS ACCESSIBLE SIGN OUT BUTTON */}
         <button
           id="sidebar-logout-button"
@@ -242,12 +289,14 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
     </div>
   );
 
+  const isMobileDrawerActive = mobileOpen || (forceSidebarExpand && typeof window !== 'undefined' && window.innerWidth < 1024);
+
   return (
     <>
       {/* =================================================================== */}
       {/* 1. Mobile Drawer Navigation (< 1024px)                              */}
       {/* =================================================================== */}
-      {mobileOpen && (
+      {isMobileDrawerActive && (
         <div 
           className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 lg:hidden backdrop-blur-md transition-opacity duration-200 animate-in fade-in no-print cursor-pointer"
           onClick={onCloseMobile}
@@ -257,11 +306,12 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
 
       <aside 
         id="admin-sidebar-mobile"
+        data-tour="sidebar"
         className={`
           no-print fixed top-0 left-0 h-[100dvh] max-h-[100dvh] z-50 lg:hidden
           w-72 max-w-[85vw] p-2.5 sm:p-3 shrink-0
           flex flex-col transition-transform duration-250 ease-out
-          ${mobileOpen 
+          ${isMobileDrawerActive 
             ? 'translate-x-0 shadow-2xl' 
             : '-translate-x-full pointer-events-none invisible'
           }
@@ -279,15 +329,20 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
       >
         <aside 
           id="admin-sidebar"
+          data-tour="sidebar"
           onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+          onMouseLeave={() => {
+            if (!forceSidebarExpand) {
+              setIsHovered(false);
+            }
+          }}
           className={`
             absolute top-0 left-0 h-screen p-3 z-40 pointer-events-auto
-            sidebar-overlay-container
-            ${isHovered ? 'w-72 shadow-2xl' : 'w-[88px] shadow-lg'}
+            sidebar-overlay-container transition-all duration-200 ease-in-out
+            ${(isHovered || forceSidebarExpand) ? 'w-72 shadow-2xl' : 'w-[88px] shadow-lg'}
           `}
         >
-          {renderSidebarContent(isHovered, false)}
+          {renderSidebarContent(isHovered || forceSidebarExpand, false)}
         </aside>
       </div>
     </>
