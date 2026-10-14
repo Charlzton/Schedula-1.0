@@ -6,6 +6,7 @@ import { generateLowestAvailableId } from '@/lib/idHelper';
 import { useTimetable } from '@/context/TimetableContext';
 import { Lecturer } from '@/lib/dataset';
 import { LoadingButtonContent } from '@/components/LoadingButtonContent';
+import { stripLeadingTitle, cleanLecturerTitle, getLecturerDisplayName } from '@/lib/lecturerUtils';
 
 interface LecturerModalProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
 
   const [lecturerId, setLecturerId] = useState('');
   const [fullName, setFullName] = useState('');
-  const [title, setTitle] = useState('Dr.');
+  const [title, setTitle] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [department, setDepartment] = useState('Department of Computer Science');
@@ -31,8 +32,8 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
   useEffect(() => {
     if (initialLecturer) {
       setLecturerId(initialLecturer.lecturerId);
-      setFullName(initialLecturer.fullName);
-      setTitle(initialLecturer.title || 'Dr.');
+      setFullName(getLecturerDisplayName(initialLecturer));
+      setTitle(initialLecturer.title || '');
       setEmail(initialLecturer.email || initialLecturer.officeEmail || '');
       setPhone(initialLecturer.phone || '');
       setDepartment(initialLecturer.department || 'Department of Computer Science');
@@ -42,7 +43,7 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
     } else {
       setLecturerId(generateLowestAvailableId(lecturers.map(l => l.lecturerId), 'LEC'));
       setFullName('');
-      setTitle('Dr.');
+      setTitle('');
       setEmail('');
       setPhone('');
       setDepartment('Department of Computer Science');
@@ -59,7 +60,8 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
     e.preventDefault();
     setValidationError(null);
 
-    const cleanName = fullName.trim();
+    const cleanName = stripLeadingTitle(fullName);
+    const cleanTitle = cleanLecturerTitle(title);
     const cleanId = lecturerId.trim().toUpperCase();
     const cleanEmail = email.trim().toLowerCase();
 
@@ -87,12 +89,12 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
       }
     }
 
-    const resolvedEmail = cleanEmail || `${cleanName.toLowerCase().replace(/\s+/g, '.')}@ug.edu.gh`;
+    const resolvedEmail = cleanEmail || `${cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '.')}@ug.edu.gh`;
 
     const lecturerData: Lecturer = {
       lecturerId: cleanId,
       fullName: cleanName,
-      title,
+      title: cleanTitle,
       email: resolvedEmail,
       officeEmail: resolvedEmail,
       phone: phone.trim() || '+233 24 000 0000',
@@ -171,15 +173,21 @@ export function LecturerModal({ isOpen, onClose, initialLecturer }: LecturerModa
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                Academic Title
+                Academic Title (Optional)
               </label>
               <select
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-white/60 dark:bg-white/5 backdrop-blur-md border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all cursor-pointer"
               >
+                <option value="" className="dark:bg-zinc-900">None (Optional)</option>
                 <option value="Prof." className="dark:bg-zinc-900">Prof.</option>
+                <option value="Professor" className="dark:bg-zinc-900">Professor</option>
                 <option value="Assoc. Prof." className="dark:bg-zinc-900">Assoc. Prof.</option>
+                <option value="Associate Professor" className="dark:bg-zinc-900">Associate Professor</option>
+                <option value="Senior Lecturer" className="dark:bg-zinc-900">Senior Lecturer</option>
+                <option value="Lecturer" className="dark:bg-zinc-900">Lecturer</option>
+                <option value="Assistant Lecturer" className="dark:bg-zinc-900">Assistant Lecturer</option>
                 <option value="Dr." className="dark:bg-zinc-900">Dr.</option>
                 <option value="Mr." className="dark:bg-zinc-900">Mr.</option>
                 <option value="Mrs." className="dark:bg-zinc-900">Mrs.</option>

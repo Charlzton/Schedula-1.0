@@ -37,6 +37,11 @@ import {
   GenerationOptions,
   GenerationResult 
 } from '@/lib/schedulerEngine';
+import { 
+  normalizeLecturerRecord, 
+  sanitizeExistingLecturers, 
+  getLecturerDisplayName 
+} from '@/lib/lecturerUtils';
 import { useAuth } from '@/context/AuthContext';
 import {
   saveCourseToFirestore,
@@ -362,7 +367,18 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
         if (!isMounted) return;
         const remoteLecturers = snapshot.docs.map((docSnap) => docSnap.data() as Lecturer);
         if (remoteLecturers.length > 0 || snapshot.empty) {
-          setLecturers(remoteLecturers);
+          const { sanitized, hasChanges } = sanitizeExistingLecturers(remoteLecturers);
+          setLecturers(sanitized);
+
+          // Asynchronously heal unambiguous duplicate titles in Firestore if user is admin
+          if (hasChanges && (user?.role === 'admin' || user?.role === 'super_admin')) {
+            sanitized.forEach(lec => {
+              const original = remoteLecturers.find(r => r.lecturerId === lec.lecturerId);
+              if (original && (original.fullName !== lec.fullName || original.title !== lec.title)) {
+                saveLecturerToFirestore(lec).catch(() => {});
+              }
+            });
+          }
         }
       }, () => {});
       unsubscribes.push(unsubLecturers);
@@ -617,23 +633,28 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
 
   // Lecturer CRUD
   const addLecturer = (lecturer: Lecturer, silent: boolean = false) => {
+    const normalized = normalizeLecturerRecord(lecturer);
     const enrichedLecturer: Lecturer = {
-      ...lecturer,
-      accountStatus: lecturer.accountStatus || 'unclaimed'
+      ...normalized,
+      accountStatus: normalized.accountStatus || 'unclaimed'
     };
     setLecturers(prev => [...prev.filter(l => l.lecturerId !== enrichedLecturer.lecturerId), enrichedLecturer]);
     saveLecturerToFirestore(enrichedLecturer);
     if (!silent) {
-      addActivity('Lecturer Added', `Added ${enrichedLecturer.fullName} (${enrichedLecturer.title})`, 'create');
+      const displayName = getLecturerDisplayName(enrichedLecturer);
+      addActivity('Lecturer Added', `Added ${displayName}${enrichedLecturer.title ? ` (${enrichedLecturer.title})` : ''}`, 'create');
     }
   };
 
   const bulkAddLecturers = (newLecturers: Lecturer[]) => {
     if (!newLecturers.length) return;
-    const enriched = newLecturers.map(l => ({
-      ...l,
-      accountStatus: l.accountStatus || 'unclaimed'
-    }));
+    const enriched = newLecturers.map(l => {
+      const normalized = normalizeLecturerRecord(l);
+      return {
+        ...normalized,
+        accountStatus: normalized.accountStatus || 'unclaimed'
+      };
+    });
     const newIds = new Set(enriched.map(l => l.lecturerId));
     setLecturers(prev => [...prev.filter(l => !newIds.has(l.lecturerId)), ...enriched]);
     bulkSaveLecturersToFirestore(enriched);
@@ -644,7 +665,8 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     let updatedLecturer: Lecturer | null = null;
     setLecturers(prev => prev.map(l => {
       if (l.lecturerId === id) {
-        updatedLecturer = { ...l, ...updated };
+        const merged = { ...l, ...updated };
+        updatedLecturer = normalizeLecturerRecord(merged);
         return updatedLecturer;
       }
       return l;

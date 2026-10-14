@@ -40,9 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark h-full" suppressHydrationWarning>
-      <head>
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
+      <body className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0B0E] text-[#111827] dark:text-[#F9FAFB] font-system antialiased selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-[#0B0B0E] overflow-x-hidden transition-colors duration-120" suppressHydrationWarning>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function() {
@@ -60,8 +58,6 @@ export default function RootLayout({
             })();`
           }}
         />
-      </head>
-      <body className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0B0E] text-[#111827] dark:text-[#F9FAFB] font-system antialiased selection:bg-zinc-900 selection:text-white dark:selection:bg-white dark:selection:text-[#0B0B0E] overflow-x-hidden transition-colors duration-120" suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>
             <TimetableProvider>

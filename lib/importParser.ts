@@ -316,6 +316,7 @@ function generateDefaultMapping(type: ParsedDataset['detectedType'], columns: st
     } else if (type === 'lecturers') {
       if (c.includes('id') || c.includes('code')) mapping[col] = 'id';
       else if (c.includes('name')) mapping[col] = 'name';
+      else if (c.includes('title') || c.includes('rank') || c.includes('salutation') || c.includes('prefix')) mapping[col] = 'title';
       else if (c.includes('email')) mapping[col] = 'email';
       else if (c.includes('dept') || c.includes('department')) mapping[col] = 'department';
       else mapping[col] = 'skip';
@@ -357,22 +358,23 @@ export async function generateExcelTemplate(): Promise<void> {
   wsCourses.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
   wsCourses.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
 
-  wsCourses.addRow({ code: 'DCIT 301', title: 'Operating Systems', creditHours: 3, level: 300, semester: 'Semester 1', lecturer: 'Dr. Michael Agartha', hall: 'NNB LG1', students: 120 });
-  wsCourses.addRow({ code: 'DCIT 303', title: 'Computer Networks', creditHours: 3, level: 300, semester: 'Semester 1', lecturer: 'Prof. Yaw Anane', hall: 'LT 1', students: 150 });
+  wsCourses.addRow({ code: 'DCIT 301', title: 'Operating Systems', creditHours: 3, level: 300, semester: 'Semester 1', lecturer: 'Michael Agartha', hall: 'NNB LG1', students: 120 });
+  wsCourses.addRow({ code: 'DCIT 303', title: 'Computer Networks', creditHours: 3, level: 300, semester: 'Semester 1', lecturer: 'Yaw Anane', hall: 'LT 1', students: 150 });
 
   // 2. Lecturers Sheet
   const wsLecturers = workbook.addWorksheet('Lecturers');
   wsLecturers.columns = [
     { header: 'Lecturer ID', key: 'id', width: 16 },
     { header: 'Lecturer Name', key: 'name', width: 28 },
+    { header: 'Academic Title (Optional)', key: 'title', width: 24 },
     { header: 'Department', key: 'dept', width: 24 },
     { header: 'Email', key: 'email', width: 28 }
   ];
   wsLecturers.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
   wsLecturers.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
 
-  wsLecturers.addRow({ id: 'LEC-001', name: 'Dr. Michael Agartha', dept: 'Computer Science', email: 'magartha@ug.edu.gh' });
-  wsLecturers.addRow({ id: 'LEC-002', name: 'Prof. Yaw Anane', dept: 'Computer Science', email: 'yanane@ug.edu.gh' });
+  wsLecturers.addRow({ id: 'LEC-001', name: 'Michael Agartha', title: 'Senior Lecturer', dept: 'Computer Science', email: 'magartha@ug.edu.gh' });
+  wsLecturers.addRow({ id: 'LEC-002', name: 'Yaw Anane', title: '', dept: 'Computer Science', email: 'yanane@ug.edu.gh' });
 
   // 3. Facilities Sheet
   const wsFacilities = workbook.addWorksheet('Lecture Halls');

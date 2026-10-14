@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react-hooks/exhaustive-deps */
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { 
@@ -1249,6 +1250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return await getAdministratorAccounts(user?.role);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const contextValue = useMemo(() => ({
     user,
     lecturerProfile,
@@ -1271,7 +1273,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     deleteAdminAccount,
     deleteCurrentUserAccount,
     getAdministrators,
-  }), [
+  }),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [
     user,
     lecturerProfile,
     isLoading,

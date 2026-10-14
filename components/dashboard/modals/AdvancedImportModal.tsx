@@ -21,6 +21,7 @@ import { useTimetable } from '@/context/TimetableContext';
 import { parseUploadedFile, generateExcelTemplate, ParsedDataset } from '@/lib/importParser';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingButtonContent } from '@/components/LoadingButtonContent';
+import { stripLeadingTitle, cleanLecturerTitle } from '@/lib/lecturerUtils';
 
 interface AdvancedImportModalProps {
   isOpen: boolean;
@@ -123,11 +124,12 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
               duplicates.push({ rowIndex: idx, existingId: existing.courseCode, type: 'course' });
             }
           } else if (ds.detectedType === 'lecturers') {
-            const name = mappedRow.name || mappedRow.fullName || row['Lecturer Name'] || row['Name'];
-            if (!name) {
+            const rawName = mappedRow.name || mappedRow.fullName || row['Lecturer Name'] || row['Name'];
+            if (!rawName) {
               validationErrors.push({ rowIndex: idx, field: 'name', message: 'Lecturer Name is required' });
             }
-            const existing = lecturers.find(l => (l.fullName || (l as any).name)?.toLowerCase() === String(name || '').toLowerCase());
+            const cleanSearch = stripLeadingTitle(rawName).toLowerCase();
+            const existing = lecturers.find(l => stripLeadingTitle(l.fullName || (l as any).name).toLowerCase() === cleanSearch);
             if (existing) {
               duplicates.push({ rowIndex: idx, existingId: existing.lecturerId, type: 'lecturer' });
             }
@@ -246,18 +248,21 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
             theoryHours: 2,
             practicalHours: 1,
             department: mapped.department || 'Department of Computer Science',
-            assignedLecturerName: mapped.lecturerName || 'Assigned Lecturer',
+            assignedLecturerName: mapped.lecturerName ? stripLeadingTitle(mapped.lecturerName) : 'Assigned Lecturer',
             expectedEnrollment: Number(mapped.expectedEnrollment) || 50
           }, true);
           importedCount++;
         } else if (ds.detectedType === 'lecturers') {
-          const id = `LEC-${Math.floor(Math.random() * 9000 + 1000)}`;
+          const id = mapped.id || mapped.lecturerId || `LEC-${Math.floor(Math.random() * 9000 + 1000)}`;
+          const rawName = String(mapped.fullName || mapped.name || 'New Lecturer').trim();
+          const cleanName = stripLeadingTitle(rawName);
+          const cleanTitle = cleanLecturerTitle(mapped.title);
           addLecturer({
             lecturerId: id,
-            fullName: mapped.fullName || mapped.name || 'New Lecturer',
-            title: mapped.title || 'Dr.',
+            fullName: cleanName || rawName,
+            title: cleanTitle || '',
             department: mapped.department || 'Department of Computer Science',
-            email: mapped.email || `${id.toLowerCase()}@ug.edu.gh`
+            email: mapped.email || `${(cleanName || id).toLowerCase().replace(/[^a-z0-9]+/g, '.')}@ug.edu.gh`
           }, true);
           importedCount++;
         } else if (ds.detectedType === 'facilities') {
@@ -455,6 +460,7 @@ export function AdvancedImportModal({ isOpen, onClose }: AdvancedImportModalProp
                         {currentDataset.detectedType === 'lecturers' && (
                           <>
                             <option value="name">Lecturer Name</option>
+                            <option value="title">Academic Title / Rank (Optional)</option>
                             <option value="department">Department</option>
                             <option value="email">Email</option>
                           </>

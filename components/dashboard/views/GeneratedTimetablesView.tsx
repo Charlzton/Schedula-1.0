@@ -33,6 +33,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { LoadingButtonContent } from '@/components/LoadingButtonContent';
 import { TimetableEntry } from '@/lib/dataset';
+import { getLecturerDisplayName } from '@/lib/lecturerUtils';
 import { 
   exportGeneratedTimetablePDF, 
   exportGeneratedTimetableExcel, 
@@ -478,11 +479,14 @@ export function GeneratedTimetablesView() {
               className="w-full px-2.5 py-1.5 rounded-xl bg-white/60 dark:bg-white/5 border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white text-xs outline-none cursor-pointer"
             >
               <option value="All" className="dark:bg-zinc-900">All Faculty Lecturers ({lecturers.length})</option>
-              {lecturers.map(l => (
-                <option key={l.lecturerId} value={l.lecturerId} className="dark:bg-zinc-900">
-                  {l.fullName} ({l.title})
-                </option>
-              ))}
+              {lecturers.map(l => {
+                const displayName = getLecturerDisplayName(l);
+                return (
+                  <option key={l.lecturerId} value={l.lecturerId} className="dark:bg-zinc-900">
+                    {displayName}{l.title ? ` (${l.title})` : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>

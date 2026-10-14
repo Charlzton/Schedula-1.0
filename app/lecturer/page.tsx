@@ -15,6 +15,7 @@ import { LecturerCoursesView } from '@/components/lecturer/views/LecturerCourses
 import { LecturerBookingRequestsView } from '@/components/lecturer/views/LecturerBookingRequestsView';
 import { LecturerSettingsView } from '@/components/lecturer/views/LecturerSettingsView';
 import { LecturerProfileModal } from '@/components/lecturer/modals/LecturerProfileModal';
+import { LecturerNextClassCountdownWidget } from '@/components/lecturer/LecturerNextClassCountdownWidget';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { HeroBackground } from '@/components/HeroBackground';
 import { Loader2 } from 'lucide-react';
@@ -194,6 +195,9 @@ export default function LecturerPage() {
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
       />
+
+      {/* Live Next-Class Countdown Widget (Sticky bottom-right) */}
+      <LecturerNextClassCountdownWidget />
     </div>
   );
 }

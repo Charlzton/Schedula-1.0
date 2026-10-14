@@ -5,6 +5,7 @@ import { X, BookOpen, Users, Clock, GraduationCap, Building2, Check, AlertCircle
 import { Course } from '@/lib/dataset';
 import { useTimetable } from '@/context/TimetableContext';
 import { LoadingButtonContent } from '@/components/LoadingButtonContent';
+import { getLecturerDisplayName } from '@/lib/lecturerUtils';
 
 interface CourseModalProps {
   isOpen: boolean;
@@ -93,7 +94,7 @@ export function CourseModal({ isOpen, onClose, initialCourse }: CourseModalProps
       practicalHours: Number(practicalHours),
       department: department.trim(),
       assignedLecturerId: assignedLecturerId || undefined,
-      assignedLecturerName: lecturer?.fullName
+      assignedLecturerName: lecturer ? getLecturerDisplayName(lecturer) : undefined
     };
 
     setIsSubmitting(true);
@@ -286,11 +287,14 @@ export function CourseModal({ isOpen, onClose, initialCourse }: CourseModalProps
               className="w-full px-3.5 py-2.5 rounded-xl bg-white/60 dark:bg-white/5 backdrop-blur-md border border-zinc-200/80 dark:border-white/10 text-zinc-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 outline-none transition-all cursor-pointer"
             >
               <option value="" className="dark:bg-zinc-900">-- None / Unassigned --</option>
-              {lecturers.map(lec => (
-                <option key={lec.lecturerId} value={lec.lecturerId} className="dark:bg-zinc-900">
-                  {lec.fullName} ({lec.title})
-                </option>
-              ))}
+              {lecturers.map(lec => {
+                const displayName = getLecturerDisplayName(lec);
+                return (
+                  <option key={lec.lecturerId} value={lec.lecturerId} className="dark:bg-zinc-900">
+                    {displayName}{lec.title ? ` (${lec.title})` : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
 

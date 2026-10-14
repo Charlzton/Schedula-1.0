@@ -19,6 +19,7 @@ import { useTimetable } from '@/context/TimetableContext';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { NotificationBell } from '@/components/NotificationBell';
+import { getLecturerDisplayName } from '@/lib/lecturerUtils';
 
 interface DashboardHeaderProps {
   onOpenMobileMenu: () => void;

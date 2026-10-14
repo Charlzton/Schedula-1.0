@@ -94,26 +94,73 @@ export async function createAdministratorAccount(
  */
 export async function getAdministratorAccounts(callerRole?: string): Promise<AdminUserRecord[]> {
   try {
-    const usersSnap = await getDocs(collection(db, 'users'));
-    const admins: AdminUserRecord[] = [];
+    const adminsMap = new Map<string, AdminUserRecord>();
 
-    usersSnap.forEach((docSnap) => {
-      const data = docSnap.data();
-      const role = (data.role || '').toLowerCase();
-      if (role === 'admin' || role === 'super_admin') {
-        admins.push({
-          id: docSnap.id,
-          name: data.name || data.fullName || 'Administrator',
-          email: data.email || '',
-          role: role as 'admin' | 'super_admin',
-          institution: data.institution || 'University of Ghana',
-          createdAt: data.createdAt || new Date().toISOString(),
-          createdBy: data.createdBy
-        });
-      }
-    });
+    // 1. Fetch from /users collection
+    try {
+      const usersSnap = await getDocs(collection(db, 'users'));
+      usersSnap.forEach((docSnap) => {
+        const data = docSnap.data();
+        const role = (data.role || '').toLowerCase();
+        if (role === 'admin' || role === 'super_admin') {
+          const email = (data.email || '').trim().toLowerCase();
+          const record: AdminUserRecord = {
+            id: docSnap.id,
+            name: data.name || data.fullName || 'Administrator',
+            email: data.email || '',
+            role: role as 'admin' | 'super_admin',
+            institution: data.institution || 'University of Ghana',
+            createdAt: data.createdAt || new Date().toISOString(),
+            createdBy: data.createdBy
+          };
+          adminsMap.set(docSnap.id, record);
+          if (email) {
+            adminsMap.set(email, record);
+          }
+        }
+      });
+    } catch (err) {
+      console.warn('[AdminAuthService] Warning loading users collection for admins:', err);
+    }
 
-    // Also ensure the primary system admin email is represented if not in list
+    // 2. Fetch from /lecturers collection for any promoted lecturers with admin/super_admin role
+    try {
+      const lecturersSnap = await getDocs(collection(db, 'lecturers'));
+      lecturersSnap.forEach((docSnap) => {
+        const data = docSnap.data();
+        const role = (data.role || '').toLowerCase();
+        if (role === 'admin' || role === 'super_admin') {
+          const email = (data.email || data.officeEmail || '').trim().toLowerCase();
+          const name = data.fullName || data.name || 'Administrator';
+          const authUid = data.authUid || docSnap.id;
+
+          const existingById = adminsMap.get(authUid) || adminsMap.get(docSnap.id);
+          const existingByEmail = email ? adminsMap.get(email) : null;
+
+          if (!existingById && !existingByEmail) {
+            const record: AdminUserRecord = {
+              id: authUid,
+              name: name,
+              email: data.email || data.officeEmail || '',
+              role: role as 'admin' | 'super_admin',
+              institution: data.institution || 'University of Ghana',
+              createdAt: data.createdAt || new Date().toISOString(),
+              createdBy: data.createdBy
+            };
+            adminsMap.set(authUid, record);
+            if (email) {
+              adminsMap.set(email, record);
+            }
+          }
+        }
+      });
+    } catch (lecErr) {
+      console.warn('[AdminAuthService] Warning loading lecturers collection for admins:', lecErr);
+    }
+
+    let admins = Array.from(new Map(Array.from(adminsMap.entries()).map(([k, v]) => [v.id, v])).values());
+
+    // 3. Ensure primary system admin email is represented if not in list
     const primaryAdminEmail = 'charlestonkyeremeh6@gmail.com';
     const hasPrimary = admins.some(a => a.email.toLowerCase() === primaryAdminEmail);
     if (!hasPrimary) {

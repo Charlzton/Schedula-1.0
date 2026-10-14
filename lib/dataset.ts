@@ -29,7 +29,7 @@ export interface LectureFacility {
 export interface Lecturer {
   lecturerId: string;
   fullName: string;
-  title: 'Professor' | 'Associate Professor' | 'Senior Lecturer' | 'Lecturer' | 'Assistant Lecturer' | string;
+  title?: 'Professor' | 'Associate Professor' | 'Senior Lecturer' | 'Lecturer' | 'Assistant Lecturer' | string;
   avatar?: string;
   officeEmail?: string;
   email?: string;
@@ -410,9 +410,18 @@ export function isCourseAllocatedToLecturer(
     }
   }
 
-  // 4. Full name match
+  // 4. Full name match (handles both direct and stripped title comparisons)
   if (course.assignedLecturerName && lecturer.fullName) {
-    if (course.assignedLecturerName.trim().toLowerCase() === lecturer.fullName.trim().toLowerCase()) {
+    const cName = course.assignedLecturerName.trim().toLowerCase();
+    const lName = lecturer.fullName.trim().toLowerCase();
+    if (cName === lName) {
+      return true;
+    }
+    // Compare after removing leading titles (e.g. "Dr. Michael Agbo Tettey Soli" vs "Michael Agbo Tettey Soli")
+    const cleanPrefixRegex = /^(?:(?:rev(?:erend)?\.?\s*(?:dr\.?|prof(?:essor)?\.?)?)|(?:(?:associate|assoc\.?)\s+prof(?:essor)?\.?)|(?:(?:assistant|asst\.?)\s+prof(?:essor)?\.?)|(?:prof(?:essor)?\.?)|(?:dr\.?|doctor)|(?:mr\.?)|(?:mrs\.?)|(?:ms\.?)|(?:miss))\s+/i;
+    const cleanCourseName = cName.replace(cleanPrefixRegex, '').trim();
+    const cleanLecName = lName.replace(cleanPrefixRegex, '').trim();
+    if (cleanCourseName && cleanLecName && cleanCourseName === cleanLecName) {
       return true;
     }
   }
