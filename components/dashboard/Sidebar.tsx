@@ -330,10 +330,14 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
         <aside 
           id="admin-sidebar"
           data-tour="sidebar"
-          onMouseEnter={() => setIsHovered(true)}
+          onMouseEnter={() => {
+            setIsHovered(true);
+            window.dispatchEvent(new CustomEvent('sidebar-hover', { detail: { expanded: true } }));
+          }}
           onMouseLeave={() => {
             if (!forceSidebarExpand) {
               setIsHovered(false);
+              window.dispatchEvent(new CustomEvent('sidebar-hover', { detail: { expanded: false } }));
             }
           }}
           className={`

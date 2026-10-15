@@ -473,16 +473,8 @@ export function TimetableProvider({ children }: { children: ReactNode }) {
     });
     unsubscribes.push(unsubCourses);
 
-    // Timetables subscription: For lecturers, subscribe to all published timetables so campus-wide room availability calculations work accurately
-    let timetablesQuery = null;
-    if (user?.role === 'lecturer') {
-      timetablesQuery = query(
-        collection(db, 'timetables'),
-        where('status', '==', 'published')
-      );
-    } else {
-      timetablesQuery = query(collection(db, 'timetables'));
-    }
+    // Timetables subscription: Subscribe to timetables collection so real-time updates from administration propagate immediately
+    const timetablesQuery = query(collection(db, 'timetables'));
 
     const unsubTimetables = onSnapshot(timetablesQuery, (snapshot) => {
       if (!isMounted) return;

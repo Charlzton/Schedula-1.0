@@ -116,7 +116,7 @@ export function AiSchedulingMiniPanel({ isOpen, onClose }: AiSchedulingMiniPanel
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92, y: 16 }}
         transition={{ duration: 0.16, ease: 'easeOut' }}
-        className="fixed bottom-3 right-3 left-3 sm:left-auto sm:right-6 sm:bottom-6 z-50 w-auto sm:w-[375px] max-w-[calc(100vw-1.5rem)] max-h-[min(560px,calc(100vh-4.5rem))] flex flex-col rounded-3xl glass-modal border border-zinc-200/90 dark:border-white/10 shadow-2xl backdrop-blur-2xl overflow-hidden font-system select-none"
+        className="fixed bottom-3 right-3 left-3 sm:left-auto sm:right-6 sm:bottom-6 z-50 w-auto sm:w-[340px] max-w-[calc(100vw-1.5rem)] max-h-[min(380px,calc(100vh-6rem))] flex flex-col rounded-3xl glass-modal border border-zinc-200/90 dark:border-white/10 shadow-2xl backdrop-blur-2xl overflow-hidden font-system select-none"
       >
         {/* ========================================================================= */}
         {/* HEADER: Title, Active Context & Accessible Close Button                   */}
@@ -365,7 +365,7 @@ export function AiSchedulingMiniPanel({ isOpen, onClose }: AiSchedulingMiniPanel
               defaultText={
                 <span className="flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-cyan-400 dark:text-cyan-600 shrink-0" />
-                  <span>Generate Schedule</span>
+                  <span>Generate</span>
                 </span>
               }
             />

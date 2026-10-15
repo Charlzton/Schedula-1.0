@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTimetable } from '@/context/TimetableContext';
 import { LecturerViewType, RoomBookingRequest } from '@/lib/lecturerTypes';
 import { isCourseAllocatedToLecturer } from '@/lib/dataset';
+import { isScheduleAllocatedToLecturer, isSchedulePublished } from '@/lib/lecturerUtils';
 import { 
   DoorOpen, 
   CalendarDays, 
@@ -25,20 +26,24 @@ interface LecturerOverviewViewProps {
 
 export function LecturerOverviewView({ onNavigate, bookingRequests, onOpenProfileModal }: LecturerOverviewViewProps) {
   const { user, lecturerProfile } = useAuth();
-  const { schedules, courses, lecturers } = useTimetable();
+  const { schedules, courses, lecturers, academicPeriods } = useTimetable();
 
   // Find effective lecturer profile
   const activeLecturer = useMemo(() => {
     if (lecturerProfile) return lecturerProfile;
     if (user?.lecturerId) {
-      const found = lecturers.find(l => l.lecturerId === user.lecturerId);
+      const found = lecturers.find(l => l.lecturerId.trim().toUpperCase() === user.lecturerId?.trim().toUpperCase());
+      if (found) return found;
+    }
+    if (user?.id) {
+      const found = lecturers.find(l => l.authUid === user.id);
       if (found) return found;
     }
     if (user?.email) {
-      const emailLower = user.email.toLowerCase();
+      const emailLower = user.email.toLowerCase().trim();
       const found = lecturers.find(l => 
-        (l.officeEmail && l.officeEmail.toLowerCase() === emailLower) ||
-        (l.email && l.email.toLowerCase() === emailLower)
+        (l.officeEmail && l.officeEmail.toLowerCase().trim() === emailLower) ||
+        (l.email && l.email.toLowerCase().trim() === emailLower)
       );
       if (found) return found;
     }
@@ -48,16 +53,14 @@ export function LecturerOverviewView({ onNavigate, bookingRequests, onOpenProfil
 
   const lecturerName = activeLecturer?.fullName || user?.name || 'Faculty Member';
 
-  // Lecturer schedules
+  // Lecturer schedules strictly filtered by authoritative allocation and publication
   const lecturerSchedules = useMemo(() => {
-    if (!activeLecturer) return [];
-    const id = activeLecturer.lecturerId;
-    const nameLower = activeLecturer.fullName.toLowerCase();
+    if (!activeLecturer && !user) return [];
     return schedules.filter(s => 
-      s.lecturerId === id || 
-      (s.lecturerName && s.lecturerName.toLowerCase() === nameLower)
+      isScheduleAllocatedToLecturer(s, activeLecturer, courses, user?.id, user?.email) &&
+      isSchedulePublished(s, academicPeriods)
     );
-  }, [schedules, activeLecturer]);
+  }, [schedules, activeLecturer, courses, user, academicPeriods]);
 
   // Determine current day of week
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -207,216 +210,85 @@ export function LecturerOverviewView({ onNavigate, bookingRequests, onOpenProfil
         </div>
       </section>
 
-      {/* 3. Today's Sessions & Quick Actions (Two-Column Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left Column: Today's Teaching Sessions (2 cols) */}
-        <div className="lg:col-span-2 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-zinc-900 dark:text-white">
-                {isWeekend ? 'Upcoming Monday Classes' : `${effectiveDay} Classes`}
-              </h2>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-600 dark:text-zinc-300">
-                {todayLectures.length}
-              </span>
-            </div>
+      {/* Today's Teaching Sessions */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+              {isWeekend ? 'Upcoming Monday Classes' : `${effectiveDay} Classes`}
+            </h2>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-white/10 text-zinc-600 dark:text-zinc-300">
+              {todayLectures.length}
+            </span>
+          </div>
 
+          <button
+            type="button"
+            onClick={() => onNavigate('schedule')}
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+          >
+            <span>Full Timetable</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {todayLectures.length > 0 ? (
+          <div className="liquid-glass rounded-3xl border border-zinc-200/70 dark:border-white/10 divide-y divide-zinc-200/60 dark:divide-white/5 overflow-hidden">
+            {todayLectures.map((lecture) => (
+              <div 
+                key={lecture.id}
+                className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
+              >
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-sm text-zinc-900 dark:text-white">
+                      {lecture.courseCode} — {lecture.courseTitle}
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                      {lecture.sessionType}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400 flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span className="flex items-center gap-1 font-medium text-zinc-700 dark:text-zinc-300">
+                      <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                      {lecture.startTime} – {lecture.endTime}
+                    </span>
+                    <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                    <span className="flex items-center gap-1 font-medium text-zinc-800 dark:text-zinc-200">
+                      <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                      {lecture.hallName}
+                    </span>
+                    <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-zinc-400" />
+                      Level {lecture.level} ({lecture.expectedEnrollment} Students)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 shrink-0 self-start sm:self-auto">
+                  {lecture.semester}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="liquid-glass rounded-3xl border border-zinc-200/70 dark:border-white/10 p-8 text-center space-y-3">
+            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {!activeLecturer 
+                ? 'No teaching schedule available. Contact administration to assign your courses.' 
+                : `No teaching sessions scheduled for ${isWeekend ? 'Monday' : 'today'}.`}
+            </p>
             <button
               type="button"
               onClick={() => onNavigate('schedule')}
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
             >
-              <span>Full Timetable</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              Open Weekly Schedule
             </button>
           </div>
-
-          {todayLectures.length > 0 ? (
-            <div className="liquid-glass rounded-3xl border border-zinc-200/70 dark:border-white/10 divide-y divide-zinc-200/60 dark:divide-white/5 overflow-hidden">
-              {todayLectures.map((lecture) => (
-                <div 
-                  key={lecture.id}
-                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-sm text-zinc-900 dark:text-white">
-                        {lecture.courseCode} — {lecture.courseTitle}
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-                        {lecture.sessionType}
-                      </span>
-                    </div>
-
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className="flex items-center gap-1 font-medium text-zinc-700 dark:text-zinc-300">
-                        <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                        {lecture.startTime} – {lecture.endTime}
-                      </span>
-                      <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                      <span className="flex items-center gap-1 font-medium text-zinc-800 dark:text-zinc-200">
-                        <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                        {lecture.hallName}
-                      </span>
-                      <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-zinc-400" />
-                        Level {lecture.level} ({lecture.expectedEnrollment} Students)
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 shrink-0 self-start sm:self-auto">
-                    {lecture.semester}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="liquid-glass rounded-3xl border border-zinc-200/70 dark:border-white/10 p-8 text-center space-y-3">
-              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                {!activeLecturer 
-                  ? 'No teaching schedule available. Contact administration to assign your courses.' 
-                  : `No teaching sessions scheduled for ${isWeekend ? 'Monday' : 'today'}.`}
-              </p>
-              <button
-                type="button"
-                onClick={() => onNavigate('schedule')}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
-              >
-                Open Weekly Schedule
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Right Column: Quick Navigation & Booking Status (1 col) */}
-        <div className="space-y-4">
-          <h2 className="text-base font-bold text-zinc-900 dark:text-white">
-            Quick Actions
-          </h2>
-
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => onNavigate('rooms')}
-              className="w-full p-4 rounded-2xl liquid-glass-interactive border border-zinc-200/70 dark:border-white/10 text-left transition-all group cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
-                    <DoorOpen className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-xs text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      Room Availability
-                    </h3>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      Live occupancy & reservations
-                    </p>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('schedule')}
-              className="w-full p-4 rounded-2xl liquid-glass-interactive border border-zinc-200/70 dark:border-white/10 text-left transition-all group cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
-                    <CalendarDays className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-xs text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      Teaching Schedule
-                    </h3>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      Weekly grid and agenda views
-                    </p>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('courses')}
-              className="w-full p-4 rounded-2xl liquid-glass-interactive border border-zinc-200/70 dark:border-white/10 text-left transition-all group cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-500/20">
-                    <BookOpen className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-xs text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      My Courses
-                    </h3>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      Allocated teaching curriculum
-                    </p>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('requests')}
-              className="w-full p-4 rounded-2xl liquid-glass-interactive border border-zinc-200/70 dark:border-white/10 text-left transition-all group cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
-                    <ClipboardList className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-xs text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      Booking Requests
-                    </h3>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      {pendingCount > 0 ? `${pendingCount} pending review` : 'Manage room reservations'}
-                    </p>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </button>
-
-            {onOpenProfileModal && (
-              <button
-                type="button"
-                onClick={onOpenProfileModal}
-                className="w-full p-4 rounded-2xl liquid-glass-interactive border border-zinc-200/70 dark:border-white/10 text-left transition-all group cursor-pointer"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/20">
-                      <User className="w-4.5 h-4.5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-xs text-zinc-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        Faculty Profile
-                      </h3>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                        Manage contact details & availability
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-                </div>
-              </button>
-            )}
-          </div>
-        </div>
-
+        )}
       </div>
 
     </div>

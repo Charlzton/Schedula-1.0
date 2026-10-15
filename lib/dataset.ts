@@ -438,5 +438,14 @@ export function isCourseAllocatedToLecturer(
     }
   }
 
+  // 6. Lecturer specializations field check
+  if (lecturer.specializations && Array.isArray(lecturer.specializations) && course.courseCode) {
+    const courseCodeClean = course.courseCode.replace(/\s+/g, '').toUpperCase();
+    if (lecturer.specializations.some(item => item.replace(/\s+/g, '').toUpperCase() === courseCodeClean)) {
+      return true;
+    }
+  }
+
   return false;
 }
+

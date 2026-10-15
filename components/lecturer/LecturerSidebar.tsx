@@ -16,9 +16,12 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useTour } from '@/context/TourContext';
+import { useTimetable } from '@/context/TimetableContext';
 import { useRouter } from 'next/navigation';
 import { SchedulaLogo } from '@/components/SchedulaLogo';
 import { LecturerViewType } from '@/lib/lecturerTypes';
+import { isCourseAllocatedToLecturer } from '@/lib/dataset';
+import { isScheduleAllocatedToLecturer, isSchedulePublished } from '@/lib/lecturerUtils';
 
 interface LecturerSidebarProps {
   activeView: LecturerViewType;
@@ -39,6 +42,7 @@ export function LecturerSidebar({
   const { signOut, user, lecturerProfile, isSigningOut: authIsSigningOut } = useAuth();
   const { theme, mounted } = useTheme();
   const { startTour, forceSidebarExpand } = useTour();
+  const { facilities, schedules, courses, lecturers, academicPeriods } = useTimetable();
   const isDark = mounted ? theme === 'dark' : false;
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -74,6 +78,32 @@ export function LecturerSidebar({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [mobileOpen, onCloseMobile]);
 
+  const currentLecturer = React.useMemo(() => {
+    if (lecturerProfile) return lecturerProfile;
+    if (user?.lecturerId) {
+      const found = lecturers.find(l => l.lecturerId.trim().toUpperCase() === user.lecturerId?.trim().toUpperCase());
+      if (found) return found;
+    }
+    if (user?.id) {
+      const found = lecturers.find(l => l.authUid === user.id);
+      if (found) return found;
+    }
+    return null;
+  }, [lecturerProfile, user, lecturers]);
+
+  const lecturerSchedulesCount = React.useMemo(() => {
+    if (!currentLecturer && !user) return 0;
+    return schedules.filter(s => 
+      isScheduleAllocatedToLecturer(s, currentLecturer, courses, user?.id, user?.email) &&
+      isSchedulePublished(s, academicPeriods)
+    ).length;
+  }, [schedules, currentLecturer, user, courses, academicPeriods]);
+
+  const lecturerCoursesCount = React.useMemo(() => {
+    if (!currentLecturer) return courses.length;
+    return courses.filter(c => isCourseAllocatedToLecturer(c, currentLecturer)).length;
+  }, [currentLecturer, courses]);
+
   const navItems: {
     id: LecturerViewType;
     label: string;
@@ -81,9 +111,9 @@ export function LecturerSidebar({
     badge?: number;
   }[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'rooms', label: 'Rooms', icon: DoorOpen },
-    { id: 'schedule', label: 'Schedule', icon: CalendarDays },
-    { id: 'courses', label: 'My Courses', icon: BookOpen },
+    { id: 'rooms', label: 'Rooms', icon: DoorOpen, badge: facilities.length > 0 ? facilities.length : undefined },
+    { id: 'schedule', label: 'Schedule', icon: CalendarDays, badge: lecturerSchedulesCount > 0 ? lecturerSchedulesCount : undefined },
+    { id: 'courses', label: 'My Courses', icon: BookOpen, badge: lecturerCoursesCount > 0 ? lecturerCoursesCount : undefined },
     { 
       id: 'requests', 
       label: 'Requests', 
@@ -343,10 +373,14 @@ export function LecturerSidebar({
         <aside 
           id="lecturer-sidebar"
           data-tour="sidebar"
-          onMouseEnter={() => setIsHovered(true)}
+          onMouseEnter={() => {
+            setIsHovered(true);
+            window.dispatchEvent(new CustomEvent('sidebar-hover', { detail: { expanded: true } }));
+          }}
           onMouseLeave={() => {
             if (!forceSidebarExpand) {
               setIsHovered(false);
+              window.dispatchEvent(new CustomEvent('sidebar-hover', { detail: { expanded: false } }));
             }
           }}
           className={`

@@ -5,11 +5,27 @@ import { useAuth } from '@/context/AuthContext';
 import { useTimetable } from '@/context/TimetableContext';
 import { ScheduleAssignment } from '@/lib/dataset';
 import { exportGeneratedTimetablePDF, exportGeneratedTimetableExcel, exportGeneratedTimetableCSV } from '@/lib/exportUtils';
+import { isScheduleAllocatedToLecturer, isSchedulePublished, stripLeadingTitle } from '@/lib/lecturerUtils';
 import { Clock, MapPin, Users, Calendar, AlertCircle, FileSpreadsheet, FileText, Download } from 'lucide-react';
+
+function getUpcomingDateString(dayName: string): string {
+  const dayMap: Record<string, number> = {
+    Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6
+  };
+  const targetDay = dayMap[dayName];
+  if (targetDay === undefined) return dayName;
+  const now = new Date();
+  const currentDay = now.getDay();
+  let diff = targetDay - currentDay;
+  if (diff < 0) diff += 7;
+  const target = new Date(now);
+  target.setDate(now.getDate() + diff);
+  return target.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
 export function LecturerTeachingScheduleView() {
   const { user, lecturerProfile } = useAuth();
-  const { schedules, lecturers, academicPeriods, currentAcademicYear } = useTimetable();
+  const { schedules, courses, lecturers, academicPeriods, currentAcademicYear } = useTimetable();
 
   const [selectedYear, setSelectedYear] = useState<string>(currentAcademicYear || '2026/2027');
   const [selectedSemester, setSelectedSemester] = useState<'All' | 'Semester 1' | 'Semester 2'>('Semester 1');
@@ -27,54 +43,58 @@ export function LecturerTeachingScheduleView() {
   const currentLecturer = useMemo(() => {
     if (lecturerProfile) return lecturerProfile;
     if (user?.lecturerId) {
-      const found = lecturers.find(l => l.lecturerId === user.lecturerId);
+      const found = lecturers.find(l => l.lecturerId.trim().toUpperCase() === user.lecturerId?.trim().toUpperCase());
+      if (found) return found;
+    }
+    if (user?.id) {
+      const found = lecturers.find(l => l.authUid === user.id);
       if (found) return found;
     }
     if (user?.email) {
-      const emailLower = user.email.toLowerCase();
+      const emailLower = user.email.toLowerCase().trim();
       const found = lecturers.find(l => 
-        (l.officeEmail && l.officeEmail.toLowerCase() === emailLower) ||
-        (l.email && l.email.toLowerCase() === emailLower)
+        (l.officeEmail && l.officeEmail.toLowerCase().trim() === emailLower) ||
+        (l.email && l.email.toLowerCase().trim() === emailLower)
       );
       if (found) return found;
     }
     return null;
   }, [lecturerProfile, user, lecturers]);
 
-  // Lecturer schedules strictly filtered by lecturer ID, academic year, semester, and publishing status
+  // Lecturer schedules strictly filtered by authoritative allocation, academic year, semester, and publishing status
   const lecturerSchedules = useMemo(() => {
-    if (!currentLecturer) return [];
-    const id = currentLecturer.lecturerId;
-    const nameLower = currentLecturer.fullName.toLowerCase();
+    if (!currentLecturer && !user) return [];
 
     return schedules.filter(s => {
-      const match = s.lecturerId === id || (s.lecturerName && s.lecturerName.toLowerCase() === nameLower);
-      if (!match) return false;
+      // 1. Authoritative allocation to this lecturer
+      if (!isScheduleAllocatedToLecturer(s, currentLecturer, courses, user?.id, user?.email)) {
+        return false;
+      }
 
-      // Match Year
-      if (s.academicYear && s.academicYear !== selectedYear) return false;
+      // 2. Authoritative publishing check (excludes draft schedules)
+      if (!isSchedulePublished(s, academicPeriods)) {
+        return false;
+      }
 
-      // Match Semester
-      if (selectedSemester !== 'All' && s.semester !== selectedSemester) return false;
+      // 3. Match Year if selected
+      if (selectedYear && s.academicYear && s.academicYear !== selectedYear) {
+        return false;
+      }
 
-      // Check if period is published in system
-      const period = academicPeriods.find(p => 
-        p.academicYear === (s.academicYear || selectedYear) && 
-        p.semester === s.semester
-      );
-      if (period && !period.isPublished) {
+      // 4. Match Semester if selected
+      if (selectedSemester !== 'All' && s.semester && s.semester !== selectedSemester) {
         return false;
       }
 
       return true;
     });
-  }, [schedules, currentLecturer, selectedYear, selectedSemester, academicPeriods]);
+  }, [schedules, currentLecturer, user, courses, academicPeriods, selectedYear, selectedSemester]);
 
   const activeAcademicPeriod = useMemo(() => {
     return academicPeriods.find(p => 
       p.academicYear === selectedYear && 
-      (selectedSemester === 'All' || p.semester === selectedSemester)
-    ) || academicPeriods[0];
+      (selectedSemester === 'All' ? p.isCurrent : p.semester === selectedSemester)
+    ) || academicPeriods.find(p => p.academicYear === selectedYear);
   }, [academicPeriods, selectedYear, selectedSemester]);
 
   const days: ('Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday')[] = [
@@ -368,6 +388,9 @@ export function LecturerTeachingScheduleView() {
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-zinc-900 dark:text-white">
                       {day}
+                    </span>
+                    <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                      • {getUpcomingDateString(day)}
                     </span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5 text-zinc-600 dark:text-zinc-400">
                       {sessions.length} {sessions.length === 1 ? 'class' : 'classes'}

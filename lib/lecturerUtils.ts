@@ -1,4 +1,4 @@
-import { Lecturer } from './dataset';
+import { Lecturer, Course, TimetableEntry, AcademicPeriod, isCourseAllocatedToLecturer } from './dataset';
 
 /**
  * Common professional and courtesy title prefix regex.
@@ -162,3 +162,139 @@ export function sanitizeExistingLecturers(lecturers: Lecturer[]): {
     changedCount,
   };
 }
+
+/**
+ * Authoritatively determines if a published timetable entry is assigned to a lecturer.
+ * Adheres strictly to the identity and schedule model hierarchy:
+ * 1. Direct stable Lecturer ID match on schedule entry (or Auth UID).
+ * 2. Direct stable Email match on schedule entry.
+ * 3. Course catalog assigned lecturer check (assignedLecturerId / isCourseAllocatedToLecturer).
+ * 4. Canonical profile assignedCourses and specializations check.
+ * 5. Strict rejection if schedule specifies an explicit conflicting lecturer ID.
+ * 6. Fallback clean name match (only if no conflicting ID is set).
+ */
+export function isScheduleAllocatedToLecturer(
+  schedule: TimetableEntry,
+  lecturer: Lecturer | null | undefined,
+  courses: Course[] = [],
+  userAuthUid?: string | null,
+  userEmail?: string | null
+): boolean {
+  if (!schedule) return false;
+
+  const canonicalLecId = (lecturer?.lecturerId || '').trim().toUpperCase();
+  const authUid = (userAuthUid || lecturer?.authUid || '').trim();
+  const schedLecId = (schedule.lecturerId || '').trim().toUpperCase();
+  const schedCourseCode = (schedule.courseCode || '').replace(/\s+/g, '').toUpperCase();
+  const schedEmail = (schedule.lecturerEmail || '').trim().toLowerCase();
+  const userEmailClean = (userEmail || lecturer?.officeEmail || lecturer?.email || '').trim().toLowerCase();
+
+  // 1. Direct Stable Lecturer ID match
+  if (canonicalLecId && schedLecId && canonicalLecId === schedLecId) {
+    return true;
+  }
+  if (authUid && schedLecId && (authUid.toUpperCase() === schedLecId || authUid === schedule.lecturerId)) {
+    return true;
+  }
+
+  // 2. Direct Stable Email match on schedule entry
+  if (schedEmail && userEmailClean && schedEmail === userEmailClean) {
+    return true;
+  }
+  if (schedEmail && lecturer?.officeEmail && schedEmail === lecturer.officeEmail.trim().toLowerCase()) {
+    return true;
+  }
+  if (schedEmail && lecturer?.email && schedEmail === lecturer.email.trim().toLowerCase()) {
+    return true;
+  }
+
+  // 3. Course catalog assigned lecturer check
+  if (schedCourseCode) {
+    const course = courses.find(c => c.courseCode.replace(/\s+/g, '').toUpperCase() === schedCourseCode);
+    if (course) {
+      if (course.assignedLecturerId) {
+        const cLecId = course.assignedLecturerId.trim().toUpperCase();
+        if (canonicalLecId && cLecId === canonicalLecId) return true;
+        if (authUid && (cLecId === authUid.toUpperCase() || course.assignedLecturerId === authUid)) return true;
+      }
+      if (isCourseAllocatedToLecturer(course, lecturer, authUid)) {
+        return true;
+      }
+    }
+  }
+
+  // 4. Lecturer profile assignedCourses or specializations check
+  if (schedCourseCode && lecturer) {
+    if (lecturer.assignedCourses) {
+      const assigned = Array.isArray(lecturer.assignedCourses)
+        ? lecturer.assignedCourses
+        : lecturer.assignedCourses.split(',').map(s => s.trim());
+      if (assigned.some(c => c.replace(/\s+/g, '').toUpperCase() === schedCourseCode)) {
+        return true;
+      }
+    }
+    if (lecturer.specializations && Array.isArray(lecturer.specializations)) {
+      if (lecturer.specializations.some(c => c.replace(/\s+/g, '').toUpperCase() === schedCourseCode)) {
+        return true;
+      }
+    }
+  }
+
+  // 5. If schedule entry explicitly specifies a DIFFERENT known lecturer ID, do NOT match by display name
+  if (schedLecId && canonicalLecId && schedLecId !== canonicalLecId) {
+    return false;
+  }
+
+  // 6. Fallback Name match (only when no conflicting ID is set)
+  if (schedule.lecturerName && lecturer?.fullName) {
+    const cleanSchedName = stripLeadingTitle(schedule.lecturerName).toLowerCase();
+    const cleanLecName = stripLeadingTitle(lecturer.fullName).toLowerCase();
+    if (cleanSchedName && cleanLecName && cleanSchedName === cleanLecName) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Checks if a timetable schedule entry is authoritative and published.
+ * Draft schedules are never displayed as published.
+ */
+export function isSchedulePublished(
+  schedule: TimetableEntry,
+  academicPeriods: AcademicPeriod[] = []
+): boolean {
+  if (!schedule) return false;
+
+  // 1. Explicit draft is never published
+  if (schedule.status === 'draft') {
+    return false;
+  }
+
+  // 2. Explicit published status
+  if (schedule.status === 'published') {
+    // If an academic period exists for this schedule, verify it has not been unpublished by an admin
+    const period = academicPeriods.find(p => 
+      (schedule.periodId && p.id === schedule.periodId) ||
+      (p.academicYear === schedule.academicYear && p.semester === schedule.semester)
+    );
+    if (period && period.isPublished === false) {
+      return false;
+    }
+    return true;
+  }
+
+  // 3. Fallback: If status is undefined or 'generated', check if corresponding academic period is published
+  const period = academicPeriods.find(p => 
+    (schedule.periodId && p.id === schedule.periodId) ||
+    (p.academicYear === schedule.academicYear && p.semester === schedule.semester)
+  );
+
+  if (period && period.isPublished === true) {
+    return true;
+  }
+
+  return false;
+}
+
